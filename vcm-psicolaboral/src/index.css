@@ -1,0 +1,51 @@
+*{
+  box-sizing: border-box;
+}
+body{
+  margin: 0;
+  font-family: 'Source Code Pro' ;
+  background-color: whitesmoke;
+  color:black;
+}
+.container{
+  max-width: 1000px;
+  margin:auto;
+  padding: 40px 20px;
+}
+header{
+  margin-bottom: 30px;
+}
+.tag{
+  font-size: 14px;
+  font-weight:700;
+}
+h1{
+  margin-bottom: 10px;
+}
+.indicadores{
+  display: flex;
+  gap: 16px;
+  scroll-snap-type: center;
+  
+}
+
+.indicadores article{
+  flex: 1;
+  padding: 20px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.indicadores strong{
+  display: block;
+  font-size: 30px;
+}
+.indicadores span{
+  color: #555;
+}
+.flujo{
+  margin-top: 20px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+}
