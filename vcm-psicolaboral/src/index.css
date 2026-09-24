@@ -1,11 +1,21 @@
 *{
   box-sizing: border-box;
 }
+:root{
+  --fondo-cuadros: white;
+  --fondo-pagina: whitesmoke;
+  --font-negro: black;
+  --borde-boton: #000;
+  --borde-boton-hover: #0e97b3;
+  --font-boton-hover: #1699b3;
+  --transicion-rapida: 0.3s;
+}
 body{
   margin: 0;
   font-family: 'Source Code Pro' ;
-  background-color: whitesmoke;
-  color:black;
+  background-color: var(--fondo-pagina);
+  color:var(--font-negro);
+  --radio-cuadros:8px;
 }
 .container{
   max-width: 1000px;
@@ -49,3 +59,25 @@ h1{
   background-color: white;
   border-radius: 8px;
 }
+/* .button-solicitud: Dedicado a botones de formularios o procesos
+   de los usuarios*/
+.button-solicitud{
+  margin-top: 10px;
+  padding: 1rem;
+  max-width: 10rem;
+  background-color: var(--fondo-cuadros);
+  border: 0.1rem solid var(--borde-boton);
+  border-radius: var(--radio-cuadros);
+  cursor: pointer;
+  color: var(--font-negro);
+  transition: 
+  border var(--transicion-rapida) ease,
+  box-shadow var(--transicion-rapida) ease,
+  color var(--transicion-rapida) ease;
+}
+.button-solicitud:hover{
+    outline: none;
+    border-color: var(--borde-boton-hover);
+    box-shadow: 0 0 3px var(--borde-boton-hover);
+    color: var(--font-boton-hover);
+  }

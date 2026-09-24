@@ -61,7 +61,7 @@ function App(){
     <p>Candidato → Solicitud →Evaluación → Estado → Consulta </p>
 
    </section>
-
+    <button type="button" className="button-solicitud">Solicitar entrevista con Evaluador Psico-Laboral</button>
   </main>
 
  );
