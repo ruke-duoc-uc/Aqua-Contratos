@@ -21,7 +21,10 @@ body{
   max-width: 1000px;
   margin:auto;
   padding: 40px 20px;
+  display:flex;
+  flex-direction:column;
 }
+
 header{
   margin-bottom: 30px;
 }
@@ -63,17 +66,20 @@ h1{
    de los usuarios*/
 .button-solicitud{
   margin-top: 10px;
-  padding: 1rem;
-  max-width: 10rem;
+  padding: clamp(10px, 5.5vw, 10px) clamp(10px, 4vw, 100px);  
+  min-height: 5rem;
+  max-width: max-content;
   background-color: var(--fondo-cuadros);
   border: 0.1rem solid var(--borde-boton);
   border-radius: var(--radio-cuadros);
   cursor: pointer;
   color: var(--font-negro);
+  justify-content:center;
   transition: 
   border var(--transicion-rapida) ease,
   box-shadow var(--transicion-rapida) ease,
-  color var(--transicion-rapida) ease;
+  color var(--transicion-rapida) ease,
+  font-weight var(--transicion-rapida) ease;
 }
 .button-solicitud:hover{
     outline: none;
@@ -81,3 +87,6 @@ h1{
     box-shadow: 0 0 3px var(--borde-boton-hover);
     color: var(--font-boton-hover);
   }
+.container .button-solicitud{
+  align-self: center; 
+}

@@ -58,10 +58,12 @@ function App(){
 
     <h2>Flujo principal</h2>
 
-    <p>Candidato → Solicitud →Evaluación → Estado → Consulta </p>
+    <p>Candidato → Solicitud → Evaluación → Estado → Consulta </p>
 
    </section>
-    <button type="button" className="button-solicitud">Solicitar entrevista con Evaluador Psico-Laboral</button>
+    <button type="button" className="button-solicitud">
+        <h3>Solicitar entrevista con Evaluador Psico-Laboral</h3>
+    </button>
   </main>
 
  );
