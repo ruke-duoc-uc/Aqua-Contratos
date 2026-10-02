@@ -1,45 +1,38 @@
 # AQUA-CONTRATOS
 Repositorio dedicado una página web creada con React y node
 
-@startuml
-title Flujo Principal MVP - Gestión de Evaluaciones Psicolaborales (AquaChile)
+```mermaid
+flowchart TD
+    subgraph Analista ["👤 Rol: Analista de Reclutamiento"]
+        A(["Inicio: Ingresa a la Web y selecciona rol Analista"]) --> B["Vista Web: Gestión de Candidatos<br/>Completa formulario de nuevo candidato"]
+        B --> C{"¿Datos del candidato<br/>son válidos?"}
+        C -- "No" --> D["Muestra alerta de validación en el formulario"]
+        D --> B
+        C -- "Sí" --> E["Guarda candidato en el listado"]
+        E --> F["Vista Web: Solicitudes de Evaluación<br/>Crea solicitud asociada al candidato"]
+        F --> G["Asigna Cargo, Familia de Cargo,<br/>Evaluador Responsable y Observaciones"]
+        G --> H["Guarda Solicitud con estado: PENDIENTE"]
+    end
 
-|Analista de Reclutamiento|
-start
-:Ingresa al sistema (Selector de Rol);
-:Abre "Formulario de Candidato" y
-registra datos del postulante;
+    subgraph Evaluador ["🧠 Rol: Profesional Evaluador"]
+        H --> I["Vista Web: Solicitudes de Evaluación<br/>Filtra solicitudes en estado PENDIENTE"]
+        I --> J["Vista Web: Detalle y Evaluación<br/>Revisa antecedentes del candidato y cargo"]
+        J --> K{"¿Antecedentes completos<br/>para agendar?"}
+        K -- "Sí" --> L["Registra Fecha de Evaluación y<br/>cambia estado a: EN PROCESO"]
+        L --> M["Realiza evaluación, ingresa Observaciones<br/>y selecciona Categoría de Resultado<br/>(Recomendado / Con obs. / No recomendado)"]
+        M --> N{"¿Formulario de evaluación<br/>completo?"}
+        N -- "No" --> O["Muestra error de campos obligatorios"]
+        O --> M
+        N -- "Sí" --> P["Guarda evaluación y<br/>actualiza estado a: FINALIZADA"]
+    end
 
-if (¿Datos de candidato válidos?) then (No)
-  :Muestra errores de validación;
-  stop
-else (Sí)
-  :Guarda Candidato en el sistema;
-endif
+    subgraph Consulta ["📊 Rol: Analista / Jefatura"]
+        P --> Q["Vista Web: Dashboard de Inicio<br/>Actualiza tarjetas de indicadores (KPIs)"]
+        Q --> R(["Fin: Consulta de solicitud y resultado consolidado"])
+    end
 
-:Abre "Nueva Solicitud de Evaluación"
-y asocia al Candidato;
-:Asigna Cargo, Familia de Cargo,
-Evaluador Responsable y Observaciones;
-:Guarda Solicitud (Estado = **Pendiente**);
-
-|Profesional Evaluador|
-:Consulta "Listado de Solicitudes"
-y filtra estado **Pendiente**;
-:Abre "Detalle de Solicitud";
-:Registra Fecha de Evaluación y
-actualiza estado a **En proceso**;
-:Realiza evaluación y registra Observaciones
-y Resultado (Recomendado / Con obs. / No rec.);
-
-if (¿Datos de evaluación completos?) then (No)
-  :Muestra alerta de campos requeridos;
-else (Sí)
-  :Actualiza estado a **Finalizada**;
-endif
-
-|Analista de Reclutamiento / Jefatura|
-:Visualiza indicadores actualizados en "Dashboard";
-:Consulta resultado final en "Detalle de Solicitud";
-stop
-@enduml
+    %% Estilos visuales para estados clave
+    style H fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#000
+    style L fill:#cfe2ff,stroke:#0d6efd,stroke-width:2px,color:#000
+    style P fill:#d1e7dd,stroke:#198754,stroke-width:2px,color:#000
+```
