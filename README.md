@@ -26,9 +26,3 @@ Aqua-Contratos es una página web que centraliza información básica del proces
 |RF08|Actualizar el estado de la solicitud: Pendiente, En proceso o Finalizada|<div style="background-color: red; color: white; padding: 4px; text-align: center; border-radius: 4px;">Alta</div>|
 |RF09|Registrar fecha de evaluación, observaciones o resultado general|<div style="background-color: red; color: white; padding: 4px; text-align: center; border-radius: 4px;">Alta</div>|
 |RF10|Mostrar dashboard simple con indicadores generales del proceso|<div style="background-color: green; color: white; padding: 4px; text-align: center; border-radius: 4px;">Media</div>|
-
-
-| Prioridad | Tarea |
-| :--- | :--- |
-| <div style="background-color: red; color: white; padding: 4px; text-align: center; border-radius: 4px;"></div> | Entregar reporte mensual |
-| Media | Revisar correos |
