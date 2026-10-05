@@ -1,25 +1,33 @@
-/**Lista para poner a los candidatos recientes
+/** Fila de la tabla de candidatos recientes
  * @Autor Luxorar
-**/
+ **/
 import BotonOrange from "./BotonOrange";
+import { COLUMNAS } from "./columnasTabla";
+import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";
 
-function CandidatosRecientes({nombre, rut,especialidad,planta,fecha,evaluador,estado}){
-    return(
+function CandidatosRecientes({ nombre, rut, especialidad, planta, fecha, evaluador, estado }) {
+    return (
         <div
             style={{
-                border:"1px solid gray", backgroundColor:"white", display:"flex",gap:"16px",flexDirection:"row",
-                justifyContent:"space-between", padding:"10px"
+                display: "grid",
+                gridTemplateColumns: COLUMNAS,
+                alignItems: "center",
+                gap: "16px",
+                padding: "10px 16px",
+                backgroundColor: "white",
+                fontWeight: "bold",
             }}
         >
-            <p>{nombre}</p>
-            <p>{rut}</p>
-            <p>{especialidad}</p>
-            <p>{planta}</p>
-            <p>{fecha}</p>
-            <p>{evaluador}</p>
-            <p>{estado}</p>
-            <BotonOrange texto="Detalles" href="" />
+            <span>{nombre}</span>
+            <span>{rut}</span>
+            <span>{especialidad}</span>
+            <span>{planta}</span>
+            <span>{fecha}</span>
+            <span>{evaluador}</span>
+            <span>{estado}</span>
+            <BotonOrange texto="Detalle"/>
         </div>
-    );
+            );
 }
+
 export default CandidatosRecientes;
