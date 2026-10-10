@@ -9,13 +9,22 @@
   --borde-boton-hover: #0e97b3;
   --font-boton-hover: #1699b3;
   --transicion-rapida: 0.3s;
+  --radio-cuadros: 8px;
+  --fondo-modal-overlay: rgba(0, 0, 0, 0.55);
+  --borde-campo-input: #cccccc;
+  --borde-campo-focus: #0e97b3;
+  --fondo-badge-verde: #d1e7dd;
+  --color-badge-verde: #0f5132;
+  --fondo-badge-amarillo: #fff3cd;
+  --color-badge-amarillo: #856404;
+  --fondo-badge-rojo: #f8d7da;
+  --color-badge-rojo: #842029;
 }
 body{
   margin: 0;
-  font-family: 'Source Code Pro' ;
+  font-family: 'Source Code Pro', Arial, sans-serif;
   background-color: var(--fondo-pagina);
   color:var(--font-negro);
-  --radio-cuadros:8px;
 }
 .container{
   max-width: 1000px;
@@ -89,4 +98,357 @@ h1{
   }
 .container .button-solicitud{
   align-self: center; 
+}
+
+/* Barra superior de contexto y selector de rol (RF01) */
+.header-roles {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--fondo-cuadros);
+  padding: 12px 24px;
+  border-radius: var(--radio-cuadros);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+}
+
+.selector-rol-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.select-rol {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--borde-campo-input);
+  background-color: var(--fondo-cuadros);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transicion-rapida);
+}
+
+.select-rol:focus {
+  border-color: var(--borde-campo-focus);
+}
+
+.badge-rol {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+/* Pestañas de Navegación del Sistema (Dashboard, Candidatos, Solicitudes) */
+.nav-tabs-lista {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+  width: 100%;
+}
+
+.nav-tab-boton {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  color: #495057;
+  transition: all var(--transicion-rapida);
+}
+
+.nav-tab-boton:hover {
+  background-color: #f1f3f5;
+  color: #000;
+}
+
+.nav-tab-boton.activo {
+  background-color: #0e97b3;
+  color: white;
+}
+
+/* Modal y Formulario para Nueva Solicitud (RF02, RF04, RF05) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--fondo-modal-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-contenido {
+  background-color: var(--fondo-cuadros);
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: var(--radio-cuadros);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-cerrar-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-cerrar-btn:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.form-seccion-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #0e97b3;
+  margin-top: 0;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 4px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.form-col-span-2 {
+  grid-column: span 2;
+}
+
+.form-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-grupo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--borde-campo-input);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  background-color: var(--fondo-cuadros);
+  transition: border-color var(--transicion-rapida);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--borde-campo-focus);
+}
+
+.form-error-mensaje {
+  color: #c92a2a;
+  background-color: #ffe3e3;
+  border: 1px solid #ffa8a8;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.boton-secundario {
+  background-color: #f1f3f5;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 10px 18px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color var(--transicion-rapida);
+}
+
+.boton-secundario:hover {
+  background-color: #e9ecef;
+}
+
+/* Badges de estado en la tabla */
+.badge-estado {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.badge-pendiente {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge-proceso {
+  background-color: #cfe2ff;
+  color: #084298;
+}
+
+.badge-finalizado {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.badge-revision {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+/* Barra de Búsqueda y Filtros de Solicitudes (RF07) */
+.filtros-barra-contenedor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.buscador-input-wrapper {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+}
+
+.buscador-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--borde-campo-input);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background-color: var(--fondo-cuadros);
+  transition: border-color var(--transicion-rapida);
+}
+
+.buscador-input:focus {
+  border-color: var(--borde-campo-focus);
+}
+
+.filtro-select {
+  padding: 8px 12px;
+  border: 1px solid var(--borde-campo-input);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background-color: var(--fondo-cuadros);
+  cursor: pointer;
+}
+
+.filtro-select:focus {
+  border-color: var(--borde-campo-focus);
+}
+
+.boton-limpiar-filtros {
+  background: none;
+  border: 1px solid #ced4da;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all var(--transicion-rapida);
+}
+
+.boton-limpiar-filtros:hover {
+  background-color: #e9ecef;
+  color: #212529;
+}
+
+/* Badges de Resultado Psicolaboral (RF09) */
+.badge-dictamen {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.badge-dictamen-recomendado {
+  background-color: var(--fondo-badge-verde);
+  color: var(--color-badge-verde);
+  border: 1px solid #a3cfbb;
+}
+
+.badge-dictamen-observaciones {
+  background-color: var(--fondo-badge-amarillo);
+  color: var(--color-badge-amarillo);
+  border: 1px solid #ffe69c;
+}
+
+.badge-dictamen-norecomendado {
+  background-color: var(--fondo-badge-rojo);
+  color: var(--color-badge-rojo);
+  border: 1px solid #f1aeb5;
+}
+
+.badge-dictamen-pendiente {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+/* Bloque destacado de evaluación en ModalDetalle */
+.caja-evaluacion-psicolaboral {
+  background-color: #fdfefe;
+  border: 1px solid #e1e7ec;
+  border-left: 4px solid #0e97b3;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 10px;
 }
