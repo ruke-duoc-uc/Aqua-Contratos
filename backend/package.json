@@ -1,0 +1,27 @@
+{
+  "name": "aqua-contratos-backend",
+  "version": "1.0.0",
+  "description": "API REST en Node.js y Express para el sistema de evaluaciones psicolaborales Aqua-Contratos",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "aquachile",
+    "express",
+    "rest-api",
+    "psicolaboral"
+  ],
+  "author": "Smiling Friends",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -123,6 +123,16 @@ Aqua-Contratos/
 ├── README.md                 # Documentación integral del proyecto
 ├── evidencias/               # Documentación y pautas académicas del caso
 │   └── Fullstack-Actividad_Bases_MVP_AquaChile_DSY1104.docx.pdf
+├── backend/                  # Capa de servicios y API REST (Node.js + Express)
+│   ├── package.json          # Dependencias (express, cors, dotenv)
+│   ├── README.md             # Especificación detallada de endpoints REST
+│   └── src/
+│       ├── app.js            # Configuración Express y middlewares
+│       ├── index.js          # Arranque del servidor (puerto 4000)
+│       ├── controllers/      # Controladores (candidatos, solicitudes, dashboard)
+│       ├── routes/           # Rutas API (/api/candidatos, /api/solicitudes, /api/dashboard)
+│       ├── data/             # Semilla y dataStore en memoria
+│       └── middlewares/      # Manejadores de errores y 404
 └── vcm-psicolaboral/         # Frontend de la aplicación (React + Vite)
     ├── index.html            # Plantilla HTML base
     ├── vite.config.js        # Configuración de compilación Vite
@@ -193,20 +203,20 @@ Aqua-Contratos/
 
 ---
 
-## 🛠️ Diagnóstico Técnico y Errores Conocidos
+## 🛠️ Diagnóstico Técnico y Estado de Correcciones
 
-Durante la auditoría del código se detectaron los siguientes puntos a resolver:
+Estado tras auditorías y refactorizaciones del código:
 
 1. **Imports no utilizados de JSX Runtime:**  
-   En `DashBoardPage.jsx` y `CandidarosRecientes.jsx` está importado `import { jsxDEV as _jsxDEV } from "react/jsx-dev-runtime";`. Debe eliminarse ya que Vite maneja la transformación JSX de forma automática.
+   🟢 **Resuelto:** Eliminadas importaciones espurias de `_jsxDEV`.
 2. **Error tipográfico en nombre de componente:**  
-   El archivo `src/components/CandidarosRecientes.jsx` tiene una errata en el nombre ("Candidaros"). Debe renombrarse a `CandidatosRecientes.jsx` junto con sus importaciones.
+   🟢 **Resuelto:** Archivo renombrado a `CandidatosRecientes.jsx` con importaciones actualizadas.
 3. **Variable CSS mal posicionada:**  
-   `--radio-cuadros: 8px;` está definida dentro del selector `body` en lugar de `:root` en `index.css`.
-4. **Enlaces sin enrutador:**  
-   Botones como `+ Nueva solicitud` (`href="/nueva-solicitud"`) y `Detalle` no tienen rutas configuradas (`react-router-dom`) ni manejadores de eventos.
-5. **Capa Backend ausente:**  
-   El repositorio no cuenta con servidor Node.js/Express ni API REST para la persistencia de datos.
+   🟢 **Resuelto:** `--radio-cuadros: 8px;` y demás variables de diseño organizadas dentro de `:root` en `index.css`.
+4. **Navegación e interactividad de enlaces:**  
+   🟢 **Resuelto:** Interacciones de botones (+ Nueva solicitud, Detalle, Editar) enlazadas mediante modales dinámicos y pestañas de vista.
+5. **Capa Backend y API REST:**  
+   🟡 **En desarrollo:** Estructura modular construida en `backend/` con endpoints REST definidos en Express. Pendiente conexión cliente-servidor y base de datos persistente.
 
 ---
 
@@ -236,4 +246,8 @@ Según lo estipulado en [CONTRIBUTING.md](file:///C:/Users/Usuario/OneDrive/Desk
   - [x] Buscador y filtros de solicitudes por estado/cargo/candidato (RF07).
   - [x] Interfaz dedicada de Evaluación psicológica con dictamen y rúbrica (RF09).
 - [ ] **Fase 4: Backend y Persistencia**
-  - [ ] Construir API en Node.js/Express para persistencia de candidatos y solicitudes.
+  - [x] Diseñar estructura de carpetas modular (`controllers`, `routes`, `dataStore`).
+  - [x] Definir especificación de la API REST (`/api/candidatos`, `/api/solicitudes`, `/api/dashboard`).
+  - [x] Configurar servidor Express con CORS y manejo centralizado de errores.
+  - [ ] Conectar frontend (sustituir mock / `localStorage` por llamadas HTTP `fetch`/`axios`).
+  - [ ] Integrar motor de base de datos persistente (MongoDB, PostgreSQL o SQLite).
