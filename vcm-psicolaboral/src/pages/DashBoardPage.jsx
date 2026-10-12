@@ -14,6 +14,7 @@ import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalEditarCandidato from "../components/ModalEditarCandidato";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { COLUMNAS } from "../components/columnasTabla";
+import { api } from "../services/api";
 
 const STORAGE_KEY = "aqua_contratos_datos_mvp_v1";
 
@@ -67,6 +68,8 @@ function DashBoardPage() {
     const [rolActual, setRolActual] = useState("analista");
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarDatosIniciales);
+    const [backendConectado, setBackendConectado] = useState(false);
+    const [cargandoApi, setCargandoApi] = useState(false);
 
     const [modalNuevaAbierto, setModalNuevaAbierto] = useState(false);
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
@@ -79,7 +82,35 @@ function DashBoardPage() {
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
     const [filtroEvaluador, setFiltroEvaluador] = useState("todos");
 
-    // Persistencia automática en el almacenamiento local
+    // Sincronización inicial con la API REST y Base de Datos SQLite
+    useEffect(() => {
+        let isMounted = true;
+        async function sincronizarConBackend() {
+            setCargandoApi(true);
+            try {
+                const datosRemotos = await api.getSolicitudes();
+                if (isMounted && Array.isArray(datosRemotos)) {
+                    const formateados = datosRemotos.map((item) => ({
+                        ...item,
+                        fecha: new Date(item.fecha),
+                    }));
+                    setCandidatos(formateados);
+                    setBackendConectado(true);
+                }
+            } catch (err) {
+                console.warn("Backend Express no disponible. Operando en modo local (localStorage):", err.message);
+                if (isMounted) setBackendConectado(false);
+            } finally {
+                if (isMounted) setCargandoApi(false);
+            }
+        }
+        sincronizarConBackend();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Persistencia secundaria en almacenamiento local como respaldo
     useEffect(() => {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(candidatos));
@@ -139,42 +170,80 @@ function DashBoardPage() {
         setFiltroEvaluador("todos");
     };
 
-    // Crear nueva postulación (RF02, RF04, RF05)
-    const handleGuardarSolicitud = (nuevaSolicitud) => {
-        setCandidatos([nuevaSolicitud, ...candidatos]);
-        setAlertaExito(`✓ Solicitud creada exitosamente para ${nuevaSolicitud.nombre} (${nuevaSolicitud.cargo})`);
+    // Crear nueva postulación (RF02, RF04, RF05) conectado a la API y BD
+    const handleGuardarSolicitud = async (nuevaSolicitud) => {
+        try {
+            const creada = await api.crearSolicitud(nuevaSolicitud);
+            const formateada = { ...creada, fecha: new Date(creada.fecha) };
+            setCandidatos((prev) => [formateada, ...prev.filter((c) => c.id !== formateada.id)]);
+            setBackendConectado(true);
+            setAlertaExito(`✓ Solicitud guardada en base de datos SQLite para ${formateada.nombre} (${formateada.cargo})`);
+        } catch (err) {
+            console.warn("Guardando localmente tras fallo en la API:", err.message);
+            setCandidatos([nuevaSolicitud, ...candidatos]);
+            setAlertaExito(`✓ Solicitud creada exitosamente para ${nuevaSolicitud.nombre} (${nuevaSolicitud.cargo})`);
+        }
         setTimeout(() => setAlertaExito(""), 4500);
     };
 
-    // Modificar datos de un candidato existente (RF03)
-    const handleGuardarCandidatoEditado = (candidatoActualizado) => {
-        setCandidatos((prev) =>
-            prev.map((c) => (c.id === candidatoActualizado.id ? { ...c, ...candidatoActualizado } : c))
-        );
+    // Modificar datos de un candidato existente (RF03) conectado a la API y BD
+    const handleGuardarCandidatoEditado = async (candidatoActualizado) => {
+        try {
+            const actualizado = await api.actualizarCandidato(candidatoActualizado.id, candidatoActualizado);
+            const formateado = {
+                ...actualizado,
+                fecha: new Date(actualizado.fecha || candidatoActualizado.fecha),
+            };
+            setCandidatos((prev) =>
+                prev.map((c) => (c.id === formateado.id ? { ...c, ...formateado } : c))
+            );
+            setBackendConectado(true);
+            setAlertaExito(`✓ Candidato actualizado en base de datos para ${formateado.nombre}`);
+        } catch (err) {
+            console.warn("Actualizando localmente tras fallo en la API:", err.message);
+            setCandidatos((prev) =>
+                prev.map((c) => (c.id === candidatoActualizado.id ? { ...c, ...candidatoActualizado } : c))
+            );
+            setAlertaExito(`✓ Información actualizada para el candidato ${candidatoActualizado.nombre}`);
+        }
         setCandidatoAEditar(null);
-        setAlertaExito(`✓ Información actualizada para el candidato ${candidatoActualizado.nombre}`);
         setTimeout(() => setAlertaExito(""), 4500);
     };
 
-    // Actualizar estado (RF08)
-    const handleCambiarEstado = (id, nuevoEstado) => {
+    // Actualizar estado (RF08) conectado a la API y BD
+    const handleCambiarEstado = async (id, nuevoEstado) => {
         setCandidatos((prev) =>
             prev.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c))
         );
         if (solicitudSeleccionada && solicitudSeleccionada.id === id) {
             setSolicitudSeleccionada((prev) => ({ ...prev, estado: nuevoEstado }));
         }
+
+        try {
+            await api.cambiarEstadoSolicitud(id, nuevoEstado);
+            setBackendConectado(true);
+        } catch (err) {
+            console.warn("Estado guardado solo localmente:", err.message);
+        }
     };
 
-    // Guardar evaluación psicológica (RF09)
-    const handleGuardarEvaluacion = (id, evaluacionData) => {
+    // Guardar evaluación psicológica (RF09) conectado a la API y BD
+    const handleGuardarEvaluacion = async (id, evaluacionData) => {
         setCandidatos((prev) =>
             prev.map((c) => (c.id === id ? { ...c, ...evaluacionData } : c))
         );
         if (solicitudSeleccionada && solicitudSeleccionada.id === id) {
             setSolicitudSeleccionada((prev) => ({ ...prev, ...evaluacionData }));
         }
-        setAlertaExito(`✓ Evaluación psicológica registrada con éxito para ${solicitudSeleccionada?.nombre || "el postulante"}`);
+
+        try {
+            await api.guardarEvaluacionSolicitud(id, evaluacionData);
+            setBackendConectado(true);
+            setAlertaExito(`✓ Dictamen guardado en base de datos para ${solicitudSeleccionada?.nombre || "el postulante"}`);
+        } catch (err) {
+            console.warn("Evaluación guardada localmente tras fallo en la API:", err.message);
+            setAlertaExito(`✓ Evaluación psicológica registrada con éxito para ${solicitudSeleccionada?.nombre || "el postulante"}`);
+        }
         setTimeout(() => setAlertaExito(""), 4500);
     };
 
@@ -191,6 +260,44 @@ function DashBoardPage() {
                 tabActiva={tabActiva}
                 onCambiarTab={setTabActiva}
             />
+
+            {/* Indicador de conexión con Backend y Base de Datos */}
+            <div
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 14px",
+                    backgroundColor: backendConectado ? "#e8f5e9" : "#fff8e1",
+                    borderRadius: "6px",
+                    border: `1px solid ${backendConectado ? "#c8e6c9" : "#ffe082"}`,
+                    marginBottom: "16px",
+                    fontSize: "12px",
+                    color: backendConectado ? "#1b5e20" : "#795548",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span
+                        style={{
+                            display: "inline-block",
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            backgroundColor: backendConectado ? "#2e7d32" : "#f57c00",
+                        }}
+                    />
+                    <strong>
+                        {backendConectado
+                            ? "🟢 Conectado a la API REST (Backend Express + SQLite Persistente)"
+                            : "🟡 Operando en Modo Local (localStorage · Inicia el backend con npm run dev)"}
+                    </strong>
+                    {cargandoApi && <span style={{ color: "#0d6efd" }}>(Sincronizando datos...)</span>}
+                </div>
+                <span style={{ fontSize: "11px", color: "#666" }}>
+                    {backendConectado ? "Puerto API: 4000" : "Persistencia local activa"}
+                </span>
+            </div>
+
 
             {/* Banner de retroalimentación de éxito */}
             {alertaExito && (

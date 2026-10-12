@@ -23,7 +23,8 @@ backend/
     │   ├── candidatosRoutes.js
     │   ├── solicitudesRoutes.js
     │   └── dashboardRoutes.js
-    ├── data/                 # Capa de datos y almacenamiento en memoria
+    ├── data/                 # Capa de datos y persistencia (SQLite nativo)
+    │   ├── db.js             # Motor SQLite, esquema de tablas y consultas
     │   ├── seedData.js       # Datos de prueba alineados con el caso AquaChile
     │   └── dataStore.js      # Operaciones CRUD y reglas de negocio
     └── middlewares/          # Manejo de errores y rutas 404

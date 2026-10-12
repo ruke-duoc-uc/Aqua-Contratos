@@ -215,8 +215,8 @@ Estado tras auditorías y refactorizaciones del código:
    🟢 **Resuelto:** `--radio-cuadros: 8px;` y demás variables de diseño organizadas dentro de `:root` en `index.css`.
 4. **Navegación e interactividad de enlaces:**  
    🟢 **Resuelto:** Interacciones de botones (+ Nueva solicitud, Detalle, Editar) enlazadas mediante modales dinámicos y pestañas de vista.
-5. **Capa Backend y API REST:**  
-   🟡 **En desarrollo:** Estructura modular construida en `backend/` con endpoints REST definidos en Express. Pendiente conexión cliente-servidor y base de datos persistente.
+5. **Capa Backend, API REST y Persistencia:**  
+   🟢 **Resuelto:** Servidor Node.js + Express completamente integrado, API REST funcional, persistencia relacional con **SQLite** nativo y cliente HTTP conectado en React (`src/services/api.js`) con fallback inteligente.
 
 ---
 
@@ -245,9 +245,10 @@ Según lo estipulado en [CONTRIBUTING.md](file:///C:/Users/Usuario/OneDrive/Desk
   - [x] Vista modal de Detalle y selector de cambio de estado (RF03, RF06, RF08).
   - [x] Buscador y filtros de solicitudes por estado/cargo/candidato (RF07).
   - [x] Interfaz dedicada de Evaluación psicológica con dictamen y rúbrica (RF09).
-- [ ] **Fase 4: Backend y Persistencia**
+- [x] **Fase 4: Backend y Persistencia**
   - [x] Diseñar estructura de carpetas modular (`controllers`, `routes`, `dataStore`).
   - [x] Definir especificación de la API REST (`/api/candidatos`, `/api/solicitudes`, `/api/dashboard`).
   - [x] Configurar servidor Express con CORS y manejo centralizado de errores.
-  - [ ] Conectar frontend (sustituir mock / `localStorage` por llamadas HTTP `fetch`/`axios`).
-  - [ ] Integrar motor de base de datos persistente (MongoDB, PostgreSQL o SQLite).
+  - [x] Conectar frontend (cliente HTTP en `api.js` conectado a `DashBoardPage.jsx`).
+  - [x] Integrar motor de base de datos persistente (SQLite nativo con esquema SQL relacional y persistencia en disco).
+
