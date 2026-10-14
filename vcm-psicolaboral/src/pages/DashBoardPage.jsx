@@ -256,7 +256,7 @@ function DashBoardPage() {
                                     fontWeight: "bold",
                                 }}
                             >
-                                🧠 Modo Evaluador (Selecciona "Detalle" para calificar)
+                                Modo Evaluador (Selecciona "Detalle" para calificar)
                             </span>
                         )}
 
@@ -271,7 +271,7 @@ function DashBoardPage() {
                                     fontWeight: "bold",
                                 }}
                             >
-                                👁️ Consulta de Jefatura (Solo Lectura)
+                                Consulta de Jefatura (Solo Lectura)
                             </span>
                         )}
                     </div>
