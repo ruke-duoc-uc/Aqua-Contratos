@@ -12,16 +12,16 @@ function HeaderRoles({ rolActual, onCambiarRol, tabActiva, onCambiarTab }) {
     ];
 
     const tabs = [
-        { id: "dashboard", label: "📊 Dashboard Operativo" },
-        { id: "candidatos", label: "👥 Gestión de Candidatos (RF02, RF03)" },
-        { id: "solicitudes", label: "📋 Solicitudes de Evaluación (RF04-RF09)" },
+        { id: "dashboard", label: "Dashboard Operativo" },
+        { id: "candidatos", label: "Gestión de Candidatos" },
+        { id: "solicitudes", label: "Solicitudes de Evaluación" },
     ];
 
     return (
         <header className="header-roles" style={{ flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "28px" }}>🐟</span>
+
                     <div>
                         <h1 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "bold" }}>
                             AquaChile · Aqua-Contratos

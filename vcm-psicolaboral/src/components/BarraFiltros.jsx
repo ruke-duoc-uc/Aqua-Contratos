@@ -32,7 +32,7 @@ function BarraFiltros({
                 <input
                     type="text"
                     className="buscador-input"
-                    placeholder="🔍 Buscar por nombre, RUT o cargo..."
+                    placeholder="Buscar por nombre, RUT o cargo..."
                     value={busqueda}
                     onChange={(e) => onBusquedaChange(e.target.value)}
                     aria-label="Buscar solicitudes"
