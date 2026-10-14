@@ -1,0 +1,22 @@
+{
+  "name": "aqua-contratos",
+  "version": "1.0.0",
+  "description": "Sistema de digitalización y evaluación psicolaboral · AquaChile (DSY1104)",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "start:backend": "npm --prefix backend start",
+    "dev:frontend": "npm --prefix vcm-psicolaboral run dev",
+    "build:frontend": "npm --prefix vcm-psicolaboral run build",
+    "lint:frontend": "npm --prefix vcm-psicolaboral run lint",
+    "install:all": "npm --prefix backend install && npm --prefix vcm-psicolaboral install"
+  },
+  "keywords": [
+    "aquachile",
+    "react",
+    "express",
+    "sqlite",
+    "fullstack"
+  ],
+  "author": "Smiling Friends"
+}
