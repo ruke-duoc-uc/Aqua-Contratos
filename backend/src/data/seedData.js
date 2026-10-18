@@ -189,3 +189,69 @@ export const CATALOGOS_SEED = {
         "No recomendado",
     ],
 };
+
+export const INFORMES_SEED = [
+    {
+        id: 1,
+        candidatoId: 1,
+        candidatoNombre: "Luis Mancilla Peralta",
+        solicitante: "Jefe de Área",
+        urgencia: "Alta",
+        fechaLimite: "2026-10-25",
+        estado: "Abierta",
+        fechaCreacion: "2026-10-06T10:00:00.000Z",
+        destinatarios: ["analista", "evaluador"],
+        preguntas: [
+            {
+                id: 1,
+                texto: "¿El postulante tiene experiencia comprobable en integración de APIs y microservicios?",
+                fecha: "2026-10-06T10:00:00.000Z",
+                creadaPor: "Jefe de Área",
+                respuestas: [
+                    {
+                        id: 1,
+                        autor: "Amaro Villalobos Caseres",
+                        rol: "evaluador",
+                        texto: "Sí, cuenta con 3 años desarrollando APIs RESTful con Node.js y Express.",
+                        fecha: "2026-10-06T14:30:00.000Z",
+                    },
+                ],
+            },
+            {
+                id: 2,
+                texto: "¿Dispone de movilidad propia para trasladarse a planta Puerto Montt en turnos especiales?",
+                fecha: "2026-10-06T16:00:00.000Z",
+                creadaPor: "Jefe de Área",
+                respuestas: [],
+            },
+        ],
+    },
+    {
+        id: 2,
+        candidatoId: 2,
+        candidatoNombre: "Camila Soto Vargas",
+        solicitante: "Jefe de Área",
+        urgencia: "Urgente",
+        fechaLimite: "2026-10-15",
+        estado: "Abierta",
+        fechaCreacion: "2026-10-05T09:00:00.000Z",
+        destinatarios: ["evaluador"],
+        preguntas: [
+            {
+                id: 1,
+                texto: "¿Posee cursos o certificaciones en trabajo seguro en faena y espacios confinados?",
+                fecha: "2026-10-05T09:00:00.000Z",
+                creadaPor: "Jefe de Área",
+                respuestas: [
+                    {
+                        id: 1,
+                        autor: "Carolina Díaz Núñez",
+                        rol: "evaluador",
+                        texto: "Se verificó certificado de capacitación ACHS vigente hasta 2027.",
+                        fecha: "2026-10-05T15:20:00.000Z",
+                    },
+                ],
+            },
+        ],
+    },
+];

@@ -140,4 +140,54 @@ export const api = {
         });
         return res;
     },
+
+    // ==================== SOLICITUDES DE INFORME ====================
+    async getSolicitudesInforme({ busqueda, estado, candidatoId, urgencia } = {}) {
+        const params = new URLSearchParams();
+        if (busqueda) params.append("busqueda", busqueda);
+        if (estado && estado !== "todos") params.append("estado", estado);
+        if (candidatoId) params.append("candidatoId", candidatoId);
+        if (urgencia && urgencia !== "todas") params.append("urgencia", urgencia);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/solicitudes-informe${query}`);
+        return res.datos;
+    },
+
+    async getSolicitudInformePorId(id) {
+        const res = await request(`/solicitudes-informe/${id}`);
+        return res.datos;
+    },
+
+    async crearSolicitudInforme(datos) {
+        const res = await request("/solicitudes-informe", {
+            method: "POST",
+            body: JSON.stringify(datos),
+        });
+        return res.datos;
+    },
+
+    async agregarPreguntaInforme(id, { texto, creadaPor }) {
+        const res = await request(`/solicitudes-informe/${id}/preguntas`, {
+            method: "POST",
+            body: JSON.stringify({ texto, creadaPor }),
+        });
+        return res.datos;
+    },
+
+    async agregarRespuestaInforme(id, preguntaId, { autor, rol, texto }) {
+        const res = await request(`/solicitudes-informe/${id}/preguntas/${preguntaId}/respuestas`, {
+            method: "POST",
+            body: JSON.stringify({ autor, rol, texto }),
+        });
+        return res.datos;
+    },
+
+    async cambiarEstadoSolicitudInforme(id, nuevoEstado) {
+        const res = await request(`/solicitudes-informe/${id}/estado`, {
+            method: "PATCH",
+            body: JSON.stringify({ estado: nuevoEstado }),
+        });
+        return res.datos;
+    },
 };

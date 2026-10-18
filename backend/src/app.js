@@ -6,6 +6,7 @@ import cors from "cors";
 import candidatosRoutes from "./routes/candidatosRoutes.js";
 import solicitudesRoutes from "./routes/solicitudesRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import informesRoutes from "./routes/informesRoutes.js";
 import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -29,6 +30,7 @@ app.get("/api", (req, res) => {
             candidatos: "/api/candidatos",
             solicitudes: "/api/solicitudes",
             dashboard: "/api/dashboard",
+            solicitudesInforme: "/api/solicitudes-informe",
         },
     });
 });
@@ -37,6 +39,7 @@ app.get("/api", (req, res) => {
 app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/solicitudes-informe", informesRoutes);
 
 // Manejo de errores y 404
 app.use(notFoundHandler);

@@ -119,6 +119,31 @@ export const dataStore = {
         return db.obtenerCatalogos();
     },
 
+    // ==================== SOLICITUDES DE INFORME ====================
+    obtenerSolicitudesInforme(filtros) {
+        return db.obtenerSolicitudesInforme(filtros);
+    },
+
+    obtenerSolicitudInformePorId(id) {
+        return db.obtenerSolicitudInformePorId(id);
+    },
+
+    crearSolicitudInforme(datos) {
+        return db.insertarSolicitudInforme(datos);
+    },
+
+    agregarPreguntaInforme(id, datosPregunta) {
+        return db.agregarPreguntaInforme(id, datosPregunta);
+    },
+
+    agregarRespuestaInforme(id, preguntaId, datosRespuesta) {
+        return db.agregarRespuestaInforme(id, preguntaId, datosRespuesta);
+    },
+
+    actualizarEstadoSolicitudInforme(id, estado) {
+        return db.actualizarEstadoSolicitudInforme(id, estado);
+    },
+
     // ==================== REINICIO PARA DEMOSTRACIÓN (Admin Académico) ====================
     restablecerDatosDemo() {
         const resultado = db.restablecerDemo();

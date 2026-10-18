@@ -4,9 +4,14 @@ import CandidatosRecientes from "../components/CandidatosRecientes";
 import HeaderRoles from "../components/HeaderRoles";
 import BarraFiltros from "../components/BarraFiltros";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
+import ModalSolicitarInforme from "../components/ModalSolicitarInforme";
+import ModalDetalleInforme from "../components/ModalDetalleInforme";
+import BandejaInformesView from "../components/BandejaInformesView";
+import BotonOrange from "../components/BotonOrange";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { COLUMNAS } from "../components/columnasTabla";
 import { api } from "../services/api";
+import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 
 const STORAGE_KEY = "aqua_contratos_datos_mvp_v1";
 
@@ -60,10 +65,13 @@ function JefaturaPage({ onVolver }) {
     const rolActual = "jefatura";
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarDatosIniciales);
+    const [informes, setInformes] = useState(cargarInformesIniciales);
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
 
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+    const [modalCrearInformeAbierto, setModalCrearInformeAbierto] = useState(false);
+    const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
     // Filtros de búsqueda (RF07)
     const [busqueda, setBusqueda] = useState("");
@@ -76,7 +84,11 @@ function JefaturaPage({ onVolver }) {
         async function sincronizarConBackend() {
             setCargandoApi(true);
             try {
-                const datosRemotos = await api.getSolicitudes();
+                const [datosRemotos, informesRemotos] = await Promise.all([
+                    api.getSolicitudes(),
+                    api.getSolicitudesInforme().catch(() => null),
+                ]);
+
                 if (isMounted && Array.isArray(datosRemotos)) {
                     const formateados = datosRemotos.map((item) => ({
                         ...item,
@@ -84,6 +96,10 @@ function JefaturaPage({ onVolver }) {
                     }));
                     setCandidatos(formateados);
                     setBackendConectado(true);
+                }
+
+                if (isMounted && Array.isArray(informesRemotos)) {
+                    setInformes(informesRemotos);
                 }
             } catch (err) {
                 console.warn("Backend no disponible:", err.message);
@@ -98,6 +114,85 @@ function JefaturaPage({ onVolver }) {
         };
     }, []);
 
+    const handleCrearInforme = async (nuevoInformeDatos) => {
+        try {
+            const creado = await api.crearSolicitudInforme(nuevoInformeDatos);
+            setInformes((prev) => [creado, ...prev]);
+        } catch {
+            setInformes((prev) => {
+                const nuevoId = prev.length > 0 ? Math.max(...prev.map((i) => Number(i.id) || 0)) + 1 : 1;
+                const nuevoLocal = {
+                    id: nuevoId,
+                    ...nuevoInformeDatos,
+                    estado: "Abierta",
+                    fechaCreacion: new Date().toISOString(),
+                    preguntas: nuevoInformeDatos.preguntas.map((p, idx) => ({
+                        id: idx + 1,
+                        texto: p,
+                        fecha: new Date().toISOString(),
+                        creadaPor: "Jefe de Área",
+                        respuestas: [],
+                    })),
+                };
+                const actualizados = [nuevoLocal, ...prev];
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+        }
+    };
+
+    const handleAgregarPreguntaInforme = async (id, datosPregunta) => {
+        try {
+            const actualizado = await api.agregarPreguntaInforme(id, datosPregunta);
+            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformeSeleccionado(actualizado);
+        } catch {
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => {
+                    if (inf.id === id) {
+                        const nuevaPreguntaId = (inf.preguntas || []).length > 0
+                            ? Math.max(...inf.preguntas.map((p) => Number(p.id) || 0)) + 1
+                            : 1;
+                        const nuevaP = {
+                            id: nuevaPreguntaId,
+                            texto: datosPregunta.texto,
+                            fecha: new Date().toISOString(),
+                            creadaPor: "Jefe de Área",
+                            respuestas: [],
+                        };
+                        const upd = { ...inf, preguntas: [...(inf.preguntas || []), nuevaP] };
+                        setInformeSeleccionado(upd);
+                        return upd;
+                    }
+                    return inf;
+                });
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+        }
+    };
+
+    const handleCambiarEstadoInforme = async (id, nuevoEstado) => {
+        try {
+            const actualizado = await api.cambiarEstadoSolicitudInforme(id, nuevoEstado);
+            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformeSeleccionado(actualizado);
+        } catch {
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => {
+                    if (inf.id === id) {
+                        const upd = { ...inf, estado: nuevoEstado };
+                        setInformeSeleccionado(upd);
+                        return upd;
+                    }
+                    return inf;
+                });
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+        }
+    };
+
     const pendientes = candidatos.filter(
         (c) => c.estado === "Pendiente" || c.estado === "En revisión"
     ).length;
@@ -111,6 +206,7 @@ function JefaturaPage({ onVolver }) {
         { id: 2, titulo: "Solicitudes Pendientes", valor: pendientes },
         { id: 3, titulo: "En proceso", valor: enProceso },
         { id: 4, titulo: "Evaluaciones finalizadas", valor: finalizadas },
+        { id: 5, titulo: "Informes Solicitados", valor: informes.length },
     ];
 
     const solicitudesFiltradas = useMemo(() => {
@@ -205,22 +301,27 @@ function JefaturaPage({ onVolver }) {
                         <div>
                             <h2 style={{ margin: 0 }}>Panel de Control Operativo</h2>
                             <span style={{ fontSize: "14px", color: "gray" }}>
-                                Jefe de Área · Supervisión y seguimiento consolidado (Solo Lectura)
+                                Jefe de Área · Supervisión y seguimiento consolidado
                             </span>
                         </div>
 
-                        <span
-                            style={{
-                                fontSize: "13px",
-                                backgroundColor: "#e2e3e5",
-                                color: "#495057",
-                                padding: "8px 14px",
-                                borderRadius: "5px",
-                                fontWeight: "bold",
-                            }}
-                        >
-                            Consulta de Jefatura (Solo Lectura)
-                        </span>
+                        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                            <BotonOrange onClick={() => setModalCrearInformeAbierto(true)}>
+                                + Solicitar Informe de Candidato
+                            </BotonOrange>
+                            <span
+                                style={{
+                                    fontSize: "13px",
+                                    backgroundColor: "#e2e3e5",
+                                    color: "#495057",
+                                    padding: "8px 14px",
+                                    borderRadius: "5px",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                Jefatura de Área
+                            </span>
+                        </div>
                     </div>
 
                     <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
@@ -409,12 +510,39 @@ function JefaturaPage({ onVolver }) {
                 </div>
             )}
 
+            {tabActiva === "informes" && (
+                <BandejaInformesView
+                    informes={informes}
+                    rolActual={rolActual}
+                    onAbrirCrear={() => setModalCrearInformeAbierto(true)}
+                    onVerDetalle={(inf) => setInformeSeleccionado(inf)}
+                />
+            )}
+
             <ModalDetalleSolicitud
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 rolActual={rolActual}
+            />
+
+            <ModalSolicitarInforme
+                isOpen={modalCrearInformeAbierto}
+                candidatos={candidatos}
+                onCerrar={() => setModalCrearInformeAbierto(false)}
+                onCrear={handleCrearInforme}
+            />
+
+            <ModalDetalleInforme
+                key={informeSeleccionado?.id || "modal-detalle-informe"}
+                isOpen={Boolean(informeSeleccionado)}
+                informe={informeSeleccionado}
+                candidatos={candidatos}
+                rolActual={rolActual}
+                onCerrar={() => setInformeSeleccionado(null)}
+                onAgregarPregunta={handleAgregarPreguntaInforme}
+                onCambiarEstado={handleCambiarEstadoInforme}
             />
         </main>
     );

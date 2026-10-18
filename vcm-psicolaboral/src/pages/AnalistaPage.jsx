@@ -7,9 +7,12 @@ import BarraFiltros from "../components/BarraFiltros";
 import ModalNuevaSolicitud from "../components/ModalNuevaSolicitud";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalEditarCandidato from "../components/ModalEditarCandidato";
+import ModalDetalleInforme from "../components/ModalDetalleInforme";
+import BandejaInformesView from "../components/BandejaInformesView";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { COLUMNAS } from "../components/columnasTabla";
 import { api } from "../services/api";
+import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 
 const STORAGE_KEY = "aqua_contratos_datos_mvp_v1";
 
@@ -70,6 +73,8 @@ function AnalistaPage({ onVolver }) {
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [candidatoAEditar, setCandidatoAEditar] = useState(null);
     const [alertaExito, setAlertaExito] = useState("");
+    const [informes, setInformes] = useState(cargarInformesIniciales);
+    const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
     // Filtros de búsqueda (RF07)
     const [busqueda, setBusqueda] = useState("");
@@ -82,7 +87,11 @@ function AnalistaPage({ onVolver }) {
         async function sincronizarConBackend() {
             setCargandoApi(true);
             try {
-                const datosRemotos = await api.getSolicitudes();
+                const [datosRemotos, informesRemotos] = await Promise.all([
+                    api.getSolicitudes(),
+                    api.getSolicitudesInforme().catch(() => null),
+                ]);
+
                 if (isMounted && Array.isArray(datosRemotos)) {
                     const formateados = datosRemotos.map((item) => ({
                         ...item,
@@ -90,6 +99,11 @@ function AnalistaPage({ onVolver }) {
                     }));
                     setCandidatos(formateados);
                     setBackendConectado(true);
+                }
+
+                if (isMounted && Array.isArray(informesRemotos)) {
+                    setInformes(informesRemotos);
+                    guardarInformesLocal(informesRemotos);
                 }
             } catch (err) {
                 console.warn("Backend no disponible:", err.message);
@@ -103,6 +117,47 @@ function AnalistaPage({ onVolver }) {
             isMounted = false;
         };
     }, []);
+
+    const handleAgregarRespuestaInforme = async (id, preguntaId, datosRespuesta) => {
+        try {
+            const actualizado = await api.agregarRespuestaInforme(id, preguntaId, datosRespuesta);
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+            setInformeSeleccionado(actualizado);
+        } catch {
+            // Fallback modo local (localStorage)
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => {
+                    if (inf.id === id) {
+                        const preguntasActualizadas = (inf.preguntas || []).map((p) => {
+                            if (p.id === preguntaId) {
+                                const nuevaRespId = (p.respuestas || []).length > 0
+                                    ? Math.max(...p.respuestas.map((r) => Number(r.id) || 0)) + 1
+                                    : 1;
+                                return {
+                                    ...p,
+                                    respuestas: [
+                                        ...(p.respuestas || []),
+                                        { id: nuevaRespId, ...datosRespuesta, fecha: new Date().toISOString() },
+                                    ],
+                                };
+                            }
+                            return p;
+                        });
+                        const upd = { ...inf, preguntas: preguntasActualizadas };
+                        setInformeSeleccionado(upd);
+                        return upd;
+                    }
+                    return inf;
+                });
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+        }
+    };
 
     useEffect(() => {
         try {
@@ -500,6 +555,14 @@ function AnalistaPage({ onVolver }) {
                 </div>
             )}
 
+            {tabActiva === "informes" && (
+                <BandejaInformesView
+                    informes={informes}
+                    rolActual={rolActual}
+                    onVerDetalle={(inf) => setInformeSeleccionado(inf)}
+                />
+            )}
+
             <ModalNuevaSolicitud
                 isOpen={modalNuevaAbierto}
                 onCerrar={() => setModalNuevaAbierto(false)}
@@ -521,6 +584,16 @@ function AnalistaPage({ onVolver }) {
                 candidato={candidatoAEditar}
                 onCerrar={() => setCandidatoAEditar(null)}
                 onGuardar={handleGuardarCandidatoEditado}
+            />
+
+            <ModalDetalleInforme
+                key={informeSeleccionado?.id || "modal-detalle-informe"}
+                isOpen={Boolean(informeSeleccionado)}
+                informe={informeSeleccionado}
+                candidatos={candidatos}
+                rolActual={rolActual}
+                onCerrar={() => setInformeSeleccionado(null)}
+                onAgregarRespuesta={handleAgregarRespuestaInforme}
             />
         </main>
     );

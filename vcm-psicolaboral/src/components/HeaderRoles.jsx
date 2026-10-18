@@ -17,6 +17,7 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onVolver }) {
         { id: "dashboard", label: "Dashboard Operativo" },
         { id: "candidatos", label: "Gestión de Candidatos" },
         { id: "solicitudes", label: "Solicitudes de Evaluación" },
+        { id: "informes", label: "Informes de Candidatos" },
     ];
 
     return (
