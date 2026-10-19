@@ -1,5 +1,5 @@
 /**
- * Configuración principal de la aplicación Express
+ * Configuración principal de la aplicación Express para Aqua-Contratos
  */
 import express from "express";
 import cors from "cors";
@@ -7,6 +7,9 @@ import candidatosRoutes from "./routes/candidatosRoutes.js";
 import solicitudesRoutes from "./routes/solicitudesRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import informesRoutes from "./routes/informesRoutes.js";
+import puestosRoutes from "./routes/puestosRoutes.js";
+import postulacionesRoutes from "./routes/postulacionesRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -19,14 +22,17 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Endpoint de estado y bienvenida de la API
+// Endpoint de bienvenida y catálogo de rutas
 app.get("/api", (req, res) => {
     res.json({
         ok: true,
         nombre: "Aqua-Contratos API REST",
-        version: "1.0.0",
-        descripcion: "Sistema de evaluación psicolaboral · AquaChile",
+        version: "2.0.0",
+        descripcion: "Sistema integral de evaluación psicolaboral y reclutamiento · AquaChile",
         rutas: {
+            auth: "/api/auth",
+            puestos: "/api/puestos",
+            postulaciones: "/api/postulaciones",
             candidatos: "/api/candidatos",
             solicitudes: "/api/solicitudes",
             dashboard: "/api/dashboard",
@@ -36,6 +42,9 @@ app.get("/api", (req, res) => {
 });
 
 // Rutas de entidades del sistema
+app.use("/api/auth", authRoutes);
+app.use("/api/puestos", puestosRoutes);
+app.use("/api/postulaciones", postulacionesRoutes);
 app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
