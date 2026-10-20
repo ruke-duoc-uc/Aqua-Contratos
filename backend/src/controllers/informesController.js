@@ -1,5 +1,5 @@
 /**
- * Controlador de Solicitudes de Informes de Candidatos
+ * Controlador de Solicitudes de Informes (por Candidato o por Puesto de Trabajo)
  * Permite a la Jefatura solicitar información adicional a evaluadores y analistas,
  * formular preguntas múltiples, repreguntar y responder manteniendo la trazabilidad.
  */
@@ -12,12 +12,14 @@ export const informesController = {
      */
     listar(req, res) {
         try {
-            const { busqueda, estado, candidatoId, urgencia } = req.query;
+            const { busqueda, estado, candidatoId, puestoTrabajoId, urgencia, tipo } = req.query;
             const informes = dataStore.obtenerSolicitudesInforme({
                 busqueda,
                 estado,
                 candidatoId,
+                puestoTrabajoId,
                 urgencia,
+                tipo,
             });
 
             return res.status(200).json({
@@ -36,7 +38,7 @@ export const informesController = {
 
     /**
      * GET /api/solicitudes-informe/:id
-     * Obtiene el detalle de la solicitud de informe junto con la ficha del candidato.
+     * Obtiene el detalle de la solicitud de informe junto con la ficha del candidato y del puesto.
      */
     obtenerPorId(req, res) {
         try {
@@ -50,13 +52,22 @@ export const informesController = {
                 });
             }
 
-            const candidato = dataStore.obtenerCandidatoPorId(informe.candidatoId);
+            let candidato = null;
+            if (informe.candidatoId) {
+                candidato = dataStore.obtenerCandidatoPorId(informe.candidatoId);
+            }
+
+            let puesto = null;
+            if (informe.puestoTrabajoId) {
+                puesto = dataStore.obtenerPuestoPorId(informe.puestoTrabajoId);
+            }
 
             return res.status(200).json({
                 ok: true,
                 datos: {
                     ...informe,
                     candidatoPerfil: candidato || null,
+                    puestoPerfil: puesto || null,
                 },
             });
         } catch (error) {
@@ -70,13 +81,15 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe
-     * Crea una nueva solicitud de informe emitida por Jefatura.
+     * Crea una nueva solicitud de informe emitida por Jefatura (por candidato o por puesto).
      */
     crear(req, res) {
         try {
             const {
                 candidatoId,
                 candidatoNombre,
+                puestoTrabajoId,
+                tipo,
                 solicitante,
                 urgencia,
                 fechaLimite,
@@ -84,40 +97,67 @@ export const informesController = {
                 preguntas,
             } = req.body;
 
-            if (!candidatoId) {
+            if (!candidatoId && !puestoTrabajoId) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "Debe seleccionar un candidato existente para emitir la solicitud de informe.",
+                    mensaje: "Debe asociar la solicitud de informe a un candidato o a un puesto de trabajo.",
                 });
             }
 
-            const candidato = dataStore.obtenerCandidatoPorId(candidatoId);
-            if (!candidato) {
-                return res.status(404).json({
+            let nombreFinal = candidatoNombre;
+            if (candidatoId) {
+                const candidato = dataStore.obtenerCandidatoPorId(candidatoId);
+                if (!candidato) {
+                    return res.status(404).json({
+                        ok: false,
+                        mensaje: `No se encontró el candidato con ID ${candidatoId}.`,
+                    });
+                }
+                nombreFinal = candidato.nombre;
+            }
+
+            if (puestoTrabajoId) {
+                const puesto = dataStore.obtenerPuestoPorId(puestoTrabajoId);
+                if (!puesto) {
+                    return res.status(404).json({
+                        ok: false,
+                        mensaje: `No se encontró el puesto de trabajo con ID ${puestoTrabajoId}.`,
+                    });
+                }
+            }
+
+            const preguntasLimpias = (preguntas || [])
+                .map((p) => (typeof p === "string" ? p.trim() : p.texto?.trim()))
+                .filter(Boolean);
+
+            if (preguntasLimpias.length === 0) {
+                return res.status(400).json({
                     ok: false,
-                    mensaje: `No se encontró el candidato con ID ${candidatoId}.`,
+                    mensaje: "Debe ingresar al menos una pregunta para generar la solicitud de informe.",
                 });
             }
 
-            const nuevoInforme = dataStore.crearSolicitudInforme({
-                candidatoId,
-                candidatoNombre: candidatoNombre || candidato.nombre,
+            const nuevaSolicitud = dataStore.crearSolicitudInforme({
+                candidatoId: candidatoId ? Number(candidatoId) : null,
+                candidatoNombre: nombreFinal || "Solicitud por Puesto",
+                puestoTrabajoId: puestoTrabajoId ? Number(puestoTrabajoId) : null,
+                tipo: tipo || (puestoTrabajoId && !candidatoId ? "puesto" : "candidato"),
                 solicitante: solicitante || "Jefe de Área",
                 urgencia: urgencia || "Media",
                 fechaLimite: fechaLimite || null,
                 destinatarios: destinatarios || ["analista", "evaluador"],
-                preguntas: Array.isArray(preguntas) && preguntas.length > 0 ? preguntas : ["Información general requerida"],
+                preguntas: preguntasLimpias,
             });
 
             return res.status(201).json({
                 ok: true,
-                mensaje: "Solicitud de informe creada exitosamente.",
-                datos: nuevoInforme,
+                mensaje: "Solicitud de informe emitida exitosamente.",
+                datos: nuevaSolicitud,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al emitir la solicitud de informe.",
+                mensaje: "Error interno al crear la solicitud de informe.",
                 error: error.message,
             });
         }
@@ -125,7 +165,7 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe/:id/preguntas
-     * Agrega una nueva pregunta al hilo de la solicitud (repregunta de Jefatura).
+     * Agrega una repregunta o nueva pregunta formulada por Jefatura.
      */
     agregarPregunta(req, res) {
         try {
@@ -135,16 +175,16 @@ export const informesController = {
             if (!texto || !texto.trim()) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "El texto de la pregunta no puede estar vacío.",
+                    mensaje: "El texto de la pregunta es obligatorio.",
                 });
             }
 
-            const actualizado = dataStore.agregarPreguntaInforme(id, {
-                texto,
+            const informe = dataStore.agregarPreguntaInforme(id, {
+                texto: texto.trim(),
                 creadaPor: creadaPor || "Jefe de Área",
             });
 
-            if (!actualizado) {
+            if (!informe) {
                 return res.status(404).json({
                     ok: false,
                     mensaje: `No se encontró la solicitud de informe con ID ${id}.`,
@@ -153,13 +193,13 @@ export const informesController = {
 
             return res.status(200).json({
                 ok: true,
-                mensaje: "Pregunta añadida exitosamente a la solicitud de informe.",
-                datos: actualizado,
+                mensaje: "Pregunta añadida exitosamente.",
+                datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al agregar la pregunta.",
+                mensaje: "Error al agregar pregunta a la solicitud de informe.",
                 error: error.message,
             });
         }
@@ -167,7 +207,7 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe/:id/preguntas/:preguntaId/respuestas
-     * Registra una respuesta de un analista o evaluador a una pregunta específica.
+     * Registra una respuesta de Analista o Evaluador con comentarios técnicos.
      */
     agregarRespuesta(req, res) {
         try {
@@ -177,32 +217,32 @@ export const informesController = {
             if (!texto || !texto.trim()) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "El comentario de respuesta no puede estar vacío.",
+                    mensaje: "El texto de la respuesta no puede estar vacío.",
                 });
             }
 
-            const actualizado = dataStore.agregarRespuestaInforme(id, preguntaId, {
+            const informe = dataStore.agregarRespuestaInforme(id, preguntaId, {
                 autor,
                 rol: rol || "evaluador",
-                texto,
+                texto: texto.trim(),
             });
 
-            if (!actualizado) {
+            if (!informe) {
                 return res.status(404).json({
                     ok: false,
-                    mensaje: `No se encontró la solicitud o la pregunta indicada.`,
+                    mensaje: `No se encontró el informe #${id} o la pregunta #${preguntaId}.`,
                 });
             }
 
             return res.status(200).json({
                 ok: true,
-                mensaje: "Comentario registrado con éxito.",
-                datos: actualizado,
+                mensaje: "Respuesta registrada y vinculada a la trazabilidad del informe.",
+                datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al guardar la respuesta.",
+                mensaje: "Error al registrar la respuesta a la pregunta.",
                 error: error.message,
             });
         }
@@ -210,7 +250,7 @@ export const informesController = {
 
     /**
      * PATCH /api/solicitudes-informe/:id/estado
-     * Permite cerrar o reabrir la solicitud de informe.
+     * Permite cerrar o reactivar la solicitud de informe.
      */
     cambiarEstado(req, res) {
         try {
@@ -224,8 +264,8 @@ export const informesController = {
                 });
             }
 
-            const actualizado = dataStore.actualizarEstadoSolicitudInforme(id, estado);
-            if (!actualizado) {
+            const informe = dataStore.actualizarEstadoSolicitudInforme(id, estado);
+            if (!informe) {
                 return res.status(404).json({
                     ok: false,
                     mensaje: `No se encontró la solicitud de informe con ID ${id}.`,
@@ -234,13 +274,13 @@ export const informesController = {
 
             return res.status(200).json({
                 ok: true,
-                mensaje: `Solicitud de informe marcada como ${estado}.`,
-                datos: actualizado,
+                mensaje: `Solicitud de informe #${id} actualizada a estado '${estado}'.`,
+                datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al actualizar el estado de la solicitud.",
+                mensaje: "Error al actualizar el estado de la solicitud de informe.",
                 error: error.message,
             });
         }

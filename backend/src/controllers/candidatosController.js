@@ -1,13 +1,14 @@
 /**
  * Controlador de Candidatos
- * Reglas de negocio y manejo de peticiones HTTP para la entidad Candidato.
+ * Reglas de negocio y manejo de peticiones HTTP para el perfil del Candidato.
+ * Los datos del candidato están desacoplados de la planta (la planta pertenece al puesto de trabajo).
  */
 import { dataStore } from "../data/dataStore.js";
 
 export const candidatosController = {
     /**
      * GET /api/candidatos
-     * Lista todos los candidatos con soporte opcional de búsqueda y filtro por planta.
+     * Lista todos los candidatos con soporte opcional de búsqueda y filtro por planta (legacy).
      */
     listar(req, res) {
         try {
@@ -29,7 +30,7 @@ export const candidatosController = {
 
     /**
      * GET /api/candidatos/:id
-     * Obtiene un candidato por su ID.
+     * Obtiene un candidato por su ID junto a su historial de postulaciones.
      */
     obtenerPorId(req, res) {
         try {
@@ -43,9 +44,15 @@ export const candidatosController = {
                 });
             }
 
+            // Adjuntar historial completo de postulaciones
+            const postulaciones = dataStore.obtenerPostulaciones({ candidatoId: Number(id) });
+
             return res.status(200).json({
                 ok: true,
-                datos: candidato,
+                datos: {
+                    ...candidato,
+                    postulaciones,
+                },
             });
         } catch (error) {
             return res.status(500).json({
@@ -58,17 +65,30 @@ export const candidatosController = {
 
     /**
      * POST /api/candidatos
-     * Registra un nuevo candidato aplicando validación de datos obligatorios y unicidad de RUT.
+     * Registra un nuevo candidato. La planta es opcional (pertenece a los puestos de trabajo).
      */
     crear(req, res) {
         try {
-            const { nombre, rut, especialidad, planta, cargo, familiaCargo, antecedentes, evaluador } = req.body;
+            const {
+                nombre,
+                rut,
+                email,
+                telefono,
+                especialidad,
+                planta,
+                cargo,
+                familiaCargo,
+                antecedentes,
+                infoMedica,
+                experienciaLaboral,
+                evaluador,
+            } = req.body;
 
-            // Validación de campos obligatorios (RF02)
-            if (!nombre || !rut || !especialidad || !planta) {
+            // Validación de campos obligatorios mínimos
+            if (!nombre || !rut || !especialidad) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "Faltan campos obligatorios: nombre, rut, especialidad y planta son requeridos.",
+                    mensaje: "Faltan campos obligatorios: nombre, rut y especialidad son requeridos.",
                 });
             }
 
@@ -84,11 +104,15 @@ export const candidatosController = {
             const nuevoCandidato = dataStore.crearCandidato({
                 nombre,
                 rut,
+                email,
+                telefono,
                 especialidad,
                 planta,
                 cargo,
                 familiaCargo,
                 antecedentes,
+                infoMedica,
+                experienciaLaboral,
                 evaluador,
             });
 
@@ -108,7 +132,7 @@ export const candidatosController = {
 
     /**
      * PUT /api/candidatos/:id
-     * Actualiza la información principal de un candidato existente (RF03).
+     * Actualiza la información personal, médica y profesional de un candidato (RF03).
      */
     actualizar(req, res) {
         try {
@@ -137,7 +161,7 @@ export const candidatosController = {
 
             return res.status(200).json({
                 ok: true,
-                mensaje: "Candidato actualizado exitosamente.",
+                mensaje: "Perfil del candidato actualizado exitosamente.",
                 datos: candidatoActualizado,
             });
         } catch (error) {

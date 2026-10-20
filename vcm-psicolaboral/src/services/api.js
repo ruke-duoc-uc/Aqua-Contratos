@@ -43,6 +43,142 @@ export const api = {
         return request("");
     },
 
+    // ==================== AUTENTICACIÓN Y USUARIOS ====================
+    async getUsuarios() {
+        const res = await request("/auth/usuarios");
+        return res.datos;
+    },
+
+    async login({ email, password }) {
+        const res = await request("/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+        });
+        return res.datos;
+    },
+
+    async registroCandidato(datos) {
+        const res = await request("/auth/registro-candidato", {
+            method: "POST",
+            body: JSON.stringify(datos),
+        });
+        return res.datos;
+    },
+
+    // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
+    async getPuestos({ busqueda, planta, familiaCargo, estado } = {}) {
+        const params = new URLSearchParams();
+        if (busqueda) params.append("busqueda", busqueda);
+        if (planta && planta !== "todas") params.append("planta", planta);
+        if (familiaCargo && familiaCargo !== "todas") params.append("familiaCargo", familiaCargo);
+        if (estado && estado !== "todos") params.append("estado", estado);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/puestos${query}`);
+        return res.datos;
+    },
+
+    async getPuestoPorId(id) {
+        const res = await request(`/puestos/${id}`);
+        return res.datos;
+    },
+
+    async crearPuesto(datos) {
+        const res = await request("/puestos", {
+            method: "POST",
+            body: JSON.stringify(datos),
+        });
+        return res.datos;
+    },
+
+    async actualizarPuesto(id, datos) {
+        const res = await request(`/puestos/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(datos),
+        });
+        return res.datos;
+    },
+
+    async cambiarEstadoPuesto(id, nuevoEstado) {
+        const res = await request(`/puestos/${id}/estado`, {
+            method: "PATCH",
+            body: JSON.stringify({ estado: nuevoEstado }),
+        });
+        return res.datos;
+    },
+
+    async eliminarPuesto(id) {
+        return request(`/puestos/${id}`, {
+            method: "DELETE",
+        });
+    },
+
+    // ==================== POSTULACIONES ====================
+    async getPostulaciones({ candidatoId, puestoTrabajoId, estado, evaluador } = {}) {
+        const params = new URLSearchParams();
+        if (candidatoId) params.append("candidatoId", candidatoId);
+        if (puestoTrabajoId) params.append("puestoTrabajoId", puestoTrabajoId);
+        if (estado && estado !== "todos") params.append("estado", estado);
+        if (evaluador && evaluador !== "todos") params.append("evaluador", evaluador);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/postulaciones${query}`);
+        return res.datos;
+    },
+
+    async getPostulacionPorId(id) {
+        const res = await request(`/postulaciones/${id}`);
+        return res.datos;
+    },
+
+    async crearPostulacion(datos) {
+        const res = await request("/postulaciones", {
+            method: "POST",
+            body: JSON.stringify(datos),
+        });
+        return res.datos;
+    },
+
+    async cambiarEstadoPostulacion(id, nuevoEstado) {
+        const res = await request(`/postulaciones/${id}/estado`, {
+            method: "PATCH",
+            body: JSON.stringify({ estado: nuevoEstado }),
+        });
+        return res.datos;
+    },
+
+    async agendarEntrevistaPostulacion(id, { fechaEntrevista, evaluadorAsignado, observaciones }) {
+        const res = await request(`/postulaciones/${id}/agendar`, {
+            method: "PATCH",
+            body: JSON.stringify({ fechaEntrevista, evaluadorAsignado, observaciones }),
+        });
+        return res.datos;
+    },
+
+    async responderCandidatoPostulacion(id, { respuesta, sugerenciaFecha }) {
+        const res = await request(`/postulaciones/${id}/respuesta-candidato`, {
+            method: "PATCH",
+            body: JSON.stringify({ respuesta, sugerenciaFecha }),
+        });
+        return res.datos;
+    },
+
+    async guardarEvaluacionPostulacion(id, evaluacionData) {
+        const res = await request(`/postulaciones/${id}/evaluacion`, {
+            method: "PATCH",
+            body: JSON.stringify(evaluacionData),
+        });
+        return res.datos;
+    },
+
+    async decidirContratacionPostulacion(id, decisionFinal) {
+        const res = await request(`/postulaciones/${id}/decision-final`, {
+            method: "PATCH",
+            body: JSON.stringify({ decisionFinal }),
+        });
+        return res.datos;
+    },
+
     // ==================== CANDIDATOS ====================
     async getCandidatos({ busqueda, planta } = {}) {
         const params = new URLSearchParams();
@@ -81,7 +217,7 @@ export const api = {
         });
     },
 
-    // ==================== SOLICITUDES ====================
+    // ==================== SOLICITUDES (Legacy) ====================
     async getSolicitudes({ busqueda, estado, planta, evaluador } = {}) {
         const params = new URLSearchParams();
         if (busqueda) params.append("busqueda", busqueda);
@@ -142,11 +278,13 @@ export const api = {
     },
 
     // ==================== SOLICITUDES DE INFORME ====================
-    async getSolicitudesInforme({ busqueda, estado, candidatoId, urgencia } = {}) {
+    async getSolicitudesInforme({ busqueda, estado, candidatoId, puestoTrabajoId, urgencia, tipo } = {}) {
         const params = new URLSearchParams();
         if (busqueda) params.append("busqueda", busqueda);
         if (estado && estado !== "todos") params.append("estado", estado);
         if (candidatoId) params.append("candidatoId", candidatoId);
+        if (puestoTrabajoId) params.append("puestoTrabajoId", puestoTrabajoId);
+        if (tipo && tipo !== "todos") params.append("tipo", tipo);
         if (urgencia && urgencia !== "todas") params.append("urgencia", urgencia);
 
         const query = params.toString() ? `?${params.toString()}` : "";

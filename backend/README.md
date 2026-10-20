@@ -16,12 +16,20 @@ backend/
     ├── app.js                # Configuración de Express, CORS y middleware
     ├── index.js              # Punto de entrada y arranque del servidor
     ├── controllers/          # Lógica de negocio y controladores HTTP
+    │   ├── authController.js
+    │   ├── puestosController.js
+    │   ├── postulacionesController.js
     │   ├── candidatosController.js
     │   ├── solicitudesController.js
+    │   ├── informesController.js
     │   └── dashboardController.js
     ├── routes/               # Definición de rutas REST
+    │   ├── authRoutes.js
+    │   ├── puestosRoutes.js
+    │   ├── postulacionesRoutes.js
     │   ├── candidatosRoutes.js
     │   ├── solicitudesRoutes.js
+    │   ├── informesRoutes.js
     │   └── dashboardRoutes.js
     ├── data/                 # Capa de datos y persistencia (SQLite nativo)
     │   ├── db.js             # Motor SQLite, esquema de tablas y consultas
@@ -62,57 +70,73 @@ npm start
 
 ## 📡 Especificación de Endpoints REST
 
-### 1. Candidatos (`/api/candidatos`)
+### 1. Autenticación y Cuentas (`/api/auth`)
 
-| Método | Endpoint | Descripción | Parámetros / Body |
+| Método | Endpoint | Descripción | Body / Parámetros |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/candidatos` | Lista todos los candidatos | Query: `?busqueda=texto&planta=Osorno` |
-| `GET` | `/api/candidatos/:id` | Detalle de un candidato por ID | Param: `id` |
-| `POST` | `/api/candidatos` | Registra un nuevo candidato (valida obligatorios y unicidad de RUT) | Body JSON: `{ nombre, rut, especialidad, planta, cargo, familiaCargo, antecedentes }` |
-| `PUT` | `/api/candidatos/:id` | Actualiza la información de un candidato existente | Param: `id`, Body JSON con campos a modificar |
-| `DELETE` | `/api/candidatos/:id` | Elimina un candidato | Param: `id` |
-
-#### Ejemplo POST `/api/candidatos`:
-```json
-{
-  "nombre": "Esteban Morales Silva",
-  "rut": "17.890.123-4",
-  "especialidad": "Mantenimiento Industrial",
-  "planta": "Calbuco",
-  "cargo": "Técnico Electromecánico",
-  "familiaCargo": "Mantenimiento Industrial",
-  "antecedentes": "5 años de experiencia en líneas de proceso."
-}
-```
+| `GET` | `/api/auth/usuarios` | Lista los perfiles simulados disponibles para la demo | Ninguno |
+| `POST` | `/api/auth/login` | Inicio de sesión con correo y contraseña | `{ "email": "...", "password": "..." }` |
+| `POST` | `/api/auth/registro-candidato` | Auto-registro de candidato y creación de cuenta | `{ "nombre", "rut", "email", "password", "especialidad", "infoMedica", "experienciaLaboral" }` |
 
 ---
 
-### 2. Solicitudes de Evaluación (`/api/solicitudes`)
+### 2. Puestos de Trabajo (`/api/puestos`)
 
 | Método | Endpoint | Descripción | Parámetros / Body |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/solicitudes` | Lista las solicitudes de evaluación con filtros | Query: `?busqueda=texto&estado=Pendiente&planta=Puerto+Montt&evaluador=Amaro` |
-| `GET` | `/api/solicitudes/:id` | Obtiene la ficha completa de una solicitud | Param: `id` |
-| `POST` | `/api/solicitudes` | Emite una nueva solicitud asociada a un cargo (estado inicial: `Pendiente`) | Body JSON: `{ nombre, rut, especialidad, planta, cargo, familiaCargo, evaluador, antecedentes }` |
-| `PATCH` | `/api/solicitudes/:id/estado` | Cambia el estado del flujo (`Pendiente`, `En revisión`, `En proceso`, `Finalizado`) | Body JSON: `{ "estado": "En proceso" }` |
-| `PATCH` | `/api/solicitudes/:id/evaluacion` | Registra dictamen psicolaboral, fecha y conclusiones | Body JSON: `{ resultadoPsicologico, fechaEvaluacion, conclusiones, estado }` |
-
-#### Ejemplo PATCH `/api/solicitudes/3/evaluacion`:
-```json
-{
-  "resultadoPsicologico": "Recomendado",
-  "fechaEvaluacion": "2026-10-12",
-  "conclusiones": "Postulante demuestra alto apego a normas de seguridad y estabilidad emocional.",
-  "estado": "Finalizado"
-}
-```
+| `GET` | `/api/puestos` | Lista puestos u ofertas laborales con filtros | Query: `?busqueda=texto&planta=Osorno&familiaCargo=...&estado=Abierto` |
+| `GET` | `/api/puestos/:id` | Detalle del puesto con postulantes asociados | Param: `id` |
+| `POST` | `/api/puestos` | Jefatura crea una nueva vacante laboral en una planta | `{ "titulo", "planta", "familiaCargo", "descripcion", "requisitos", "vacantes", "creadoPor" }` |
+| `PUT` | `/api/puestos/:id` | Actualiza los datos de un puesto | Param: `id`, Body JSON con campos a modificar |
+| `PATCH` | `/api/puestos/:id/estado` | Cambia el estado del puesto (`Abierto`, `Pausado`, `Cerrado`) | `{ "estado": "Cerrado" }` |
+| `DELETE` | `/api/puestos/:id` | Elimina o archiva un puesto de trabajo | Param: `id` |
 
 ---
 
-### 3. Dashboard y Catálogos (`/api/dashboard`)
+### 3. Postulaciones (`/api/postulaciones`)
+
+| Método | Endpoint | Descripción | Parámetros / Body |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/postulaciones` | Lista postulaciones con filtros | Query: `?candidatoId=1&puestoTrabajoId=2&estado=En+proceso` |
+| `GET` | `/api/postulaciones/:id` | Detalle completo de la postulación (perfil + puesto) | Param: `id` |
+| `POST` | `/api/postulaciones` | Candidato se postula a un puesto abierto | `{ "candidatoId": 1, "puestoTrabajoId": 2 }` |
+| `PATCH` | `/api/postulaciones/:id/estado` | Cambia el estado del flujo | `{ "estado": "En revisión" }` |
+| `PATCH` | `/api/postulaciones/:id/agendar` | Evaluador fija fecha/hora de entrevista | `{ "fechaEntrevista": "...", "evaluadorAsignado": "...", "observaciones": "..." }` |
+| `PATCH` | `/api/postulaciones/:id/respuesta-candidato` | Candidato confirma entrevista o sugiere otra fecha | `{ "respuesta": "Aceptada" | "Sugerir cambio", "sugerenciaFecha": "..." }` |
+| `PATCH` | `/api/postulaciones/:id/evaluacion` | Evaluador registra dictamen y observaciones | `{ "dictamenPsicologico": "Recomendado", "conclusiones": "..." }` |
+| `PATCH` | `/api/postulaciones/:id/decision-final` | Analista registra decisión final de contratación | `{ "decisionFinal": "Contratado" | "No contratado" }` |
+
+---
+
+### 4. Candidatos (`/api/candidatos`)
+
+| Método | Endpoint | Descripción | Parámetros / Body |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/candidatos` | Lista todos los candidatos | Query: `?busqueda=texto` |
+| `GET` | `/api/candidatos/:id` | Detalle del candidato e historial de postulaciones | Param: `id` |
+| `POST` | `/api/candidatos` | Registra perfil de candidato (desacoplado de planta) | `{ "nombre", "rut", "email", "telefono", "especialidad", "infoMedica", "experienciaLaboral" }` |
+| `PUT` | `/api/candidatos/:id` | Modifica datos personales, médicos o laborales | Param: `id`, Body JSON |
+| `DELETE` | `/api/candidatos/:id` | Elimina candidato | Param: `id` |
+
+---
+
+### 5. Consultas e Informes de Jefatura (`/api/solicitudes-informe`)
+
+| Método | Endpoint | Descripción | Parámetros / Body |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/solicitudes-informe` | Lista consultas e informes con filtros | Query: `?busqueda=&estado=&candidatoId=&puestoTrabajoId=&urgencia=&tipo=` |
+| `GET` | `/api/solicitudes-informe/:id` | Detalle con preguntas, respuestas e hilos | Param: `id` |
+| `POST` | `/api/solicitudes-informe` | Jefatura emite informe por candidato o por puesto | `{ "candidatoId", "puestoTrabajoId", "urgencia", "fechaLimite", "preguntas": [] }` |
+| `POST` | `/api/solicitudes-informe/:id/preguntas` | Jefatura agrega repregunta | `{ "texto": "...", "creadaPor": "Jefe de Área" }` |
+| `POST` | `/api/solicitudes-informe/:id/preguntas/:preguntaId/respuestas` | Evaluador o analista responde con trazabilidad | `{ "autor": "...", "rol": "evaluador", "texto": "..." }` |
+| `PATCH` | `/api/solicitudes-informe/:id/estado` | Cierra o reabre el informe | `{ "estado": "Cerrada" | "Abierta" }` |
+
+---
+
+### 6. Dashboard y Catálogos (`/api/dashboard`)
 
 | Método | Endpoint | Descripción |
 | :--- | :--- | :--- |
-| `GET` | `/api/dashboard/kpis` | Retorna los 4 indicadores clave del proceso (Total candidatos, Pendientes, En proceso, Finalizadas). |
-| `GET` | `/api/dashboard/catalogos` | Retorna las listas maestras de Plantas, Familias de Cargo y Evaluadores. |
-| `POST` | `/api/dashboard/reset-demo` | Restablece los datos iniciales de prueba (utilidad para demostración del Administrador Académico). |
+| `GET` | `/api/dashboard/kpis` | Métricas generales (candidatos, puestos abiertos, postulaciones, contratados). |
+| `GET` | `/api/dashboard/catalogos` | Listas maestras de Plantas, Familias de Cargo y Evaluadores. |
+| `POST` | `/api/dashboard/reset-demo` | Restablece todos los datos iniciales de prueba en SQLite y JSON. |
