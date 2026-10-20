@@ -3,8 +3,9 @@
  **/
 import { useState } from "react";
 
-function BotonOrange({ texto, href, onClick, type = "button" }) {
+function BotonOrange({ texto, children, href, onClick, type = "button", disabled = false }) {
     const [hover, setHover] = useState(false);
+    const contenido = texto || children;
 
     const baseStyle = {
         display: "inline-block",
@@ -35,7 +36,7 @@ function BotonOrange({ texto, href, onClick, type = "button" }) {
                 onMouseLeave={() => setHover(false)}
                 style={baseStyle}
             >
-                {texto}
+                {contenido}
             </a>
         );
     }
@@ -43,12 +44,13 @@ function BotonOrange({ texto, href, onClick, type = "button" }) {
     return (
         <button
             type={type}
+            disabled={disabled}
             onClick={onClick}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             style={baseStyle}
         >
-            {texto}
+            {contenido}
         </button>
     );
 }

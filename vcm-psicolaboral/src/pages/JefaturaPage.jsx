@@ -306,9 +306,10 @@ function JefaturaPage({ onVolver }) {
                         </div>
 
                         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                            <BotonOrange onClick={() => setModalCrearInformeAbierto(true)}>
-                                + Solicitar Informe de Candidato
-                            </BotonOrange>
+                            <BotonOrange
+                                texto="+ Solicitar Informe de Candidato"
+                                onClick={() => setModalCrearInformeAbierto(true)}
+                            />
                             <span
                                 style={{
                                     fontSize: "13px",

@@ -329,9 +329,10 @@ export default function ModalSolicitarInforme({
                         >
                             Cancelar
                         </button>
-                        <BotonOrange type="submit" disabled={guardando}>
-                            {guardando ? "Emitiendo solicitud..." : "Emitir Solicitud de Informe"}
-                        </BotonOrange>
+                        <BotonOrange 
+                            type="submit" 
+                            texto={guardando ? "Emitiendo solicitud..." : "Emitir Solicitud de Informe"} 
+                        />
                     </div>
                 </form>
             </div>

@@ -82,9 +82,10 @@ export default function BandejaInformesView({
                 </div>
 
                 {esJefe && (
-                    <BotonOrange onClick={onAbrirCrear}>
-                        + Solicitar Informe de Candidato
-                    </BotonOrange>
+                    <BotonOrange
+                        texto="+ Solicitar Informe de Candidato"
+                        onClick={onAbrirCrear}
+                    />
                 )}
             </div>
 
@@ -298,9 +299,10 @@ export default function BandejaInformesView({
                         🔍 No se encontraron solicitudes de informes.
                     </p>
                     {esJefe && (
-                        <BotonOrange onClick={onAbrirCrear}>
-                            + Emitir la primera solicitud de informe
-                        </BotonOrange>
+                        <BotonOrange
+                            texto="+ Emitir la primera solicitud de informe"
+                            onClick={onAbrirCrear}
+                        />
                     )}
                 </div>
             )}

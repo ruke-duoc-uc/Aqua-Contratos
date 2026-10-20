@@ -417,9 +417,11 @@ export default function ModalDetalleInforme({
                                                 resize: "vertical",
                                             }}
                                         />
-                                        <BotonOrange type="submit" disabled={enviando || !nuevaPreguntaTexto.trim()}>
-                                            Enviar Pregunta
-                                        </BotonOrange>
+                                        <BotonOrange
+                                            type="submit"
+                                            disabled={enviando || !nuevaPreguntaTexto.trim()}
+                                            texto="Enviar Pregunta"
+                                        />
                                     </div>
                                 </form>
                             )}
