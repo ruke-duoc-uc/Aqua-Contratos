@@ -118,7 +118,7 @@ function App() {
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                     gap: "24px",
-                    maxWidth: "960px",
+                    maxWidth: "1200px",
                     width: "100%",
                     marginBottom: "30px",
                 }}

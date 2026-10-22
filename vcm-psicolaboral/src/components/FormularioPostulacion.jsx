@@ -1,8 +1,8 @@
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
+import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
 
-const LIMITE_CV_BYTES = 10 * 1024 * 1024;
 
 function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
     const [datos, setDatos] = useState({ nombre: "", apellido: "" });
@@ -10,6 +10,15 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
     const [archivoCv, setArchivoCv] = useState(null);
     const [campoEnfocado, setCampoEnfocado] = useState("");
     const [error, setError] = useState("");
+    const LIMITE_CV_BYTES = 10 * 1024 * 1024;
+
+    const CAMPOS_PERSONALES = [
+        { campo: "nombre", etiqueta: "Nombre", placeholder: "Ej. Ana" },
+        { campo: "apellido", etiqueta: "Apellido", placeholder: "Ej. García" },
+        { campo: "direccion", etiqueta: "Dirección", placeholder: "Ej. Av. Central 123", columnaCompleta: true },
+        { campo: "email", etiqueta: "E-mail", placeholder: "Ej. ana.gar@gmail.com", columnaCompleta: true },
+        
+    ];
 
     /**
      * El cargo sigue a la oferta seleccionada mientras no se edite a mano:
@@ -111,33 +120,18 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                         gap: "16px",
                     }}
                 >
-                    <div className="form-grupo">
-                        <label htmlFor="postulacion-nombre">Nombre *</label>
-                        <input
-                            id="postulacion-nombre"
-                            type="text"
-                            className="form-input"
-                            value={datos.nombre}
-                            onChange={actualizarCampo("nombre")}
-                            {...propsFoco("nombre")}
-                            placeholder="Ej. Ana"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-grupo">
-                        <label htmlFor="postulacion-apellido">Apellido *</label>
-                        <input
-                            id="postulacion-apellido"
-                            type="text"
-                            className="form-input"
-                            value={datos.apellido}
-                            onChange={actualizarCampo("apellido")}
-                            {...propsFoco("apellido")}
-                            placeholder="Ej. García"
-                            required
-                        />
-                    </div>
+                {CAMPOS_PERSONALES.map(({ campo, etiqueta, placeholder, columnaCompleta }) => (
+                    <BarraValorFormularioPostulante
+                        key={campo}
+                        id={`postulacion-${campo}`}
+                        etiqueta={etiqueta}
+                        placeholder={placeholder}
+                        value={datos[campo]}
+                        onChange={actualizarCampo(campo)}
+                        propsFoco={propsFoco(campo)}
+                        columnaCompleta={columnaCompleta}
+                    />
+                ))}
 
                     <div className="form-grupo" style={{ gridColumn: "1 / -1" }}>
                         <label htmlFor="postulacion-cargo">Cargo al que postulas *</label>
@@ -152,6 +146,18 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                             required
                         />
                     </div>
+                    <div className="form-grupo" style={{ gridColumn: "1 / -8" }}>
+                        <label htmlFor="postulacion-fecha">Fecha de Nacimiento *</label>
+                        <input
+                            id="postulacion-fecha"
+                            type="date"
+                            className="form-input"
+                            value={datos.fecha}
+                            onChange={actualizarCampo("fecha")}
+                            {...propsFoco("fecha")}
+                            required
+                        />
+                    </div>                  
 
                     <div className="form-grupo" style={{ gridColumn: "1 / -1" }}>
                         <label htmlFor="postulacion-cv">Adjuntar currículum (CV) *</label>
