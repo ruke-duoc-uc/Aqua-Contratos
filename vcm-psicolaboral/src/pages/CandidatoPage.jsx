@@ -10,22 +10,21 @@
  * desde el catálogo local de demostración. Las postulaciones se registran en el
  * navegador (localStorage), porque la API exige un candidato previamente registrado.
  *
- * @Autor Equipo Smiling Friends · Full Stack II · DSY1104
+ * @Autor Luxo
  **/
 
 import { useState, useEffect, useMemo } from "react";
 import IndicadorCard from "../components/IndicadorCard";
-import BotonOrange from "../components/BotonOrange";
+import TarjetaOferta from "../components/tarjetaOferta";
+import FormularioPostulacion from "../components/FormularioPostulacion";
+import ComprobantePostulacion from "../components/ComprobantePostulacion";
+import AlertaAviso from "../components/AlertaAviso";
 import { api } from "../services/api";
+import { NARANJA } from "../components/Estilos";
 
 /* ============================== CONSTANTES ============================== */
 
 const STORAGE_KEY_POSTULACIONES = "aqua_contratos_postulaciones_candidato_v1";
-
-const NARANJA = "#f57c00";
-const NARANJA_OSCURO = "#e8590c";
-const NARANJA_CLARO = "#fff4e6";
-const LIMITE_CV_BYTES = 10 * 1024 * 1024;
 
 const PLANTAS = [
     "Puerto Montt",
@@ -118,29 +117,6 @@ const PUESTOS_INICIALES = [
     },
 ];
 
-/* ============================ UTILIDADES DE UI =========================== */
-
-const formatearFecha = (valor) => {
-    if (!valor) return "Sin fecha";
-    const fecha = new Date(valor);
-    if (Number.isNaN(fecha.getTime())) return "Sin fecha";
-    return fecha.toLocaleDateString("es-CL");
-};
-
-const ESTILO_ETIQUETA = {
-    fontSize: "12px",
-    fontWeight: "700",
-    color: "#6c757d",
-    textTransform: "uppercase",
-    letterSpacing: "0.4px",
-};
-
-const ESTILO_VALOR = {
-    fontSize: "14px",
-    color: "#333",
-    margin: "3px 0 0 0",
-};
-
 /* ===================== CAPA DE DATOS LOCAL (MODO DEMO) ==================== */
 
 const cargarPostulacionesLocales = () => {
@@ -161,365 +137,6 @@ const guardarPostulacionesLocales = (postulaciones) => {
     }
 };
 
-/* ======================== TARJETA DE OFERTA LABORAL ====================== */
-
-function TarjetaOferta({ puesto, seleccionada, onPostular }) {
-    return (
-        <article
-            style={{
-                backgroundColor: "white",
-                borderRadius: "10px",
-                border: `2px solid ${seleccionada ? NARANJA : "gray"}`,
-                padding: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-            }}
-        >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
-                <div>
-                    <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{puesto.titulo}</h3>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                        {puesto.planta} · {puesto.familiaCargo}
-                    </span>
-                </div>
-                <span className="badge-estado badge-finalizado">{puesto.estado || "Abierto"}</span>
-            </div>
-
-            <p style={{ margin: 0, fontSize: "13.5px", color: "#555", lineHeight: "1.5" }}>
-                {puesto.descripcion}
-            </p>
-
-            <details>
-                <summary
-                    style={{
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        color: NARANJA_OSCURO,
-                        cursor: "pointer",
-                    }}
-                >
-                    Ver requisitos
-                </summary>
-                <p style={{ margin: "8px 0 0 0", fontSize: "13px", color: "#555", lineHeight: "1.5" }}>
-                    {puesto.requisitos}
-                </p>
-            </details>
-
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-                <div>
-                    <span style={ESTILO_ETIQUETA}>Vacantes</span>
-                    <p style={ESTILO_VALOR}>{puesto.vacantes}</p>
-                </div>
-                <div>
-                    <span style={ESTILO_ETIQUETA}>Publicado por</span>
-                    <p style={ESTILO_VALOR}>{puesto.creadoPor || "AquaChile"}</p>
-                </div>
-            </div>
-
-            <div style={{ marginTop: "auto", paddingTop: "6px" }}>
-                <BotonOrange
-                    texto={seleccionada ? "Postulando" : "Postular"}
-                    onClick={() => onPostular(puesto)}
-                />
-            </div>
-        </article>
-    );
-}
-
-/* ====================== FORMULARIO DE POSTULACIÓN ======================== */
-
-function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
-    const [datos, setDatos] = useState({ nombre: "", apellido: "" });
-    const [cargoElegido, setCargoElegido] = useState({ clave: "libre", valor: "" });
-    const [archivoCv, setArchivoCv] = useState(null);
-    const [campoEnfocado, setCampoEnfocado] = useState("");
-    const [error, setError] = useState("");
-
-    /**
-     * El cargo sigue a la oferta seleccionada mientras no se edite a mano:
-     * al elegir otra vacante, el campo vuelve a mostrar el título del puesto.
-     */
-    const clavePuesto = puesto?.id ?? "libre";
-    const cargo = cargoElegido.clave === clavePuesto ? cargoElegido.valor : puesto?.titulo || "";
-
-    const actualizarCampo = (campo) => (evento) => {
-        setDatos((prev) => ({ ...prev, [campo]: evento.target.value }));
-        setError("");
-    };
-
-    const actualizarCargo = (evento) => {
-        setCargoElegido({ clave: clavePuesto, valor: evento.target.value });
-        setError("");
-    };
-
-    /** Enfoque en naranja: identidad visual del postulante sobre los campos. */
-    const estiloCampo = (campo) => ({
-        borderColor: campoEnfocado === campo ? NARANJA : "#cccccc",
-        boxShadow: campoEnfocado === campo ? "0 0 0 3px rgba(245, 124, 0, 0.15)" : "none",
-    });
-
-    const manejarArchivo = (evento) => {
-        const archivo = evento.target.files?.[0] || null;
-        setError("");
-        if (archivo && archivo.size > LIMITE_CV_BYTES) {
-            setArchivoCv(null);
-            setError("El CV no puede superar los 10 MB.");
-            return;
-        }
-        setArchivoCv(archivo);
-    };
-
-    const manejarEnvio = (evento) => {
-        evento.preventDefault();
-
-        if (!datos.nombre.trim() || !datos.apellido.trim() || !cargo.trim()) {
-            setError("El nombre, el apellido y el cargo al que postulas son obligatorios.");
-            return;
-        }
-        if (!archivoCv) {
-            setError("Adjunta tu currículum (PDF o Word) para enviar la postulación.");
-            return;
-        }
-
-        onEnviar({
-            nombre: datos.nombre.trim(),
-            apellido: datos.apellido.trim(),
-            cargo: cargo.trim(),
-            archivoCv,
-        });
-    };
-
-    return (
-        <section
-            style={{
-                backgroundColor: "white",
-                borderRadius: "10px",
-                border: `2px solid ${NARANJA}`,
-                overflow: "hidden",
-            }}
-        >
-            <header
-                style={{
-                    padding: "16px 20px",
-                    borderBottom: "1px solid #f0f0f0",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                }}
-            >
-                <div>
-                    <h3 style={{ margin: 0, fontSize: "1.1rem", color: NARANJA_OSCURO }}>
-                        Formulario de Postulación
-                    </h3>
-                    <span style={{ fontSize: "13px", color: "#666" }}>
-                        {puesto
-                            ? `Postulando a ${puesto.titulo} · ${puesto.planta}`
-                            : "Completa tus datos y adjunta tu currículum"}
-                    </span>
-                </div>
-            </header>
-
-            <form onSubmit={manejarEnvio} style={{ padding: "20px" }}>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "16px",
-                    }}
-                >
-                    <div className="form-grupo">
-                        <label htmlFor="postulacion-nombre">Nombre *</label>
-                        <input
-                            id="postulacion-nombre"
-                            type="text"
-                            className="form-input"
-                            value={datos.nombre}
-                            onChange={actualizarCampo("nombre")}
-                            onFocus={() => setCampoEnfocado("nombre")}
-                            onBlur={() => setCampoEnfocado("")}
-                            style={estiloCampo("nombre")}
-                            placeholder="Ej. Ana"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-grupo">
-                        <label htmlFor="postulacion-apellido">Apellido *</label>
-                        <input
-                            id="postulacion-apellido"
-                            type="text"
-                            className="form-input"
-                            value={datos.apellido}
-                            onChange={actualizarCampo("apellido")}
-                            onFocus={() => setCampoEnfocado("apellido")}
-                            onBlur={() => setCampoEnfocado("")}
-                            style={estiloCampo("apellido")}
-                            placeholder="Ej. García"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-grupo" style={{ gridColumn: "1 / -1" }}>
-                        <label htmlFor="postulacion-cargo">Cargo al que postulas *</label>
-                        <input
-                            id="postulacion-cargo"
-                            type="text"
-                            className="form-input"
-                            value={cargo}
-                            onChange={actualizarCargo}
-                            onFocus={() => setCampoEnfocado("cargo")}
-                            onBlur={() => setCampoEnfocado("")}
-                            style={estiloCampo("cargo")}
-                            placeholder="Ej. Prevencionista de Faena"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-grupo" style={{ gridColumn: "1 / -1" }}>
-                        <label htmlFor="postulacion-cv">Adjuntar currículum (CV) *</label>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
-                                flexWrap: "wrap",
-                            }}
-                        >
-                            <label
-                                htmlFor="postulacion-cv"
-                                style={{
-                                    display: "inline-block",
-                                    padding: "9px 16px",
-                                    border: `1px solid ${NARANJA}`,
-                                    borderRadius: "6px",
-                                    backgroundColor: archivoCv ? NARANJA_CLARO : "white",
-                                    color: NARANJA_OSCURO,
-                                    fontSize: "13px",
-                                    fontWeight: "700",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                {archivoCv ? "Cambiar archivo" : "Seleccionar CV"}
-                            </label>
-                            <input
-                                id="postulacion-cv"
-                                type="file"
-                                accept=".pdf,.doc,.docx,application/pdf"
-                                onChange={manejarArchivo}
-                                style={{
-                                    position: "absolute",
-                                    width: "1px",
-                                    height: "1px",
-                                    padding: 0,
-                                    margin: "-1px",
-                                    overflow: "hidden",
-                                    clip: "rect(0, 0, 0, 0)",
-                                    whiteSpace: "nowrap",
-                                    border: 0,
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontSize: "13px",
-                                    color: archivoCv ? "#333" : "#6c757d",
-                                    wordBreak: "break-word",
-                                }}
-                            >
-                                {archivoCv
-                                    ? archivoCv.name
-                                    : "Ningún archivo seleccionado (PDF o Word, máx. 10 MB)"}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {error && (
-                    <div className="form-error-mensaje" role="alert" style={{ marginTop: "16px" }}>
-                        {error}
-                    </div>
-                )}
-
-                <div
-                    style={{
-                        display: "flex",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                        marginTop: "20px",
-                    }}
-                >
-                    <BotonOrange type="submit" texto="Enviar postulación" />
-                    {puesto && (
-                        <button type="button" className="boton-secundario" onClick={onCancelar}>
-                            Cancelar
-                        </button>
-                    )}
-                </div>
-            </form>
-        </section>
-    );
-}
-
-/* ===================== COMPROBANTE DE POSTULACIÓN ======================== */
-
-function ComprobantePostulacion({ postulacion }) {
-    return (
-        <article
-            style={{
-                backgroundColor: "white",
-                borderRadius: "10px",
-                border: "2px solid gray",
-                padding: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-            }}
-        >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
-                <div>
-                    <h3 style={{ margin: 0, fontSize: "1.05rem" }}>
-                        {postulacion.nombre} {postulacion.apellido}
-                    </h3>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                        {postulacion.cargo}
-                        {postulacion.planta ? ` · ${postulacion.planta}` : ""}
-                    </span>
-                </div>
-                <span className="badge-estado badge-proceso">{postulacion.estado}</span>
-            </div>
-
-            <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
-                <div>
-                    <span style={ESTILO_ETIQUETA}>Enviada</span>
-                    <p style={ESTILO_VALOR}>{formatearFecha(postulacion.fechaPostulacion)}</p>
-                </div>
-                <div>
-                    <span style={ESTILO_ETIQUETA}>CV adjunto</span>
-                    <p style={{ ...ESTILO_VALOR, wordBreak: "break-word" }}>{postulacion.cvArchivo}</p>
-                </div>
-            </div>
-
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: "13px",
-                    color: "#7a3e00",
-                    backgroundColor: NARANJA_CLARO,
-                    borderLeft: `3px solid ${NARANJA}`,
-                    padding: "8px 12px",
-                    borderRadius: "4px",
-                }}
-            >
-                Tu postulación quedó registrada. El equipo de Reclutamiento revisará tu CV y te
-                contactará para coordinar las entrevistas.
-            </p>
-        </article>
-    );
-}
-
 /* ============================ PANTALLA PRINCIPAL ========================== */
 
 function CandidatoPage({ onVolver }) {
@@ -531,6 +148,7 @@ function CandidatoPage({ onVolver }) {
     const [backendConectado, setBackendConectado] = useState(false);
     const [alertaExito, setAlertaExito] = useState("");
     const [alertaError, setAlertaError] = useState("");
+    const [versionFormulario, setVersionFormulario] = useState(0);
 
     /* Carga las ofertas desde la API y, si no responde, mantiene el catálogo local. */
     useEffect(() => {
@@ -595,6 +213,11 @@ function CandidatoPage({ onVolver }) {
         { id: 3, titulo: "Postulaciones Enviadas", valor: postulaciones.length },
     ];
 
+    const limpiarFiltros = () => {
+        setBusqueda("");
+        setFiltroPlanta("todas");
+    };
+
     const handlePostular = (puesto) => {
         setAlertaError("");
         setAlertaExito("");
@@ -634,6 +257,7 @@ function CandidatoPage({ onVolver }) {
 
         setPostulaciones((prev) => [...prev, nueva]);
         setPuestoSeleccionado(null);
+        setVersionFormulario((v) => v + 1); // remonta el formulario y lo deja vacío
         setAlertaExito(`✓ Postulación enviada exitosamente para el cargo '${nueva.cargo}'.`);
     };
 
@@ -661,9 +285,7 @@ function CandidatoPage({ onVolver }) {
                 }}
             >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: "1.2rem" }}>
-                        AquaChile · Aqua-Contratos
-                    </h1>
+                    <h1 style={{ margin: 0, fontSize: "1.2rem" }}>AquaChile · Aqua-Contratos</h1>
                     <span style={{ fontSize: "12px", color: "#666" }}>
                         Portal de Postulación · Sistema Integrado de Evaluaciones Psicolaborales
                     </span>
@@ -718,63 +340,8 @@ function CandidatoPage({ onVolver }) {
                 </span>
             </div>
 
-            {alertaExito && (
-                <div
-                    role="status"
-                    style={{
-                        backgroundColor: "#d1e7dd",
-                        color: "#0f5132",
-                        border: "1px solid #badbcc",
-                        padding: "12px 18px",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                        fontWeight: "600",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                    }}
-                >
-                    <span>{alertaExito}</span>
-                    <button
-                        type="button"
-                        onClick={() => setAlertaExito("")}
-                        aria-label="Cerrar aviso"
-                        style={{ background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
-
-            {alertaError && (
-                <div
-                    role="alert"
-                    style={{
-                        backgroundColor: "var(--fondo-badge-rojo)",
-                        color: "var(--color-badge-rojo)",
-                        border: "1px solid #f5c2c7",
-                        padding: "12px 18px",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                        fontWeight: "600",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "12px",
-                    }}
-                >
-                    <span>{alertaError}</span>
-                    <button
-                        type="button"
-                        onClick={() => setAlertaError("")}
-                        aria-label="Cerrar aviso"
-                        style={{ background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
+            <AlertaAviso tipo="exito" mensaje={alertaExito} onCerrar={() => setAlertaExito("")} />
+            <AlertaAviso tipo="error" mensaje={alertaError} onCerrar={() => setAlertaError("")} />
 
             <div
                 style={{
@@ -794,14 +361,7 @@ function CandidatoPage({ onVolver }) {
                 </div>
             </div>
 
-            <div
-                style={{
-                    display: "flex",
-                    gap: "16px",
-                    marginBottom: "24px",
-                    flexWrap: "wrap",
-                }}
-            >
+            <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
                 {indicadores.map((indicador) => (
                     <IndicadorCard
                         key={indicador.id}
@@ -813,6 +373,7 @@ function CandidatoPage({ onVolver }) {
 
             <div style={{ marginBottom: "24px" }}>
                 <FormularioPostulacion
+                    key={versionFormulario}
                     puesto={puestoSeleccionado}
                     onCancelar={() => setPuestoSeleccionado(null)}
                     onEnviar={handleEnviarPostulacion}
@@ -857,10 +418,7 @@ function CandidatoPage({ onVolver }) {
                         <button
                             type="button"
                             className="boton-limpiar-filtros"
-                            onClick={() => {
-                                setBusqueda("");
-                                setFiltroPlanta("todas");
-                            }}
+                            onClick={limpiarFiltros}
                             title="Restablecer filtros"
                         >
                             ✕ Limpiar filtros
@@ -895,14 +453,7 @@ function CandidatoPage({ onVolver }) {
                         <p style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
                             No se encontraron ofertas que coincidan con los filtros aplicados.
                         </p>
-                        <button
-                            type="button"
-                            className="boton-limpiar-filtros"
-                            onClick={() => {
-                                setBusqueda("");
-                                setFiltroPlanta("todas");
-                            }}
-                        >
+                        <button type="button" className="boton-limpiar-filtros" onClick={limpiarFiltros}>
                             Restablecer filtros
                         </button>
                     </div>
@@ -910,22 +461,11 @@ function CandidatoPage({ onVolver }) {
             </div>
 
             <div style={{ marginTop: "24px" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: "16px",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                    }}
-                >
-                    <div>
-                        <h2 style={{ margin: 0 }}>Comprobantes de Postulación</h2>
-                        <span style={{ fontSize: "14px", color: "gray" }}>
-                            Postulaciones enviadas desde este navegador
-                        </span>
-                    </div>
+                <div style={{ marginBottom: "16px" }}>
+                    <h2 style={{ margin: 0 }}>Comprobantes de Postulación</h2>
+                    <span style={{ fontSize: "14px", color: "gray" }}>
+                        Postulaciones enviadas desde este navegador
+                    </span>
                 </div>
 
                 {postulaciones.length > 0 ? (
