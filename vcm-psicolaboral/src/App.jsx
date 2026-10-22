@@ -2,9 +2,10 @@ import { useState } from "react";
 import AnalistaPage from "./pages/AnalistaPage";
 import EvaluadorPage from "./pages/EvaluadorPage";
 import JefaturaPage from "./pages/JefaturaPage";
+import CandidatoPage from "./pages/CandidatoPage";
 
 function App() {
-    // Pantalla activa: null (Portal inicial), "analista", "evaluador", "jefatura"
+    // Pantalla activa: null (Portal inicial), "analista", "evaluador", "jefatura", "candidato"
     const [pantallaActiva, setPantallaActiva] = useState(null);
     const [mensajeNuevoUsuario, setMensajeNuevoUsuario] = useState(false);
 
@@ -18,6 +19,10 @@ function App() {
 
     if (pantallaActiva === "jefatura") {
         return <JefaturaPage onVolver={() => setPantallaActiva(null)} />;
+    }
+
+    if (pantallaActiva === "candidato") {
+        return <CandidatoPage onVolver={() => setPantallaActiva(null)} />;
     }
 
     const usuarios = [
@@ -50,6 +55,16 @@ function App() {
             colorFondoBadge: "#fff3e0",
             colorTextoBadge: "#e65100",
             botonTexto: "Ingresar como Jefatura",
+        },
+        {
+            id: "candidato",
+            titulo: "Postulante a Trabajo",
+            icono: "📝",
+            descripcion: "Portal público de postulación: explora las vacantes abiertas, completa el formulario y adjunta tu currículum. Sin necesidad de registro.",
+            colorBorde: "#f57c00",
+            colorFondoBadge: "#fff4e6",
+            colorTextoBadge: "#e8590c",
+            botonTexto: "Postular a un cargo",
         },
     ];
 
