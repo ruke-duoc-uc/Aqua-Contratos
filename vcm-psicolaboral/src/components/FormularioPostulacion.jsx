@@ -5,7 +5,46 @@ import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
 
 
 function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
-    const [datos, setDatos] = useState({ nombre: "", apellido: "" });
+    const [datos, setDatos] = useState({
+        nombre: "",
+        apellido: "",
+        rut: "",
+        dv: "",
+        fecha: "",
+        comuna: "",
+    });
+    const COMUNAS = [
+        "Ancud", 
+        "Calbuco", 
+        "Castro", 
+        "Chaitén", 
+        "Chonchi", 
+        "Cochamó",
+        "Curaco de Vélez", 
+        "Dalcahue", 
+        "Fresia", 
+        "Frutillar", 
+        "Futaleufú", 
+        "Hualaihué", 
+        "Llanquihue", 
+        "Los Muermos", 
+        "Maullín", 
+        "Osorno", 
+        "Palena", 
+        "Puerto Montt", 
+        "Puerto Octay", 
+        "Puerto Varas", 
+        "Puqueldón", 
+        "Purranque", 
+        "Puyehue", 
+        "Queilén", 
+        "Quellón", 
+        "Quemchi", 
+        "Quinchao", 
+        "Río Negro", 
+        "San Juan de la Costa", 
+        "San Pablo"
+    ];
     const [cargoElegido, setCargoElegido] = useState({ clave: "libre", valor: "" });
     const [archivoCv, setArchivoCv] = useState(null);
     const [campoEnfocado, setCampoEnfocado] = useState("");
@@ -17,7 +56,6 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
         { campo: "apellido", etiqueta: "Apellido", placeholder: "Ej. García" },
         { campo: "direccion", etiqueta: "Dirección", placeholder: "Ej. Av. Central 123", columnaCompleta: true },
         { campo: "email", etiqueta: "E-mail", placeholder: "Ej. ana.gar@gmail.com", columnaCompleta: true },
-        
     ];
 
     /**
@@ -67,6 +105,10 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             setError("El nombre, el apellido y el cargo al que postulas son obligatorios.");
             return;
         }
+        if (!calcularRut(datos.rut, datos.dv)) {
+            setError("El RUT ingresado no es válido. Revisa el número y el dígito verificador.");
+            return;
+        }
         if (!archivoCv) {
             setError("Adjunta tu currículum (PDF o Word) para enviar la postulación.");
             return;
@@ -75,6 +117,11 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
         onEnviar({
             nombre: datos.nombre.trim(),
             apellido: datos.apellido.trim(),
+            rut: `${datos.rut}-${datos.dv}`,
+            fecha: datos.fecha,
+            comuna: datos.comuna,
+            direccion: datos.direccion?.trim() || "",
+            email: datos.email?.trim() || "",
             cargo: cargo.trim(),
             archivoCv,
         });
@@ -120,6 +167,46 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                         gap: "16px",
                     }}
                 >
+                <div className="form-grupo">
+                    <label htmlFor="postulacion-rut">Rut *</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input
+                            id="postulacion-rut"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="off"
+                            placeholder="12345678"
+                            maxLength={8}
+                            className="form-input"
+                            style={{ flex: 1, minWidth: 0, width: "auto" }}
+                            value={datos.rut}
+                            onChange={(e) => {
+                                setDatos((prev) => ({ ...prev, rut: e.target.value.replace(/\D/g, "").slice(0, 8) }));
+                                setError("");
+                            }}
+                            required
+                        />
+                        <span>-</span>
+                        <input
+                            id="postulacion-dv"
+                            type="text"
+                            autoComplete="off"
+                            placeholder="K"
+                            maxLength={1}
+                            className="form-input"
+                            style={{ flex: "0 0 50px", width: "50px", minWidth: 0, textAlign: "center" }}
+                            value={datos.dv}
+                            onChange={(e) => {
+                                setDatos((prev) => ({
+                                    ...prev,
+                                    dv: e.target.value.replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1),
+                                }));
+                                setError("");
+                            }}
+                            required
+                        />
+                    </div>
+                </div>
                 {CAMPOS_PERSONALES.map(({ campo, etiqueta, placeholder, columnaCompleta }) => (
                     <BarraValorFormularioPostulante
                         key={campo}
@@ -132,6 +219,24 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                         columnaCompleta={columnaCompleta}
                     />
                 ))}
+                <div className="form-grupo">
+                    <label htmlFor="postulacion-comuna">Comuna *</label>
+                    <select
+                        id="postulacion-comuna"
+                        className="form-input"
+                        value={datos.comuna}
+                        onChange={actualizarCampo("comuna")}
+                        {...propsFoco("comuna")}
+                        required
+                    >
+                        <option value="">Selecciona tu comuna</option>
+                        {COMUNAS.map((comuna) => (
+                            <option key={comuna} value={comuna}>
+                                {comuna}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                     <div className="form-grupo" style={{ gridColumn: "1 / -1" }}>
                         <label htmlFor="postulacion-cargo">Cargo al que postulas *</label>

@@ -11,7 +11,7 @@
  * navegador (localStorage), porque la API exige un candidato previamente registrado.
  *
  * @Autor Luxo
- **/
+**/
 
 import { useState, useEffect, useMemo } from "react";
 import IndicadorCard from "../components/IndicadorCard";
