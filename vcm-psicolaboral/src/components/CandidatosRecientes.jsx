@@ -2,7 +2,7 @@
  * @Autor Luxorar
  **/
 import BotonOrange from "./BotonOrange";
-import { COLUMNAS } from "./columnasTabla";
+import { COLUMNAS } from "../utils/columnasTabla";
 
 function CandidatosRecientes({ nombre, rut, especialidad, planta, fecha, evaluador, estado, onDetalle }) {
     const obtenerClaseEstado = (est) => {
