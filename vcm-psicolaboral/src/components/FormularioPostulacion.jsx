@@ -251,7 +251,7 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                             required
                         />
                     </div>
-                    <div className="form-grupo" style={{ gridColumn: "1 / -8" }}>
+                    <div className="form-grupo">
                         <label htmlFor="postulacion-fecha">Fecha de Nacimiento *</label>
                         <input
                             id="postulacion-fecha"

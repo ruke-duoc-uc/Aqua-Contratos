@@ -1,18 +1,20 @@
 import { useState, useMemo, useEffect } from "react";
-import IndicadorCard from "../components/IndicadorCard";
 import BotonOrange from "../components/BotonOrange";
-import CandidatosRecientes from "../components/CandidatosRecientes";
 import HeaderRoles from "../components/HeaderRoles";
-import BarraFiltros from "../components/BarraFiltros";
 import ModalNuevaSolicitud from "../components/ModalNuevaSolicitud";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalEditarCandidato from "../components/ModalEditarCandidato";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import GestionCandidatosView from "../components/GestionCandidatosView";
-import { COLUMNAS } from "../components/columnasTabla";
 import { api } from "../services/api";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
+import GrillaIndicadores from "../components/GrillaIndicadores";
+import BannerEstadoBackend from "../components/BannerEstadoBackend";
+import AlertaExitoCerrable from "../components/AlertaExitoCerrable";
+import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
+import EncabezadoRegistro from "../components/EncabezadoRegistro";
+import PanelSolicitudes from "../components/PanelSolicitudes";
 
 const STORAGE_KEY = "aqua_contratos_datos_mvp_v1";
 
@@ -270,6 +272,22 @@ function AnalistaPage({ onVolver }) {
         }
     };
 
+    const propsFiltros = {
+        busqueda,
+        onBusquedaChange: setBusqueda,
+        filtroEstado,
+        onFiltroEstadoChange: setFiltroEstado,
+        filtroPlanta,
+        onFiltroPlantaChange: setFiltroPlanta,
+        filtroEvaluador,
+        onFiltroEvaluadorChange: setFiltroEvaluador,
+        plantasDisponibles: PLANTAS_DISPONIBLES,
+        evaluadoresDisponibles: EVALUADORES_DISPONIBLES,
+        totalResultados: solicitudesFiltradas.length,
+        totalOriginal: candidatos.length,
+        onLimpiarFiltros: handleLimpiarFiltros,
+    };
+
     return (
         <main style={{ backgroundColor: "#F0F8FF", fontFamily: "Arial, Helvetica, sans-serif", padding: "20px", minHeight: "100vh" }}>
             <HeaderRoles
@@ -279,176 +297,32 @@ function AnalistaPage({ onVolver }) {
                 onVolver={onVolver}
             />
 
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "8px 14px",
-                    backgroundColor: backendConectado ? "#e8f5e9" : "#fff8e1",
-                    borderRadius: "6px",
-                    border: `1px solid ${backendConectado ? "#c8e6c9" : "#ffe082"}`,
-                    marginBottom: "16px",
-                    fontSize: "12px",
-                    color: backendConectado ? "#1b5e20" : "#795548",
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                        style={{
-                            display: "inline-block",
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            backgroundColor: backendConectado ? "#2e7d32" : "#f57c00",
-                        }}
-                    />
-                    <strong>
-                        {backendConectado
-                            ? "🟢 Conectado a la API REST (Backend Express + SQLite)"
-                            : "🟡 Operando en Modo Local (localStorage)"}
-                    </strong>
-                    {cargandoApi && <span style={{ color: "#0d6efd" }}>(Sincronizando datos...)</span>}
-                </div>
-                <span style={{ fontSize: "11px", color: "#666" }}>
-                    Pantalla Dedicada · Analista de Reclutamiento
-                </span>
-            </div>
+            <BannerEstadoBackend
+                backendConectado={backendConectado}
+                cargandoApi={cargandoApi}
+                etiquetaPantalla="Pantalla Dedicada · Analista de Reclutamiento"
+            />
 
-            {alertaExito && (
-                <div
-                    style={{
-                        backgroundColor: "#d1e7dd",
-                        color: "#0f5132",
-                        border: "1px solid #badbcc",
-                        padding: "12px 18px",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                        fontWeight: "600",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    <span>{alertaExito}</span>
-                    <button
-                        onClick={() => setAlertaExito("")}
-                        style={{ background: "none", border: "none", cursor: "pointer", fontWeight: "bold" }}
-                    >
-                        ×
-                    </button>
-                </div>
-            )}
+            <AlertaExitoCerrable mensaje={alertaExito} onCerrar={() => setAlertaExito("")} />
 
             {tabActiva === "dashboard" && (
                 <>
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: "24px",
-                        }}
-                    >
-                        <div>
-                            <h2 style={{ margin: 0 }}>Panel de Control Operativo</h2>
-                            <span style={{ fontSize: "14px", color: "gray" }}>
-                                Analista de Reclutamiento · Emisión y gestión integral de solicitudes
-                            </span>
-                        </div>
-
+                    <EncabezadoDashboard subtitulo="Analista de Reclutamiento · Emisión y gestión integral de solicitudes">
                         <BotonOrange
                             texto="+ Nueva solicitud"
                             onClick={() => setModalNuevaAbierto(true)}
                         />
-                    </div>
+                    </EncabezadoDashboard>
 
-                    <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
-                        {indicadores.map((indicador) => (
-                            <IndicadorCard
-                                key={indicador.id}
-                                valor={indicador.valor}
-                                titulo={indicador.titulo}
-                            />
-                        ))}
-                    </div>
+                    <GrillaIndicadores indicadores={indicadores} />
 
-                    <div
-                        style={{
-                            border: "2px solid gray",
-                            borderRadius: "10px",
-                            width: "100%",
-                            backgroundColor: "white",
-                            overflow: "hidden",
-                        }}
-                    >
-                        <BarraFiltros
-                            busqueda={busqueda}
-                            onBusquedaChange={setBusqueda}
-                            filtroEstado={filtroEstado}
-                            onFiltroEstadoChange={setFiltroEstado}
-                            filtroPlanta={filtroPlanta}
-                            onFiltroPlantaChange={setFiltroPlanta}
-                            filtroEvaluador={filtroEvaluador}
-                            onFiltroEvaluadorChange={setFiltroEvaluador}
-                            plantasDisponibles={PLANTAS_DISPONIBLES}
-                            evaluadoresDisponibles={EVALUADORES_DISPONIBLES}
-                            totalResultados={solicitudesFiltradas.length}
-                            totalOriginal={candidatos.length}
-                            onLimpiarFiltros={handleLimpiarFiltros}
-                        />
-
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: COLUMNAS,
-                                alignItems: "center",
-                                gap: "16px",
-                                padding: "10px 16px",
-                                backgroundColor: "#CDCDCD",
-                                fontWeight: "bold",
-                                color: "gray",
-                            }}
-                        >
-                            <span>Nombre</span>
-                            <span>Rut</span>
-                            <span>Especialidad</span>
-                            <span>Planta</span>
-                            <span>Fecha</span>
-                            <span>Evaluador</span>
-                            <span>Estado</span>
-                            <span>Acción</span>
-                        </div>
-
-                        {solicitudesFiltradas.length > 0 ? (
-                            solicitudesFiltradas.map((candidato) => (
-                                <CandidatosRecientes
-                                    key={candidato.id}
-                                    nombre={candidato.nombre}
-                                    rut={candidato.rut}
-                                    especialidad={candidato.especialidad}
-                                    planta={candidato.planta}
-                                    fecha={
-                                        candidato.fecha instanceof Date
-                                            ? candidato.fecha.toLocaleDateString("es-CL")
-                                            : candidato.fecha
-                                    }
-                                    evaluador={candidato.evaluador}
-                                    estado={candidato.estado}
-                                    onDetalle={() => setSolicitudSeleccionada(candidato)}
-                                />
-                            ))
-                        ) : (
-                            <div style={{ padding: "40px 20px", textAlign: "center", color: "#6c757d" }}>
-                                <p style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
-                                    🔍 No se encontraron solicitudes con los filtros aplicados.
-                                </p>
-                                <button type="button" className="boton-limpiar-filtros" onClick={handleLimpiarFiltros}>
-                                    Restablecer filtros
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <PanelSolicitudes
+                        anchoCompleto
+                        filtros={propsFiltros}
+                        solicitudes={solicitudesFiltradas}
+                        mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
+                        onDetalle={setSolicitudSeleccionada}
+                    />
                 </>
             )}
 
@@ -463,96 +337,20 @@ function AnalistaPage({ onVolver }) {
             )}
 
             {tabActiva === "solicitudes" && (
-                <div
-                    style={{
-                        backgroundColor: "white",
-                        borderRadius: "10px",
-                        border: "2px solid gray",
-                        overflow: "hidden",
-                    }}
-                >
-                    <div style={{ padding: "16px 20px", borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>
-                            <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                                📋 Registro Integral de Solicitudes de Evaluación
-                            </h2>
-                            <span style={{ fontSize: "13px", color: "gray" }}>
-                                Seguimiento de postulaciones y emisión de solicitudes
-                            </span>
-                        </div>
-                        <BotonOrange
-                            texto="+ Nueva Solicitud"
-                            onClick={() => setModalNuevaAbierto(true)}
-                        />
-                    </div>
-
-                    <BarraFiltros
-                        busqueda={busqueda}
-                        onBusquedaChange={setBusqueda}
-                        filtroEstado={filtroEstado}
-                        onFiltroEstadoChange={setFiltroEstado}
-                        filtroPlanta={filtroPlanta}
-                        onFiltroPlantaChange={setFiltroPlanta}
-                        filtroEvaluador={filtroEvaluador}
-                        onFiltroEvaluadorChange={setFiltroEvaluador}
-                        plantasDisponibles={PLANTAS_DISPONIBLES}
-                        evaluadoresDisponibles={EVALUADORES_DISPONIBLES}
-                        totalResultados={solicitudesFiltradas.length}
-                        totalOriginal={candidatos.length}
-                        onLimpiarFiltros={handleLimpiarFiltros}
-                    />
-
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: COLUMNAS,
-                            alignItems: "center",
-                            gap: "16px",
-                            padding: "10px 16px",
-                            backgroundColor: "#CDCDCD",
-                            fontWeight: "bold",
-                            color: "gray",
-                        }}
-                    >
-                        <span>Nombre</span>
-                        <span>Rut</span>
-                        <span>Especialidad</span>
-                        <span>Planta</span>
-                        <span>Fecha</span>
-                        <span>Evaluador</span>
-                        <span>Estado</span>
-                        <span>Acción</span>
-                    </div>
-
-                    {solicitudesFiltradas.length > 0 ? (
-                        solicitudesFiltradas.map((candidato) => (
-                            <CandidatosRecientes
-                                key={candidato.id}
-                                nombre={candidato.nombre}
-                                rut={candidato.rut}
-                                especialidad={candidato.especialidad}
-                                planta={candidato.planta}
-                                fecha={
-                                    candidato.fecha instanceof Date
-                                        ? candidato.fecha.toLocaleDateString("es-CL")
-                                        : candidato.fecha
-                                }
-                                evaluador={candidato.evaluador}
-                                estado={candidato.estado}
-                                onDetalle={() => setSolicitudSeleccionada(candidato)}
+                <PanelSolicitudes
+                    encabezado={
+                        <EncabezadoRegistro subtitulo="Seguimiento de postulaciones y emisión de solicitudes">
+                            <BotonOrange
+                                texto="+ Nueva Solicitud"
+                                onClick={() => setModalNuevaAbierto(true)}
                             />
-                        ))
-                    ) : (
-                        <div style={{ padding: "40px 20px", textAlign: "center", color: "#6c757d" }}>
-                            <p style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
-                                🔍 No se encontraron solicitudes que coincidan con la búsqueda.
-                            </p>
-                            <button type="button" className="boton-limpiar-filtros" onClick={handleLimpiarFiltros}>
-                                Restablecer filtros
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        </EncabezadoRegistro>
+                    }
+                    filtros={propsFiltros}
+                    solicitudes={solicitudesFiltradas}
+                    mensajeVacio="🔍 No se encontraron solicitudes que coincidan con la búsqueda."
+                    onDetalle={setSolicitudSeleccionada}
+                />
             )}
 
             {tabActiva === "informes" && (

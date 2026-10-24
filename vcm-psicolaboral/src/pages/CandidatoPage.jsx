@@ -13,14 +13,15 @@
  * @Autor Luxo
 **/
 
-import { useState, useEffect, useMemo } from "react";
-import IndicadorCard from "../components/IndicadorCard";
 import TarjetaOferta from "../components/tarjetaOferta";
 import FormularioPostulacion from "../components/FormularioPostulacion";
 import ComprobantePostulacion from "../components/ComprobantePostulacion";
 import AlertaAviso from "../components/AlertaAviso";
 import { api } from "../services/api";
 import { NARANJA } from "../components/Estilos";
+import GrillaIndicadores from "../components/GrillaIndicadores";
+import EstadoVacio from "../components/EstadoVacio";
+import { useState, useEffect, useMemo } from "react";
 
 /* ============================== CONSTANTES ============================== */
 
@@ -257,11 +258,11 @@ function CandidatoPage({ onVolver }) {
 
         setPostulaciones((prev) => [...prev, nueva]);
         setPuestoSeleccionado(null);
-        setVersionFormulario((v) => v + 1); // remonta el formulario y lo deja vacío
+        setVersionFormulario((v) => v + 1); 
         setAlertaExito(`✓ Postulación enviada exitosamente para el cargo '${nueva.cargo}'.`);
     };
 
-    return (
+    return ( 
         <main
             style={{
                 backgroundColor: "#F0F8FF",
@@ -361,15 +362,7 @@ function CandidatoPage({ onVolver }) {
                 </div>
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
-                {indicadores.map((indicador) => (
-                    <IndicadorCard
-                        key={indicador.id}
-                        valor={indicador.valor}
-                        titulo={indicador.titulo}
-                    />
-                ))}
-            </div>
+            <GrillaIndicadores indicadores={indicadores} />
 
             <div style={{ marginBottom: "24px" }}>
                 <FormularioPostulacion
@@ -449,14 +442,10 @@ function CandidatoPage({ onVolver }) {
                         ))}
                     </div>
                 ) : (
-                    <div style={{ padding: "40px 20px", textAlign: "center", color: "#6c757d" }}>
-                        <p style={{ fontSize: "16px", margin: "0 0 10px 0" }}>
-                            No se encontraron ofertas que coincidan con los filtros aplicados.
-                        </p>
-                        <button type="button" className="boton-limpiar-filtros" onClick={limpiarFiltros}>
-                            Restablecer filtros
-                        </button>
-                    </div>
+                    <EstadoVacio
+                        mensaje="No se encontraron ofertas que coincidan con los filtros aplicados."
+                        onRestablecer={limpiarFiltros}
+                    />
                 )}
             </div>
 
