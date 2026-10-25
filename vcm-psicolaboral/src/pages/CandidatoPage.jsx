@@ -22,6 +22,7 @@ import { NARANJA } from "../components/Estilos";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import EstadoVacio from "../components/EstadoVacio";
 import { useState, useEffect, useMemo } from "react";
+import { registrarPostulanteGlobal } from "../services/candidatosStorage";
 
 /* ============================== CONSTANTES ============================== */
 
@@ -225,12 +226,13 @@ function CandidatoPage({ onVolver }) {
         setPuestoSeleccionado(puesto);
     };
 
-    const handleEnviarPostulacion = ({ nombre, apellido, cargo, archivoCv }) => {
+    const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv }) => {
         const duplicada = postulaciones.some(
             (postulacion) =>
-                postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
+                (postulacion.rut && rut && postulacion.rut === rut) ||
+                (postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
                 postulacion.nombre.toLowerCase() === nombre.toLowerCase() &&
-                postulacion.apellido.toLowerCase() === apellido.toLowerCase()
+                postulacion.apellido.toLowerCase() === apellido.toLowerCase())
         );
 
         if (duplicada) {
@@ -238,28 +240,56 @@ function CandidatoPage({ onVolver }) {
             return;
         }
 
+        const nuevoPostulanteId = Date.now();
+        const cvNombre = archivoCv?.name || `cv_${nombre.toLowerCase().replace(/\s+/g, "_")}.pdf`;
+
+        // 1. Registrar en el catálogo GLOBAL visible para Analista, Evaluador y Jefatura
+        registrarPostulanteGlobal({
+            id: nuevoPostulanteId,
+            rut: rut || "",
+            nombres: nombre,
+            apellidos: apellido,
+            nombre: `${nombre} ${apellido}`,
+            direccion: direccion || "No informada",
+            comuna: comuna || puestoSeleccionado?.planta || "Puerto Montt",
+            planta: puestoSeleccionado?.planta || comuna || "Puerto Montt",
+            fecha_nacimiento: fecha || "",
+            cv_pdf: cvNombre,
+            cvArchivo: cvNombre,
+            cargo: cargo,
+            especialidad: cargo,
+            familiaCargo: puestoSeleccionado?.familiaCargo || "Operaciones Productivas",
+            evaluador: "Amaro Villalobos Caseres",
+            estado: "Pendiente",
+            antecedentes: `Postulación pública al cargo '${cargo}'. Comuna: ${comuna || "No informada"}. Dirección: ${direccion || "No informada"}.`,
+            resultadoPsicologico: "Pendiente",
+        });
+
+        // 2. Conservar comprobante local en el portal del postulante
         const nueva = {
-            id:
-                postulaciones.reduce(
-                    (maximo, postulacion) => Math.max(maximo, Number(postulacion.id) || 0),
-                    0
-                ) + 1,
-            nombre,
-            apellido,
+            id: nuevoPostulanteId,
+            rut: rut || "",
+            nombres: nombre,
+            apellidos: apellido,
+            nombre: `${nombre} ${apellido}`,
+            direccion: direccion || "",
+            comuna: comuna || puestoSeleccionado?.planta || "",
+            fecha_nacimiento: fecha || "",
             cargo,
             puestoTrabajoId: puestoSeleccionado?.id ?? null,
-            planta: puestoSeleccionado?.planta ?? "",
-            cvArchivo: archivoCv.name,
-            cvTipo: archivoCv.type,
-            cvPeso: archivoCv.size,
+            planta: puestoSeleccionado?.planta ?? comuna ?? "",
+            cv_pdf: cvNombre,
+            cvArchivo: cvNombre,
+            cvTipo: archivoCv?.type || "application/pdf",
+            cvPeso: archivoCv?.size || 0,
             fechaPostulacion: new Date().toISOString(),
             estado: "Recibida",
         };
 
-        setPostulaciones((prev) => [...prev, nueva]);
+        setPostulaciones((prev) => [nueva, ...prev.filter((p) => p.id !== nueva.id)]);
         setPuestoSeleccionado(null);
         setVersionFormulario((v) => v + 1); 
-        setAlertaExito(`✓ Postulación enviada exitosamente para el cargo '${nueva.cargo}'.`);
+        setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
     };
 
     return ( 

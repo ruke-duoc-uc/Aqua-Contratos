@@ -74,7 +74,13 @@ export const solicitudesController = {
         try {
             const {
                 nombre,
+                nombres,
+                apellidos,
                 rut,
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
                 especialidad,
                 planta,
                 cargo,
@@ -83,21 +89,30 @@ export const solicitudesController = {
                 antecedentes,
             } = req.body;
 
-            if (!nombre || !rut || !cargo || !planta) {
+            const nombreFinal = (nombre || `${nombres || ""} ${apellidos || ""}`.trim()) || "Postulante";
+            const plantaFinal = planta || comuna || "Puerto Montt";
+
+            if (!rut || !cargo) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "Faltan campos obligatorios para emitir la solicitud (nombre, rut, cargo y planta).",
+                    mensaje: "Faltan campos obligatorios para emitir la solicitud (rut y cargo).",
                 });
             }
 
             const nuevaSolicitud = dataStore.crearCandidato({
-                nombre,
+                nombre: nombreFinal,
+                nombres: nombres || (nombreFinal.split(" ").slice(0, -2).join(" ") || nombreFinal.split(" ")[0]),
+                apellidos: apellidos || (nombreFinal.split(" ").slice(-2).join(" ")),
                 rut,
-                especialidad: especialidad || "No especificada",
-                planta,
+                direccion: direccion || "",
+                comuna: comuna || plantaFinal,
+                fecha_nacimiento: fecha_nacimiento || "",
+                cv_pdf: cv_pdf || `cv_${nombreFinal.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`,
+                especialidad: especialidad || cargo || "No especificada",
+                planta: plantaFinal,
                 cargo,
                 familiaCargo: familiaCargo || "Operaciones Productivas",
-                evaluador: evaluador || "Sin Asignar",
+                evaluador: evaluador || "Amaro Villalobos Caseres",
                 estado: "Pendiente",
                 antecedentes: antecedentes || "",
                 resultadoPsicologico: "Pendiente",

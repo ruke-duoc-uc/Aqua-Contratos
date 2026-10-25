@@ -1,26 +1,56 @@
 /** Modal para Modificar Información de un Candidato Existente (RF03)
  * @Autor Amaro Villalobos
  * Permite al Analista de Reclutamiento actualizar antecedentes personales,
- * especialidad, planta y salud laboral de un postulante.
+ * RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento y CV de un postulante.
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 
-const PLANTAS = [
-    "Puerto Montt",
-    "Osorno",
-    "Castro",
-    "Calbuco",
-    "Frutillar",
-    "Puerto Varas",
-    "Ancud"
+const COMUNAS = [
+    "Ancud", 
+    "Calbuco", 
+    "Castro", 
+    "Chaitén", 
+    "Chonchi", 
+    "Cochamó",
+    "Curaco de Vélez", 
+    "Dalcahue", 
+    "Fresia", 
+    "Frutillar", 
+    "Futaleufú", 
+    "Hualaihué", 
+    "Llanquihue", 
+    "Los Muermos", 
+    "Maullín", 
+    "Osorno", 
+    "Palena", 
+    "Puerto Montt", 
+    "Puerto Octay", 
+    "Puerto Varas", 
+    "Puqueldón", 
+    "Purranque", 
+    "Puyehue", 
+    "Queilén", 
+    "Quellón", 
+    "Quemchi", 
+    "Quinchao", 
+    "Río Negro", 
+    "San Juan de la Costa", 
+    "San Pablo"
 ];
 
 function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
-    const [nombre, setNombre] = useState(candidato?.nombre || "");
+    const nombresIniciales = candidato?.nombres || (candidato?.nombre ? candidato.nombre.split(" ").slice(0, -2).join(" ") || candidato.nombre.split(" ")[0] : "");
+    const apellidosIniciales = candidato?.apellidos || (candidato?.nombre ? candidato.nombre.split(" ").slice(-2).join(" ") : "");
+
     const [rut, setRut] = useState(candidato?.rut || "");
+    const [nombres, setNombres] = useState(nombresIniciales);
+    const [apellidos, setApellidos] = useState(apellidosIniciales);
+    const [direccion, setDireccion] = useState(candidato?.direccion || "");
+    const [comuna, setComuna] = useState(candidato?.comuna || candidato?.planta || "Puerto Montt");
+    const [fechaNacimiento, setFechaNacimiento] = useState(candidato?.fecha_nacimiento || "");
+    const [cvPdf, setCvPdf] = useState(candidato?.cv_pdf || candidato?.cvArchivo || "");
     const [especialidad, setEspecialidad] = useState(candidato?.especialidad || "");
-    const [planta, setPlanta] = useState(candidato?.planta || "Puerto Montt");
     const [antecedentes, setAntecedentes] = useState(candidato?.antecedentes || "");
     const [error, setError] = useState("");
 
@@ -29,27 +59,35 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!nombre.trim()) {
-            setError("El nombre completo es obligatorio.");
-            return;
-        }
         if (!rut.trim()) {
             setError("El RUT es obligatorio.");
             return;
         }
-        if (!especialidad.trim()) {
-            setError("La especialidad o profesión es obligatoria.");
+        if (!nombres.trim()) {
+            setError("Los nombres son obligatorios.");
+            return;
+        }
+        if (!apellidos.trim()) {
+            setError("Los apellidos son obligatorios.");
             return;
         }
 
         setError("");
 
+        const nombreCompleto = `${nombres.trim()} ${apellidos.trim()}`;
+
         onGuardar({
             ...candidato,
-            nombre: nombre.trim(),
             rut: rut.trim(),
-            especialidad: especialidad.trim(),
-            planta,
+            nombres: nombres.trim(),
+            apellidos: apellidos.trim(),
+            nombre: nombreCompleto,
+            direccion: direccion.trim(),
+            comuna: comuna.trim(),
+            planta: comuna.trim(), // Sincronizado para retrocompatibilidad
+            fecha_nacimiento: fechaNacimiento,
+            cv_pdf: cvPdf.trim() || `cv_${nombres.trim().toLowerCase().replace(/\s+/g, "_")}.pdf`,
+            especialidad: especialidad.trim() || candidato.especialidad || "Postulante General",
             antecedentes: antecedentes.trim(),
         });
 
@@ -63,9 +101,10 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
+                style={{ maxWidth: "680px" }}
             >
                 <div className="modal-header">
-                    <h3>✏️ Modificar Información del Candidato (RF03)</h3>
+                    <h3>✏️ Modificar Información del Postulante (RF03)</h3>
                     <button
                         type="button"
                         className="modal-cerrar-btn"
@@ -86,18 +125,6 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
 
                         <div className="form-grid">
                             <div className="form-grupo">
-                                <label htmlFor="editar-nombre">Nombre Completo *</label>
-                                <input
-                                    id="editar-nombre"
-                                    type="text"
-                                    className="form-input"
-                                    value={nombre}
-                                    onChange={(e) => setNombre(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-grupo">
                                 <label htmlFor="editar-rut">RUT *</label>
                                 <input
                                     id="editar-rut"
@@ -105,41 +132,103 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                                     className="form-input"
                                     value={rut}
                                     onChange={(e) => setRut(e.target.value)}
+                                    placeholder="12.345.678-9"
                                     required
                                 />
                             </div>
 
                             <div className="form-grupo">
-                                <label htmlFor="editar-especialidad">Especialidad / Profesión *</label>
+                                <label htmlFor="editar-fecha-nac">Fecha de Nacimiento</label>
+                                <input
+                                    id="editar-fecha-nac"
+                                    type="date"
+                                    className="form-input"
+                                    value={fechaNacimiento}
+                                    onChange={(e) => setFechaNacimiento(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-nombres">Nombres *</label>
+                                <input
+                                    id="editar-nombres"
+                                    type="text"
+                                    className="form-input"
+                                    value={nombres}
+                                    onChange={(e) => setNombres(e.target.value)}
+                                    placeholder="Ej. Luis Andrés"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-apellidos">Apellidos *</label>
+                                <input
+                                    id="editar-apellidos"
+                                    type="text"
+                                    className="form-input"
+                                    value={apellidos}
+                                    onChange={(e) => setApellidos(e.target.value)}
+                                    placeholder="Ej. Mancilla Peralta"
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-direccion">Dirección</label>
+                                <input
+                                    id="editar-direccion"
+                                    type="text"
+                                    className="form-input"
+                                    value={direccion}
+                                    onChange={(e) => setDireccion(e.target.value)}
+                                    placeholder="Ej. Av. Angelmó 1420"
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-comuna">Comuna</label>
+                                <select
+                                    id="editar-comuna"
+                                    className="form-select"
+                                    value={comuna}
+                                    onChange={(e) => setComuna(e.target.value)}
+                                >
+                                    {COMUNAS.map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-cv">Nombre archivo CV (PDF)</label>
+                                <input
+                                    id="editar-cv"
+                                    type="text"
+                                    className="form-input"
+                                    value={cvPdf}
+                                    onChange={(e) => setCvPdf(e.target.value)}
+                                    placeholder="cv_postulante.pdf"
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="editar-especialidad">Especialidad / Cargo</label>
                                 <input
                                     id="editar-especialidad"
                                     type="text"
                                     className="form-input"
                                     value={especialidad}
                                     onChange={(e) => setEspecialidad(e.target.value)}
-                                    required
+                                    placeholder="Ej. Operador Planta"
                                 />
-                            </div>
-
-                            <div className="form-grupo">
-                                <label htmlFor="editar-planta">Planta / Ubicación *</label>
-                                <select
-                                    id="editar-planta"
-                                    className="form-select"
-                                    value={planta}
-                                    onChange={(e) => setPlanta(e.target.value)}
-                                >
-                                    {PLANTAS.map((p) => (
-                                        <option key={p} value={p}>
-                                            {p}
-                                        </option>
-                                    ))}
-                                </select>
                             </div>
 
                             <div className="form-grupo form-col-span-2">
                                 <label htmlFor="editar-antecedentes">
-                                    Antecedentes, Experiencia Laboral y Salud
+                                    Antecedentes, Experiencia Laboral y Observaciones
                                 </label>
                                 <textarea
                                     id="editar-antecedentes"

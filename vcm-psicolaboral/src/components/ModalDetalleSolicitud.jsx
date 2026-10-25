@@ -1,10 +1,12 @@
 /** Modal de Consulta y Detalle de Solicitud de Evaluación (RF03, RF06, RF08, RF09)
  * @Autor Amaro Villalobos
- * Permite visualizar el desglose del postulante, actualizar su estado y
+ * Permite visualizar el desglose del postulante (RUT, nombres, apellidos, dirección,
+ * comuna, fecha de nacimiento, edad y CV), actualizar su estado y
  * registrar la evaluación psicológica formal (Fecha, Dictamen y Observaciones).
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
+import { calcularEdad } from "../utils/calcularRut";
 
 const obtenerFechaHoy = () => new Date().toISOString().split("T")[0];
 
@@ -36,17 +38,26 @@ function ModalDetalleSolicitud({
 
     const puedeEvaluar = rolActual === "evaluador";
 
+    const nombresMostrar = solicitud.nombres || (solicitud.nombre ? solicitud.nombre.split(" ").slice(0, -2).join(" ") || solicitud.nombre.split(" ")[0] : "—");
+    const apellidosMostrar = solicitud.apellidos || (solicitud.nombre ? solicitud.nombre.split(" ").slice(-2).join(" ") : "—");
+    const edad = solicitud.fecha_nacimiento ? calcularEdad(solicitud.fecha_nacimiento) : null;
+    const cvArchivo = solicitud.cv_pdf || solicitud.cvArchivo || (solicitud.nombre ? `cv_${solicitud.nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf` : null);
+
     const handleGuardarEvaluacion = (e) => {
         e.preventDefault();
         const nuevoEstado =
             resultadoPsicologico !== "Pendiente" ? "Finalizado" : solicitud.estado;
 
-        onGuardarEvaluacion(solicitud.id, {
-            resultadoPsicologico,
-            fechaEvaluacion,
-            conclusiones,
-            estado: nuevoEstado,
-        });
+        if (typeof onGuardarEvaluacion === "function") {
+            onGuardarEvaluacion(solicitud.id, {
+                resultadoPsicologico,
+                fechaEvaluacion,
+                conclusiones,
+                estado: nuevoEstado,
+            });
+        } else if (typeof onCambiarEstado === "function") {
+            onCambiarEstado(solicitud.id, nuevoEstado);
+        }
 
         setGuardadoExitoso(true);
         setTimeout(() => setGuardadoExitoso(false), 3000);
@@ -72,12 +83,13 @@ function ModalDetalleSolicitud({
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
+                style={{ maxWidth: "780px" }}
             >
                 <div className="modal-header">
                     <div>
-                        <h3 style={{ margin: 0 }}>Detalle de Evaluación Psicolaboral</h3>
+                        <h3 style={{ margin: 0 }}>Ficha de Postulación y Evaluación Psicolaboral</h3>
                         <span style={{ fontSize: "12px", color: "var(--color-texto-atenuado, #666)" }}>
-                            ID Solicitud: #{solicitud.id} · Postulante: {solicitud.nombre}
+                            ID: #{solicitud.id} · Postulante: {nombresMostrar} {apellidosMostrar} (RUT: {solicitud.rut})
                         </span>
                     </div>
                     <button
@@ -109,27 +121,64 @@ function ModalDetalleSolicitud({
                         </div>
                     )}
 
-                    {/* 1. Antecedentes del Candidato */}
-                    <h4 className="form-seccion-titulo">1. Antecedentes del Candidato (RF03)</h4>
+                    {/* 1. Atributos del Postulante */}
+                    <h4 className="form-seccion-titulo">1. Atributos del Postulante</h4>
                     <div className="form-grid">
                         <div>
-                            <strong>Nombre:</strong>
-                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.nombre}</p>
-                        </div>
-                        <div>
                             <strong>RUT:</strong>
-                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.rut}</p>
+                            <p style={{ margin: "4px 0 12px 0", fontWeight: "bold" }}>{solicitud.rut}</p>
                         </div>
                         <div>
-                            <strong>Especialidad:</strong>
-                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.especialidad}</p>
+                            <strong>Nombres:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>{nombresMostrar}</p>
                         </div>
                         <div>
-                            <strong>Planta / Ubicación:</strong>
-                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.planta}</p>
+                            <strong>Apellidos:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>{apellidosMostrar}</p>
+                        </div>
+                        <div>
+                            <strong>Fecha de Nacimiento / Edad:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>
+                                {solicitud.fecha_nacimiento ? (
+                                    <span>
+                                        {solicitud.fecha_nacimiento}{" "}
+                                        {edad !== null && (
+                                            <span style={{ backgroundColor: "#e8f5e9", color: "#2e7d32", padding: "2px 6px", borderRadius: "10px", fontSize: "11px", fontWeight: "bold" }}>
+                                                ({edad} años)
+                                            </span>
+                                        )}
+                                    </span>
+                                ) : (
+                                    <span style={{ color: "#888", fontStyle: "italic" }}>No registrada</span>
+                                )}
+                            </p>
+                        </div>
+                        <div>
+                            <strong>Dirección:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.direccion || "Dirección no informada"}</p>
+                        </div>
+                        <div>
+                            <strong>Comuna:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>
+                                <span style={{ backgroundColor: "#f0f4f8", color: "#334e68", padding: "2px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "600" }}>
+                                    {solicitud.comuna || solicitud.planta || "No informada"}
+                                </span>
+                            </p>
                         </div>
                         <div className="form-col-span-2">
-                            <strong>Experiencia / Antecedentes:</strong>
+                            <strong>Currículum Vitae (CV PDF):</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>
+                                {cvArchivo ? (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e3f2fd", color: "#0d47a1", padding: "5px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>
+                                        📄 {cvArchivo}
+                                    </span>
+                                ) : (
+                                    <span style={{ color: "#888", fontStyle: "italic" }}>Sin archivo adjunto</span>
+                                )}
+                            </p>
+                        </div>
+                        <div className="form-col-span-2">
+                            <strong>Experiencia / Antecedentes Laborales:</strong>
                             <p
                                 style={{
                                     margin: "4px 0 12px 0",
@@ -201,7 +250,7 @@ function ModalDetalleSolicitud({
                                     className="form-select"
                                     value={solicitud.estado}
                                     onChange={(e) =>
-                                        onCambiarEstado(solicitud.id, e.target.value)
+                                        onCambiarEstado && onCambiarEstado(solicitud.id, e.target.value)
                                     }
                                     style={{ marginTop: "4px", width: "100%", maxWidth: "300px" }}
                                 >

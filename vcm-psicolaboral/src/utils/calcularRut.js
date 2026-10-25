@@ -6,7 +6,7 @@
  * @autor Luxorar 
  */
 
-function calcularRut(rut, verificador) {
+export function calcularRut(rut, verificador) {
     if (!rut || !verificador || rut.toString().length < 7) return false;
 
     let ordenRut = rut.toString().split('');
@@ -39,3 +39,23 @@ function calcularRut(rut, verificador) {
         return false;
     }
 }
+
+/**
+ * Calcula la edad en años a partir de una fecha de nacimiento (YYYY-MM-DD o Date)
+ * @param {string|Date} fechaNacimiento
+ * @returns {number|null} Edad en años cumplidos o null si es inválida
+ */
+export function calcularEdad(fechaNacimiento) {
+    if (!fechaNacimiento) return null;
+    const nacimiento = new Date(fechaNacimiento);
+    if (isNaN(nacimiento.getTime())) return null;
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const mes = hoy.getMonth() - nacimiento.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+        edad--;
+    }
+    return edad >= 0 ? edad : null;
+}
+
+export default calcularRut;

@@ -3,7 +3,7 @@
  * Conecta con el backend Express y la base de datos persistente SQLite.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const API_BASE_URL = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "http://localhost:4000/api";
 
 async function request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;

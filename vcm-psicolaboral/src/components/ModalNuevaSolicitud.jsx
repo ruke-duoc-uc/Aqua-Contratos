@@ -1,18 +1,42 @@
 /** Modal y Formulario para Registro de Candidatos y Emisión de Solicitudes (RF02, RF04, RF05)
  * @Autor Amaro Villalobos
- * Permite ingresar los datos del postulante y los parámetros de la evaluación psicolaboral.
+ * Permite ingresar los datos del postulante (RUT, nombres, apellidos, dirección, comuna,
+ * fecha de nacimiento y CV) y los parámetros de la evaluación psicolaboral.
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 
-const PLANTAS = [
-    "Puerto Montt",
-    "Osorno",
-    "Castro",
-    "Calbuco",
-    "Frutillar",
-    "Puerto Varas",
-    "Ancud"
+const COMUNAS = [
+    "Ancud", 
+    "Calbuco", 
+    "Castro", 
+    "Chaitén", 
+    "Chonchi", 
+    "Cochamó",
+    "Curaco de Vélez", 
+    "Dalcahue", 
+    "Fresia", 
+    "Frutillar", 
+    "Futaleufú", 
+    "Hualaihué", 
+    "Llanquihue", 
+    "Los Muermos", 
+    "Maullín", 
+    "Osorno", 
+    "Palena", 
+    "Puerto Montt", 
+    "Puerto Octay", 
+    "Puerto Varas", 
+    "Puqueldón", 
+    "Purranque", 
+    "Puyehue", 
+    "Queilén", 
+    "Quellón", 
+    "Quemchi", 
+    "Quinchao", 
+    "Río Negro", 
+    "San Juan de la Costa", 
+    "San Pablo"
 ];
 
 const FAMILIAS_CARGO = [
@@ -20,7 +44,8 @@ const FAMILIAS_CARGO = [
     "Mantenimiento Industrial",
     "Administración y Finanzas",
     "Logística y Abastecimiento",
-    "Calidad y Prevención de Riesgos"
+    "Calidad y Prevención de Riesgos",
+    "Sistemas y TI"
 ];
 
 const EVALUADORES = [
@@ -34,10 +59,14 @@ const generarId = () => Date.now();
 const obtenerFechaActual = () => new Date();
 
 function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
-    const [nombre, setNombre] = useState("");
     const [rut, setRut] = useState("");
+    const [nombres, setNombres] = useState("");
+    const [apellidos, setApellidos] = useState("");
+    const [direccion, setDireccion] = useState("");
+    const [comuna, setComuna] = useState("Puerto Montt");
+    const [fechaNacimiento, setFechaNacimiento] = useState("");
+    const [cvPdf, setCvPdf] = useState("");
     const [especialidad, setEspecialidad] = useState("");
-    const [planta, setPlanta] = useState("Puerto Montt");
     const [antecedentes, setAntecedentes] = useState("");
 
     const [familiaCargo, setFamiliaCargo] = useState("Operaciones Productivas");
@@ -48,10 +77,14 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
     const [error, setError] = useState("");
 
     const limpiarFormulario = () => {
-        setNombre("");
         setRut("");
+        setNombres("");
+        setApellidos("");
+        setDireccion("");
+        setComuna("Puerto Montt");
+        setFechaNacimiento("");
+        setCvPdf("");
         setEspecialidad("");
-        setPlanta("Puerto Montt");
         setAntecedentes("");
         setFamiliaCargo("Operaciones Productivas");
         setCargo("");
@@ -69,16 +102,16 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
         e.preventDefault();
 
         // Validaciones mínimas obligatorias según RF02 y RF05
-        if (!nombre.trim()) {
-            setError("El nombre completo del candidato es obligatorio.");
-            return;
-        }
         if (!rut.trim()) {
-            setError("El RUT del candidato es obligatorio.");
+            setError("El RUT del postulante es obligatorio.");
             return;
         }
-        if (!especialidad.trim()) {
-            setError("La especialidad o profesión es obligatoria.");
+        if (!nombres.trim()) {
+            setError("Los nombres del postulante son obligatorios.");
+            return;
+        }
+        if (!apellidos.trim()) {
+            setError("Los apellidos del postulante son obligatorios.");
             return;
         }
         if (!cargo.trim()) {
@@ -92,19 +125,30 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
 
         setError("");
 
+        const nombreCompleto = `${nombres.trim()} ${apellidos.trim()}`;
+        const cvGenerado = cvPdf.trim() || `cv_${nombres.trim().toLowerCase().replace(/\s+/g, "_")}.pdf`;
+
         const nuevaSolicitud = {
             id: generarId(),
-            nombre: nombre.trim(),
             rut: rut.trim(),
-            especialidad: especialidad.trim(),
-            planta,
+            nombres: nombres.trim(),
+            apellidos: apellidos.trim(),
+            nombre: nombreCompleto,
+            direccion: direccion.trim(),
+            comuna: comuna.trim(),
+            planta: comuna.trim(), // Sincronizado para retrocompatibilidad
+            fecha_nacimiento: fechaNacimiento,
+            cv_pdf: cvGenerado,
+            cvArchivo: cvGenerado,
+            especialidad: especialidad.trim() || cargo.trim(),
             antecedentes: antecedentes.trim(),
             familiaCargo,
             cargo: cargo.trim(),
             evaluador,
             observaciones: observaciones.trim(),
             fecha: obtenerFechaActual(),
-            estado: "Pendiente"
+            estado: "Pendiente",
+            resultadoPsicologico: "Pendiente"
         };
 
         onGuardar(nuevaSolicitud);
@@ -121,9 +165,10 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
+                style={{ maxWidth: "720px" }}
             >
                 <div className="modal-header">
-                    <h3>+ Nueva Solicitud de Evaluación Psicolaboral</h3>
+                    <h3>+ Nueva Solicitud y Registro de Postulante</h3>
                     <button
                         type="button"
                         className="modal-cerrar-btn"
@@ -142,36 +187,102 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                             </div>
                         )}
 
-                        <h4 className="form-seccion-titulo">1. Datos del Candidato (RF02)</h4>
+                        <h4 className="form-seccion-titulo">1. Atributos del Postulante (RF02)</h4>
                         <div className="form-grid">
                             <div className="form-grupo">
-                                <label htmlFor="nombre">Nombre Completo *</label>
+                                <label htmlFor="nuevo-rut">RUT *</label>
                                 <input
-                                    id="nombre"
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="Ej: Juan Pérez González"
-                                    value={nombre}
-                                    onChange={(e) => setNombre(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="form-grupo">
-                                <label htmlFor="rut">RUT *</label>
-                                <input
-                                    id="rut"
+                                    id="nuevo-rut"
                                     type="text"
                                     className="form-input"
                                     placeholder="Ej: 19.876.543-2"
                                     value={rut}
                                     onChange={(e) => setRut(e.target.value)}
+                                    required
                                 />
                             </div>
 
                             <div className="form-grupo">
-                                <label htmlFor="especialidad">Especialidad / Profesión *</label>
+                                <label htmlFor="nuevo-fecha-nac">Fecha de Nacimiento</label>
                                 <input
-                                    id="especialidad"
+                                    id="nuevo-fecha-nac"
+                                    type="date"
+                                    className="form-input"
+                                    value={fechaNacimiento}
+                                    onChange={(e) => setFechaNacimiento(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-nombres">Nombres *</label>
+                                <input
+                                    id="nuevo-nombres"
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Ej: Juan Andrés"
+                                    value={nombres}
+                                    onChange={(e) => setNombres(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-apellidos">Apellidos *</label>
+                                <input
+                                    id="nuevo-apellidos"
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Ej: Pérez González"
+                                    value={apellidos}
+                                    onChange={(e) => setApellidos(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-direccion">Dirección</label>
+                                <input
+                                    id="nuevo-direccion"
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Ej: Av. Angelmó 1420"
+                                    value={direccion}
+                                    onChange={(e) => setDireccion(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-comuna">Comuna *</label>
+                                <select
+                                    id="nuevo-comuna"
+                                    className="form-select"
+                                    value={comuna}
+                                    onChange={(e) => setComuna(e.target.value)}
+                                >
+                                    {COMUNAS.map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-cv">Nombre archivo CV (PDF)</label>
+                                <input
+                                    id="nuevo-cv"
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Ej: cv_juan_perez.pdf"
+                                    value={cvPdf}
+                                    onChange={(e) => setCvPdf(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="form-grupo">
+                                <label htmlFor="nuevo-especialidad">Especialidad / Profesión</label>
+                                <input
+                                    id="nuevo-especialidad"
                                     type="text"
                                     className="form-input"
                                     placeholder="Ej: Técnico en Acuicultura / Mecánica"
@@ -180,26 +291,10 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                                 />
                             </div>
 
-                            <div className="form-grupo">
-                                <label htmlFor="planta">Planta / Ubicación *</label>
-                                <select
-                                    id="planta"
-                                    className="form-select"
-                                    value={planta}
-                                    onChange={(e) => setPlanta(e.target.value)}
-                                >
-                                    {PLANTAS.map((p) => (
-                                        <option key={p} value={p}>
-                                            {p}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
                             <div className="form-grupo form-col-span-2">
-                                <label htmlFor="antecedentes">Antecedentes / Experiencia Laboral</label>
+                                <label htmlFor="nuevo-antecedentes">Antecedentes / Experiencia Laboral</label>
                                 <textarea
-                                    id="antecedentes"
+                                    id="nuevo-antecedentes"
                                     rows="2"
                                     className="form-textarea"
                                     placeholder="Experiencia previa en el rubro, referencias o estado de salud laboral..."
@@ -236,11 +331,12 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                                     placeholder="Ej: Operador de Enfriamiento / Analista"
                                     value={cargo}
                                     onChange={(e) => setCargo(e.target.value)}
+                                    required
                                 />
                             </div>
 
-                            <div className="form-grupo form-col-span-2">
-                                <label htmlFor="evaluador">Evaluador Psicolaboral Responsable *</label>
+                            <div className="form-grupo">
+                                <label htmlFor="evaluador">Evaluador Asignado *</label>
                                 <select
                                     id="evaluador"
                                     className="form-select"
@@ -256,12 +352,12 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                             </div>
 
                             <div className="form-grupo form-col-span-2">
-                                <label htmlFor="observaciones">Observaciones de la Solicitud</label>
+                                <label htmlFor="observaciones">Observaciones Iniciales de Reclutamiento</label>
                                 <textarea
                                     id="observaciones"
                                     rows="2"
                                     className="form-textarea"
-                                    placeholder="Comentarios adicionales o urgencia de contratación..."
+                                    placeholder="Comentarios para el evaluador psicolaboral..."
                                     value={observaciones}
                                     onChange={(e) => setObservaciones(e.target.value)}
                                 />
@@ -277,7 +373,7 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                         >
                             Cancelar
                         </button>
-                        <BotonOrange texto="Guardar Solicitud" type="submit" />
+                        <BotonOrange texto="Emitir Solicitud" type="submit" />
                     </div>
                 </form>
             </div>
