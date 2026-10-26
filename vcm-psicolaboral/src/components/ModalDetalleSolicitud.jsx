@@ -16,6 +16,7 @@ function ModalDetalleSolicitud({
     onCerrar,
     onCambiarEstado,
     onGuardarEvaluacion,
+    onCambiarFase,
     rolActual,
 }) {
     const [resultadoPsicologico, setResultadoPsicologico] = useState(
@@ -26,6 +27,9 @@ function ModalDetalleSolicitud({
     );
     const [conclusiones, setConclusiones] = useState(
         solicitud?.conclusiones || ""
+    );
+    const [faseActual, setFaseActual] = useState(
+        solicitud?.fase || "esperando respuesta"
     );
     const [guardadoExitoso, setGuardadoExitoso] = useState(false);
 
@@ -211,22 +215,22 @@ function ModalDetalleSolicitud({
                             <p style={{ margin: "4px 0 12px 0" }}>{fechaFormateada}</p>
                         </div>
                         <div>
-                            <strong>Evaluador Responsable:</strong>
-                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.evaluador}</p>
+                            <strong>Evaluador / Encargado Responsable:</strong>
+                            <p style={{ margin: "4px 0 12px 0" }}>{solicitud.evaluador || solicitud.encargado || "Sin asignar"}</p>
                         </div>
                         <div>
-                            <strong>Estado Actual:</strong>
+                            <strong>Condición / Fase Actual:</strong>
                             <p style={{ margin: "4px 0 12px 0" }}>
                                 <span
                                     className={`badge-estado badge-${
-                                        solicitud.estado.toLowerCase().includes("proceso")
+                                        (solicitud.estado || solicitud.fase || "").toLowerCase().includes("proceso") || (solicitud.fase || "").toLowerCase().includes("entrevista")
                                             ? "proceso"
-                                            : solicitud.estado.toLowerCase().includes("fin")
+                                            : (solicitud.estado || "").toLowerCase().includes("fin") || (solicitud.fase || "").toLowerCase().includes("aceptado")
                                             ? "finalizado"
                                             : "pendiente"
                                     }`}
                                 >
-                                    {solicitud.estado}
+                                    {solicitud.fase ? `Fase: ${solicitud.fase}` : (solicitud.estado || "Pendiente")}
                                 </span>
                             </p>
                         </div>
@@ -248,7 +252,7 @@ function ModalDetalleSolicitud({
                                 <select
                                     id="cambio-estado-select"
                                     className="form-select"
-                                    value={solicitud.estado}
+                                    value={solicitud.estado || "Pendiente"}
                                     onChange={(e) =>
                                         onCambiarEstado && onCambiarEstado(solicitud.id, e.target.value)
                                     }
