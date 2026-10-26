@@ -81,6 +81,12 @@ try {
         if (!nombresCol.includes("telefono")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN telefono TEXT;");
         if (!nombresCol.includes("infoMedica")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN infoMedica TEXT;");
         if (!nombresCol.includes("experienciaLaboral")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN experienciaLaboral TEXT;");
+        if (!nombresCol.includes("nombres")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN nombres TEXT;");
+        if (!nombresCol.includes("apellidos")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN apellidos TEXT;");
+        if (!nombresCol.includes("direccion")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN direccion TEXT;");
+        if (!nombresCol.includes("comuna")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN comuna TEXT;");
+        if (!nombresCol.includes("fecha_nacimiento")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN fecha_nacimiento TEXT;");
+        if (!nombresCol.includes("cv_pdf")) sqliteDb.exec("ALTER TABLE candidatos ADD COLUMN cv_pdf TEXT;");
     } catch {
         // Ignorar si ya existen
     }
@@ -411,21 +417,36 @@ export const db = {
         const familiaCargo = datos.familiaCargo?.trim() || "Operaciones Productivas";
         const planta = datos.planta?.trim() || null; // Opcional, ya que la planta es del puesto
 
+        const nombres = datos.nombres?.trim() || (datos.nombre ? datos.nombre.split(" ").slice(0, -2).join(" ") || datos.nombre.split(" ")[0] : "");
+        const apellidos = datos.apellidos?.trim() || (datos.nombre ? datos.nombre.split(" ").slice(-2).join(" ") : "");
+        const nombre = datos.nombre?.trim() || `${nombres} ${apellidos}`.trim() || "Postulante";
+        const direccion = datos.direccion?.trim() || "";
+        const comuna = datos.comuna?.trim() || planta || "Puerto Montt";
+        const fecha_nacimiento = datos.fecha_nacimiento || "";
+        const cv_pdf = datos.cv_pdf?.trim() || (nombre ? `cv_${nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf` : "cv_postulante.pdf");
+
         if (!useJsonFallback && sqliteDb) {
             const insert = sqliteDb.prepare(`
                 INSERT INTO candidatos (
-                    nombre, rut, email, telefono, especialidad, planta, cargo, familiaCargo,
+                    nombre, nombres, apellidos, rut, direccion, comuna, fecha_nacimiento, cv_pdf,
+                    email, telefono, especialidad, planta, cargo, familiaCargo,
                     fecha, evaluador, estado, antecedentes, infoMedica, experienciaLaboral,
                     resultadoPsicologico
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
 
             const res = insert.run(
-                datos.nombre.trim(),
+                nombre,
+                nombres,
+                apellidos,
                 datos.rut.trim(),
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
                 email,
                 telefono,
-                datos.especialidad.trim(),
+                (datos.especialidad || cargo).trim(),
                 planta,
                 cargo,
                 familiaCargo,
@@ -445,11 +466,17 @@ export const db = {
         const nuevoId = memoryStoreCandidatos.length > 0 ? Math.max(...memoryStoreCandidatos.map((c) => c.id)) + 1 : 1;
         const nuevoCandidato = {
             id: nuevoId,
-            nombre: datos.nombre.trim(),
+            nombre,
+            nombres,
+            apellidos,
             rut: datos.rut.trim(),
+            direccion,
+            comuna,
+            fecha_nacimiento,
+            cv_pdf,
             email,
             telefono,
-            especialidad: datos.especialidad.trim(),
+            especialidad: (datos.especialidad || cargo).trim(),
             planta,
             cargo,
             familiaCargo,
@@ -476,7 +503,8 @@ export const db = {
             const valores = [];
 
             const camposValidos = [
-                "nombre", "rut", "email", "telefono", "especialidad", "planta", "cargo",
+                "nombre", "nombres", "apellidos", "rut", "direccion", "comuna", "fecha_nacimiento", "cv_pdf",
+                "email", "telefono", "especialidad", "planta", "cargo",
                 "familiaCargo", "evaluador", "estado", "antecedentes", "infoMedica",
                 "experienciaLaboral", "resultadoPsicologico", "fechaEvaluacion", "conclusiones"
             ];

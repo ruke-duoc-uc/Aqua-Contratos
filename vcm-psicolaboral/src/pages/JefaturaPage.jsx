@@ -7,6 +7,7 @@ import BandejaInformesView from "../components/BandejaInformesView";
 import BotonOrange from "../components/BotonOrange";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { api } from "../services/api";
+import { cargarCandidatosGlobales, guardarCandidatosGlobales, EVENTO_ACTUALIZACION_CANDIDATOS } from "../services/candidatosStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -17,16 +18,16 @@ import PanelSolicitudes from "../components/PanelSolicitudes";
 const STORAGE_KEY = "aqua_contratos_datos_mvp_v1";
 
 const CANDIDATOS_INICIALES = [
-    { id: 1, nombre: "Luis Mancilla Peralta", rut: "21.756.200-7", especialidad: "Ing Software", planta: "Puerto Montt", cargo: "Desarrollador Full Stack", familiaCargo: "Sistemas y TI", fecha: new Date(2026, 9, 5), evaluador: "Amaro Villalobos Caseres", estado: "En revisión", antecedentes: "Experiencia en React y Node.js. Salud compatible para teletrabajo y planta.", resultadoPsicologico: "Pendiente" },
-    { id: 2, nombre: "Camila Soto Vargas", rut: "20.345.118-3", especialidad: "Prevención de Riesgos", planta: "Osorno", cargo: "Prevencionista de Faena", familiaCargo: "Calidad y Prevención de Riesgos", fecha: new Date(2026, 9, 4), evaluador: "Carolina Díaz Núñez", estado: "Pendiente", antecedentes: "2 años en plantas de salmónidos en la zona sur.", resultadoPsicologico: "Pendiente" },
-    { id: 3, nombre: "Matías Rojas Aguilar", rut: "19.872.456-K", especialidad: "Mecánica Industrial", planta: "Puerto Varas", cargo: "Técnico de Mantenimiento", familiaCargo: "Mantenimiento Industrial", fecha: new Date(2026, 9, 4), evaluador: "Amaro Villalobos Caseres", estado: "En proceso", antecedentes: "Especialista en bombas hidráulicas y líneas de faena.", resultadoPsicologico: "Pendiente" },
-    { id: 4, nombre: "Valentina Cárdenas Ruiz", rut: "21.034.789-5", especialidad: "Administración", planta: "Puerto Montt", cargo: "Asistente Administrativo", familiaCargo: "Administración y Finanzas", fecha: new Date(2026, 9, 3), evaluador: "Felipe Muñoz Parra", estado: "Finalizado", antecedentes: "Práctica profesional y experiencia en control de gestión.", resultadoPsicologico: "Recomendado", fechaEvaluacion: "2026-10-03", conclusiones: "Alta capacidad de trabajo en equipo y apego a protocolos de la empresa." },
-    { id: 5, nombre: "Sebastián Oyarzún Leal", rut: "18.456.321-2", especialidad: "Electricidad", planta: "Castro", cargo: "Eléctrico de Turno", familiaCargo: "Mantenimiento Industrial", fecha: new Date(2026, 9, 2), evaluador: "Carolina Díaz Núñez", estado: "Pendiente", antecedentes: "Certificación SEC vigente clase B.", resultadoPsicologico: "Pendiente" },
-    { id: 6, nombre: "Javiera Barría Montecinos", rut: "20.987.654-1", especialidad: "Logística", planta: "Calbuco", cargo: "Coordinador de Despacho", familiaCargo: "Logística y Abastecimiento", fecha: new Date(2026, 9, 2), evaluador: "Felipe Muñoz Parra", estado: "En proceso", antecedentes: "Experiencia en bodegas de frío y control de cadena de valor.", resultadoPsicologico: "Pendiente" },
-    { id: 7, nombre: "Diego Andrade Contreras", rut: "19.123.456-8", especialidad: "Soldadura", planta: "Ancud", cargo: "Soldador Calificado", familiaCargo: "Operaciones Productivas", fecha: new Date(2026, 9, 1), evaluador: "Amaro Villalobos Caseres", estado: "En revisión", antecedentes: "Calificación 6G vigente.", resultadoPsicologico: "Pendiente" },
-    { id: 8, nombre: "Francisca Mayorga Tapia", rut: "21.456.098-6", especialidad: "Contabilidad", planta: "Frutillar", cargo: "Analista Contable", familiaCargo: "Administración y Finanzas", fecha: new Date(2026, 8, 30), evaluador: "Carolina Díaz Núñez", estado: "Finalizado", antecedentes: "Experiencia con ERP SAP y facturación electrónica.", resultadoPsicologico: "Recomendado con observaciones", fechaEvaluacion: "2026-10-01", conclusiones: "Cumple con el perfil técnico, requiere seguimiento en manejo de presión en cierres contables." },
-    { id: 9, nombre: "Nicolás Hernández Soto", rut: "20.678.912-4", especialidad: "Ing Civil", planta: "Puerto Montt", cargo: "Ingeniero de Infraestructura", familiaCargo: "Operaciones Productivas", fecha: new Date(2026, 8, 29), evaluador: "Felipe Muñoz Parra", estado: "Pendiente", antecedentes: "Supervisión de obras marítimas y concesiones acuícolas.", resultadoPsicologico: "Pendiente" },
-    { id: 10, nombre: "Constanza Vidal Bahamonde", rut: "19.765.432-9", especialidad: "Enfermería", planta: "Osorno", cargo: "Enfermera Ocupacional", familiaCargo: "Calidad y Prevención de Riesgos", fecha: new Date(2026, 8, 28), evaluador: "Amaro Villalobos Caseres", estado: "Finalizado", antecedentes: "Experiencia en salas de primeros auxilios y protocolos sanitarios.", resultadoPsicologico: "Recomendado", fechaEvaluacion: "2026-09-30", conclusiones: "Perfil excelente con alta empatía y vocación de servicio para personal de planta." },
+    { id: 1, rut: '21.756.200-7', nombres: 'Luis Andrés', apellidos: 'Mancilla Peralta', nombre: 'Luis Mancilla Peralta', direccion: 'Av. Angelmó 1420', comuna: 'Puerto Montt', fecha_nacimiento: '1998-05-14', cv_pdf: 'cv_luis_mancilla.pdf', especialidad: 'Ing Software', planta: 'Puerto Montt', cargo: 'Desarrollador Full Stack', familiaCargo: 'Sistemas y TI', fecha: new Date(2026, 9, 5), evaluador: 'Amaro Villalobos Caseres', estado: 'En revisión', antecedentes: 'Experiencia en React y Node.js. Salud compatible para teletrabajo y planta.', resultadoPsicologico: 'Pendiente' },
+    { id: 2, rut: '20.345.118-3', nombres: 'Camila Ignacia', apellidos: 'Soto Vargas', nombre: 'Camila Soto Vargas', direccion: 'Calle Mackenna 540', comuna: 'Osorno', fecha_nacimiento: '2000-03-22', cv_pdf: 'cv_camila_soto.pdf', especialidad: 'Prevención de Riesgos', planta: 'Osorno', cargo: 'Prevencionista de Faena', familiaCargo: 'Calidad y Prevención de Riesgos', fecha: new Date(2026, 9, 4), evaluador: 'Carolina Díaz Núñez', estado: 'Pendiente', antecedentes: '2 años en plantas de salmónidos en la zona sur.', resultadoPsicologico: 'Pendiente' },
+    { id: 3, rut: '19.872.456-K', nombres: 'Matías Nicolás', apellidos: 'Rojas Aguilar', nombre: 'Matías Rojas Aguilar', direccion: 'San Francisco 320', comuna: 'Puerto Varas', fecha_nacimiento: '1997-11-08', cv_pdf: 'cv_matias_rojas.pdf', especialidad: 'Mecánica Industrial', planta: 'Puerto Varas', cargo: 'Técnico de Mantenimiento', familiaCargo: 'Mantenimiento Industrial', fecha: new Date(2026, 9, 4), evaluador: 'Amaro Villalobos Caseres', estado: 'En proceso', antecedentes: 'Especialista en bombas hidráulicas y líneas de faena.', resultadoPsicologico: 'Pendiente' },
+    { id: 4, rut: '21.034.789-5', nombres: 'Valentina Paz', apellidos: 'Cárdenas Ruiz', nombre: 'Valentina Cárdenas Ruiz', direccion: 'Los Alerces 890', comuna: 'Puerto Montt', fecha_nacimiento: '1999-08-30', cv_pdf: 'cv_valentina_cardenas.pdf', especialidad: 'Administración', planta: 'Puerto Montt', cargo: 'Asistente Administrativo', familiaCargo: 'Administración y Finanzas', fecha: new Date(2026, 9, 3), evaluador: 'Felipe Muñoz Parra', estado: 'Finalizado', antecedentes: 'Práctica profesional y experiencia en control de gestión.', resultadoPsicologico: 'Recomendado', fechaEvaluacion: '2026-10-03', conclusiones: 'Alta capacidad de trabajo en equipo y apego a protocolos de la empresa.' },
+    { id: 5, rut: '18.456.321-2', nombres: 'Sebastián Alonso', apellidos: 'Oyarzún Leal', nombre: 'Sebastián Oyarzún Leal', direccion: 'Gamboa Alto 210', comuna: 'Castro', fecha_nacimiento: '1994-01-19', cv_pdf: 'cv_sebastian_oyarzun.pdf', especialidad: 'Electricidad', planta: 'Castro', cargo: 'Eléctrico de Turno', familiaCargo: 'Mantenimiento Industrial', fecha: new Date(2026, 9, 2), evaluador: 'Carolina Díaz Núñez', estado: 'Pendiente', antecedentes: 'Certificación SEC vigente clase B.', resultadoPsicologico: 'Pendiente' },
+    { id: 6, rut: '20.987.654-1', nombres: 'Javiera Belén', apellidos: 'Barría Montecinos', nombre: 'Javiera Barría Montecinos', direccion: 'Costanera Sur 77', comuna: 'Calbuco', fecha_nacimiento: '2001-09-12', cv_pdf: 'cv_javiera_barria.pdf', especialidad: 'Logística', planta: 'Calbuco', cargo: 'Coordinador de Despacho', familiaCargo: 'Logística y Abastecimiento', fecha: new Date(2026, 9, 2), evaluador: 'Felipe Muñoz Parra', estado: 'En proceso', antecedentes: 'Experiencia en bodegas de frío y control de cadena de valor.', resultadoPsicologico: 'Pendiente' },
+    { id: 7, rut: '19.123.456-8', nombres: 'Diego Esteban', apellidos: 'Andrade Contreras', nombre: 'Diego Andrade Contreras', direccion: 'Almirante Latorre 405', comuna: 'Ancud', fecha_nacimiento: '1996-06-25', cv_pdf: 'cv_diego_andrade.pdf', especialidad: 'Soldadura', planta: 'Ancud', cargo: 'Soldador Calificado', familiaCargo: 'Operaciones Productivas', fecha: new Date(2026, 9, 1), evaluador: 'Amaro Villalobos Caseres', estado: 'En revisión', antecedentes: 'Calificación 6G vigente.', resultadoPsicologico: 'Pendiente' },
+    { id: 8, rut: '21.456.098-6', nombres: 'Francisca Andrea', apellidos: 'Mayorga Tapia', nombre: 'Francisca Mayorga Tapia', direccion: 'Av. Philippi 123', comuna: 'Frutillar', fecha_nacimiento: '2000-12-04', cv_pdf: 'cv_francisca_mayorga.pdf', especialidad: 'Contabilidad', planta: 'Frutillar', cargo: 'Analista Contable', familiaCargo: 'Administración y Finanzas', fecha: new Date(2026, 8, 30), evaluador: 'Carolina Díaz Núñez', estado: 'Finalizado', antecedentes: 'Experiencia con ERP SAP y facturación electrónica.', resultadoPsicologico: 'Recomendado con observaciones', fechaEvaluacion: '2026-10-01', conclusiones: 'Cumple con el perfil técnico, requiere seguimiento en manejo de presión en cierres contables.' },
+    { id: 9, rut: '20.678.912-4', nombres: 'Nicolás Alejandro', apellidos: 'Hernández Soto', nombre: 'Nicolás Hernández Soto', direccion: 'Pelluco Alto 615', comuna: 'Puerto Montt', fecha_nacimiento: '1999-04-18', cv_pdf: 'cv_nicolas_hernandez.pdf', especialidad: 'Ing Civil', planta: 'Puerto Montt', cargo: 'Ingeniero de Infraestructura', familiaCargo: 'Operaciones Productivas', fecha: new Date(2026, 8, 29), evaluador: 'Felipe Muñoz Parra', estado: 'Pendiente', antecedentes: 'Supervisión de obras marítimas y concesiones acuícolas.', resultadoPsicologico: 'Pendiente' },
+    { id: 10, rut: '19.765.432-9', nombres: 'Constanza Elena', apellidos: 'Vidal Bahamonde', nombre: 'Constanza Vidal Bahamonde', direccion: 'Manuel Rodríguez 820', comuna: 'Osorno', fecha_nacimiento: '1997-07-29', cv_pdf: 'cv_constanza_vidal.pdf', especialidad: 'Enfermería', planta: 'Osorno', cargo: 'Enfermera Ocupacional', familiaCargo: 'Calidad y Prevención de Riesgos', fecha: new Date(2026, 8, 28), evaluador: 'Amaro Villalobos Caseres', estado: 'Finalizado', antecedentes: 'Experiencia en salas de primeros auxilios y protocolos sanitarios.', resultadoPsicologico: 'Recomendado', fechaEvaluacion: '2026-09-30', conclusiones: 'Perfil excelente con alta empatía y vocación de servicio para personal de planta.' },
 ];
 
 const PLANTAS_DISPONIBLES = [
@@ -51,10 +52,21 @@ const cargarDatosIniciales = () => {
         const datos = localStorage.getItem(STORAGE_KEY);
         if (datos) {
             const parsed = JSON.parse(datos);
-            return parsed.map((item) => ({
-                ...item,
-                fecha: new Date(item.fecha),
-            }));
+            return parsed.map((item) => {
+                const nombres = item.nombres || (item.nombre ? item.nombre.split(' ').slice(0, -2).join(' ') || item.nombre.split(' ')[0] : '');
+                const apellidos = item.apellidos || (item.nombre ? item.nombre.split(' ').slice(-2).join(' ') : '');
+                return {
+                    ...item,
+                    nombres: item.nombres || nombres,
+                    apellidos: item.apellidos || apellidos,
+                    nombre: item.nombre || (nombres + ' ' + apellidos).trim(),
+                    direccion: item.direccion || 'Dirección no informada',
+                    comuna: item.comuna || item.planta || 'Puerto Montt',
+                    fecha_nacimiento: item.fecha_nacimiento || '1998-01-01',
+                    cv_pdf: item.cv_pdf || item.cvArchivo || (item.nombre ? 'cv_' + item.nombre.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.pdf' : 'cv_postulante.pdf'),
+                    fecha: new Date(item.fecha),
+                };
+            });
         }
     } catch {
         // En caso de error de lectura, usa los datos estáticos
@@ -65,7 +77,7 @@ const cargarDatosIniciales = () => {
 function JefaturaPage({ onVolver }) {
     const rolActual = "jefatura";
     const [tabActiva, setTabActiva] = useState("dashboard");
-    const [candidatos, setCandidatos] = useState(cargarDatosIniciales);
+    const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
     const [informes, setInformes] = useState(cargarInformesIniciales);
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
@@ -73,6 +85,20 @@ function JefaturaPage({ onVolver }) {
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [modalCrearInformeAbierto, setModalCrearInformeAbierto] = useState(false);
     const [informeSeleccionado, setInformeSeleccionado] = useState(null);
+
+    // Sincronización en tiempo real con postulantes inscritos desde la pantalla pública
+    useEffect(() => {
+        const handleRecargar = () => {
+            const actualizados = cargarCandidatosGlobales();
+            setCandidatos(actualizados);
+        };
+        window.addEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+        window.addEventListener("storage", handleRecargar);
+        return () => {
+            window.removeEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+            window.removeEventListener("storage", handleRecargar);
+        };
+    }, []);
 
     // Filtros de búsqueda (RF07)
     const [busqueda, setBusqueda] = useState("");

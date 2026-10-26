@@ -81,9 +81,9 @@ export default function BandejaInformesView({
                     </span>
                 </div>
 
-                {esJefe && (
+                {onAbrirCrear && (
                     <BotonOrange
-                        texto="+ Solicitar Informe de Candidato"
+                        texto="+ Solicitar Informe / Formular Preguntas"
                         onClick={onAbrirCrear}
                     />
                 )}

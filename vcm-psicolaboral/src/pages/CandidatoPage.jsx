@@ -22,6 +22,12 @@ import { NARANJA } from "../components/Estilos";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import EstadoVacio from "../components/EstadoVacio";
 import { useState, useEffect, useMemo } from "react";
+import { registrarPostulanteGlobal } from "../services/candidatosStorage";
+import {
+    crearPostulacionGlobal,
+    cargarPostulacionesGlobales,
+    EVENTO_ACTUALIZACION_POSTULACIONES,
+} from "../services/postulacionesStorage";
 
 /* ============================== CONSTANTES ============================== */
 
@@ -178,6 +184,39 @@ function CandidatoPage({ onVolver }) {
         guardarPostulacionesLocales(postulaciones);
     }, [postulaciones]);
 
+    /* Sincronización en tiempo real con fases y entrevistas actualizadas por los empleados */
+    useEffect(() => {
+        const handleSyncPostulaciones = () => {
+            const globales = cargarPostulacionesGlobales();
+            setPostulaciones((locales) =>
+                locales.map((loc) => {
+                    const match = globales.find(
+                        (g) =>
+                            g.id === loc.id ||
+                            (g.rut && loc.rut && g.rut === loc.rut && (g.puestoTitulo === loc.cargo || g.puestoId === loc.puestoTrabajoId))
+                    );
+                    if (match) {
+                        return {
+                            ...loc,
+                            fase: match.fase,
+                            entrevista: match.entrevista,
+                            encargado: match.encargado,
+                            dictamenPsicologico: match.dictamenPsicologico,
+                        };
+                    }
+                    return loc;
+                })
+            );
+        };
+        handleSyncPostulaciones();
+        window.addEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleSyncPostulaciones);
+        window.addEventListener("storage", handleSyncPostulaciones);
+        return () => {
+            window.removeEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleSyncPostulaciones);
+            window.removeEventListener("storage", handleSyncPostulaciones);
+        };
+    }, []);
+
     /* Autocierre de los avisos, con limpieza del temporizador al desmontar. */
     useEffect(() => {
         if (!alertaExito) return;
@@ -225,12 +264,13 @@ function CandidatoPage({ onVolver }) {
         setPuestoSeleccionado(puesto);
     };
 
-    const handleEnviarPostulacion = ({ nombre, apellido, cargo, archivoCv }) => {
+    const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv }) => {
         const duplicada = postulaciones.some(
             (postulacion) =>
-                postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
+                (postulacion.rut && rut && postulacion.rut === rut) ||
+                (postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
                 postulacion.nombre.toLowerCase() === nombre.toLowerCase() &&
-                postulacion.apellido.toLowerCase() === apellido.toLowerCase()
+                postulacion.apellido.toLowerCase() === apellido.toLowerCase())
         );
 
         if (duplicada) {
@@ -238,28 +278,80 @@ function CandidatoPage({ onVolver }) {
             return;
         }
 
+        const nuevoPostulanteId = Date.now();
+        const cvNombre = archivoCv?.name || `cv_${nombre.toLowerCase().replace(/\s+/g, "_")}.pdf`;
+
+        // Determinar vacante y planta correspondiente
+        const puestoCoincidente = puestoSeleccionado || puestos.find((p) => p.titulo.toLowerCase().trim() === cargo.toLowerCase().trim());
+        const puestoIdFinal = puestoCoincidente?.id || 1;
+        const puestoTituloFinal = puestoCoincidente?.titulo || cargo;
+        const plantaFinal = puestoCoincidente?.planta || comuna || "Puerto Montt";
+
+        // 1. Registrar en el catálogo GLOBAL de candidatos visible para los empleados
+        registrarPostulanteGlobal({
+            id: nuevoPostulanteId,
+            rut: rut || "",
+            nombres: nombre,
+            apellidos: apellido,
+            nombre: `${nombre} ${apellido}`,
+            direccion: direccion || "No informada",
+            comuna: comuna || plantaFinal,
+            planta: plantaFinal,
+            fecha_nacimiento: fecha || "",
+            cv_pdf: cvNombre,
+            cvArchivo: cvNombre,
+            cargo: puestoTituloFinal,
+            especialidad: puestoTituloFinal,
+            familiaCargo: puestoCoincidente?.familiaCargo || "Operaciones Productivas",
+            evaluador: "Amaro Villalobos Caseres",
+            estado: "Pendiente",
+            antecedentes: `Postulación pública al cargo '${puestoTituloFinal}'. Comuna: ${comuna || "No informada"}. Dirección: ${direccion || "No informada"}.`,
+            resultadoPsicologico: "Pendiente",
+        });
+
+        // 2. Registrar en la lista GLOBAL de postulaciones por cargo activo
+        crearPostulacionGlobal({
+            id: nuevoPostulanteId,
+            puestoId: puestoIdFinal,
+            puestoTitulo: puestoTituloFinal,
+            planta: plantaFinal,
+            candidatoId: nuevoPostulanteId,
+            nombre: `${nombre} ${apellido}`,
+            rut: rut || "",
+            fase: "esperando respuesta",
+            entrevista: "Por agendar",
+            encargado: "Amaro Villalobos Caseres",
+            cv_pdf: cvNombre,
+        });
+
+        // 3. Conservar comprobante local en el portal del postulante
         const nueva = {
-            id:
-                postulaciones.reduce(
-                    (maximo, postulacion) => Math.max(maximo, Number(postulacion.id) || 0),
-                    0
-                ) + 1,
-            nombre,
-            apellido,
-            cargo,
-            puestoTrabajoId: puestoSeleccionado?.id ?? null,
-            planta: puestoSeleccionado?.planta ?? "",
-            cvArchivo: archivoCv.name,
-            cvTipo: archivoCv.type,
-            cvPeso: archivoCv.size,
+            id: nuevoPostulanteId,
+            rut: rut || "",
+            nombres: nombre,
+            apellidos: apellido,
+            nombre: `${nombre} ${apellido}`,
+            direccion: direccion || "",
+            comuna: comuna || plantaFinal,
+            fecha_nacimiento: fecha || "",
+            cargo: puestoTituloFinal,
+            puestoTrabajoId: puestoIdFinal,
+            planta: plantaFinal,
+            cv_pdf: cvNombre,
+            cvArchivo: cvNombre,
+            cvTipo: archivoCv?.type || "application/pdf",
+            cvPeso: archivoCv?.size || 0,
             fechaPostulacion: new Date().toISOString(),
             estado: "Recibida",
+            fase: "esperando respuesta",
+            entrevista: "Por agendar",
+            encargado: "Amaro Villalobos Caseres",
         };
 
-        setPostulaciones((prev) => [...prev, nueva]);
+        setPostulaciones((prev) => [nueva, ...prev.filter((p) => p.id !== nueva.id)]);
         setPuestoSeleccionado(null);
         setVersionFormulario((v) => v + 1); 
-        setAlertaExito(`✓ Postulación enviada exitosamente para el cargo '${nueva.cargo}'.`);
+        setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
     };
 
     return ( 
