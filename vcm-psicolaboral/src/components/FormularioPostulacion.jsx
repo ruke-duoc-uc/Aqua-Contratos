@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
 import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
+import { calcularRut } from "../utils/calcularRut";
 
 
 function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
