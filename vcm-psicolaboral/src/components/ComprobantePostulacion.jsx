@@ -4,6 +4,7 @@
  **/
 import { NARANJA, NARANJA_CLARO, ESTILO_ETIQUETA, ESTILO_VALOR } from "./Estilos";
 import { calcularEdad } from "../utils/calcularRut";
+import { abrirCvDocumento } from "../utils/visorCv";
 
 /* Convierte una fecha a texto. */
 const formatearFecha = (valor) => {
@@ -102,7 +103,16 @@ function ComprobantePostulacion({ postulacion }) {
                 )}
                 <div>
                     <span style={ESTILO_ETIQUETA}>CV Adjunto</span>
-                    <p style={{ ...ESTILO_VALOR, wordBreak: "break-word" }}>📄 {cv}</p>
+                    <p style={{ ...ESTILO_VALOR, wordBreak: "break-word", margin: "2px 0 6px 0" }}>📄 {cv}</p>
+                    <button
+                        type="button"
+                        onClick={() => abrirCvDocumento(postulacion)}
+                        className="btn btn-sm btn-outline-primary"
+                        style={{ fontSize: "11px", padding: "2px 8px" }}
+                        title="Ver documento en nueva pestaña"
+                    >
+                        ↗ Ver CV en nueva pestaña
+                    </button>
                 </div>
             </div>
 

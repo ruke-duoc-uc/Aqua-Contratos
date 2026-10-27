@@ -1,4 +1,4 @@
-/** Fila de la tabla de candidatos recientes
+/** Fila de la tabla de candidatos recientes con Bootstrap 5
  * @Autor Luxorar
  **/
 import BotonOrange from "./BotonOrange";
@@ -8,17 +8,17 @@ function CandidatosRecientes({ nombre, rut, especialidad, planta, fecha, evaluad
     const obtenerClaseEstado = (est) => {
         switch (est?.toLowerCase()) {
             case "pendiente":
-                return "badge-estado badge-pendiente";
+                return "badge bg-warning text-dark px-2 py-1";
             case "en proceso":
-                return "badge-estado badge-proceso";
+                return "badge bg-primary px-2 py-1";
             case "finalizado":
             case "finalizada":
-                return "badge-estado badge-finalizado";
+                return "badge bg-success px-2 py-1";
             case "en revisión":
             case "en revision":
-                return "badge-estado badge-revision";
+                return "badge bg-secondary px-2 py-1";
             default:
-                return "badge-estado";
+                return "badge bg-light text-dark border px-2 py-1";
         }
     };
 

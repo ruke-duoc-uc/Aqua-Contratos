@@ -48,6 +48,7 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
     ];
     const [cargoElegido, setCargoElegido] = useState({ clave: "libre", valor: "" });
     const [archivoCv, setArchivoCv] = useState(null);
+    const [cvDataUrl, setCvDataUrl] = useState("");
     const [campoEnfocado, setCampoEnfocado] = useState("");
     const [error, setError] = useState("");
     const LIMITE_CV_BYTES = 10 * 1024 * 1024;
@@ -93,10 +94,18 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
         setError("");
         if (archivo && archivo.size > LIMITE_CV_BYTES) {
             setArchivoCv(null);
+            setCvDataUrl("");
             setError("El CV no puede superar los 10 MB.");
             return;
         }
         setArchivoCv(archivo);
+        if (archivo) {
+            const reader = new FileReader();
+            reader.onload = (e) => setCvDataUrl(e.target?.result || "");
+            reader.readAsDataURL(archivo);
+        } else {
+            setCvDataUrl("");
+        }
     };
 
     const manejarEnvio = (evento) => {
@@ -125,8 +134,12 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             email: datos.email?.trim() || "",
             cargo: cargo.trim(),
             archivoCv,
+            cvDataUrl,
         });
     };
+
+    const rutCompleto = Boolean(datos.rut && datos.dv);
+    const rutValido = rutCompleto ? calcularRut(datos.rut, datos.dv) : null;
 
     return (
         <section
@@ -207,6 +220,19 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                             required
                         />
                     </div>
+                    {rutCompleto && (
+                        <div style={{ marginTop: "4px" }}>
+                            {rutValido ? (
+                                <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>
+                                    ✓ RUT válido
+                                </span>
+                            ) : (
+                                <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
+                                    ✕ Dígito verificador incorrecto
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
                 {CAMPOS_PERSONALES.map(({ campo, etiqueta, placeholder, columnaCompleta }) => (
                     <BarraValorFormularioPostulante

@@ -1,4 +1,4 @@
-/** Modal para Modificar Información de un Candidato Existente (RF03)
+/** Modal para Modificar Información de un Candidato Existente
  * @Autor Amaro Villalobos
  * Permite al Analista de Reclutamiento actualizar antecedentes personales,
  * RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento y CV de un postulante.
@@ -104,7 +104,7 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                 style={{ maxWidth: "680px" }}
             >
                 <div className="modal-header">
-                    <h3>✏️ Modificar Información del Postulante (RF03)</h3>
+                    <h3>✏️ Modificar Información del Postulante</h3>
                     <button
                         type="button"
                         className="modal-cerrar-btn"

@@ -21,44 +21,48 @@ function PanelSolicitudes({ encabezado, anchoCompleto = false, filtros, solicitu
 
             <BarraFiltros {...filtros} />
 
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: COLUMNAS,
-                    alignItems: "center",
-                    gap: "16px",
-                    padding: "10px 16px",
-                    backgroundColor: "#CDCDCD",
-                    fontWeight: "bold",
-                    color: "gray",
-                }}
-            >
-                {TITULOS_COLUMNAS.map((titulo) => (
-                    <span key={titulo}>{titulo}</span>
-                ))}
-            </div>
+            <div className="table-responsive" style={{ width: "100%", overflowX: "auto" }}>
+                <div style={{ minWidth: "850px" }}>
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: COLUMNAS,
+                            alignItems: "center",
+                            gap: "16px",
+                            padding: "10px 16px",
+                            backgroundColor: "#CDCDCD",
+                            fontWeight: "bold",
+                            color: "gray",
+                        }}
+                    >
+                        {TITULOS_COLUMNAS.map((titulo) => (
+                            <span key={titulo}>{titulo}</span>
+                        ))}
+                    </div>
 
-            {solicitudes.length > 0 ? (
-                solicitudes.map((candidato) => (
-                    <CandidatosRecientes
-                        key={candidato.id}
-                        nombre={candidato.nombre}
-                        rut={candidato.rut}
-                        especialidad={candidato.especialidad}
-                        planta={candidato.planta}
-                        fecha={
-                            candidato.fecha instanceof Date
-                                ? candidato.fecha.toLocaleDateString("es-CL")
-                                : candidato.fecha
-                        }
-                        evaluador={candidato.evaluador}
-                        estado={candidato.estado}
-                        onDetalle={() => onDetalle(candidato)}
-                    />
-                ))
-            ) : (
-                <EstadoVacio mensaje={mensajeVacio} onRestablecer={filtros.onLimpiarFiltros} />
-            )}
+                    {solicitudes.length > 0 ? (
+                        solicitudes.map((candidato) => (
+                            <CandidatosRecientes
+                                key={candidato.id}
+                                nombre={candidato.nombre}
+                                rut={candidato.rut}
+                                especialidad={candidato.especialidad}
+                                planta={candidato.planta}
+                                fecha={
+                                    candidato.fecha instanceof Date
+                                        ? candidato.fecha.toLocaleDateString("es-CL")
+                                        : candidato.fecha
+                                }
+                                evaluador={candidato.evaluador}
+                                estado={candidato.estado}
+                                onDetalle={() => onDetalle(candidato)}
+                            />
+                        ))
+                    ) : (
+                        <EstadoVacio mensaje={mensajeVacio} onRestablecer={filtros.onLimpiarFiltros} />
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

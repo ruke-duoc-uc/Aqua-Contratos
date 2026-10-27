@@ -1,59 +1,13 @@
-/** Modal y Formulario para Registro de Candidatos y Emisión de Solicitudes (RF02, RF04, RF05)
+/** Modal y Formulario para Registro de Candidatos y Emisión de Solicitudes
  * @Autor Amaro Villalobos
  * Permite ingresar los datos del postulante (RUT, nombres, apellidos, dirección, comuna,
  * fecha de nacimiento y CV) y los parámetros de la evaluación psicolaboral.
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
+import { calcularRut } from "../utils/calcularRut";
 
-const COMUNAS = [
-    "Ancud", 
-    "Calbuco", 
-    "Castro", 
-    "Chaitén", 
-    "Chonchi", 
-    "Cochamó",
-    "Curaco de Vélez", 
-    "Dalcahue", 
-    "Fresia", 
-    "Frutillar", 
-    "Futaleufú", 
-    "Hualaihué", 
-    "Llanquihue", 
-    "Los Muermos", 
-    "Maullín", 
-    "Osorno", 
-    "Palena", 
-    "Puerto Montt", 
-    "Puerto Octay", 
-    "Puerto Varas", 
-    "Puqueldón", 
-    "Purranque", 
-    "Puyehue", 
-    "Queilén", 
-    "Quellón", 
-    "Quemchi", 
-    "Quinchao", 
-    "Río Negro", 
-    "San Juan de la Costa", 
-    "San Pablo"
-];
-
-const FAMILIAS_CARGO = [
-    "Operaciones Productivas",
-    "Mantenimiento Industrial",
-    "Administración y Finanzas",
-    "Logística y Abastecimiento",
-    "Calidad y Prevención de Riesgos",
-    "Sistemas y TI"
-];
-
-const EVALUADORES = [
-    "Amaro Villalobos Caseres",
-    "Carolina Díaz Núñez",
-    "Felipe Muñoz Parra",
-    "Joaquín Oyarzún Leal"
-];
+import { COMUNAS, FAMILIAS_CARGO, EVALUADORES_DISPONIBLES as EVALUADORES } from "../utils/constantes";
 
 const generarId = () => Date.now();
 const obtenerFechaActual = () => new Date();
@@ -101,7 +55,7 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validaciones mínimas obligatorias según RF02 y RF05
+        // Validaciones mínimas obligatorias según  y 
         if (!rut.trim()) {
             setError("El RUT del postulante es obligatorio.");
             return;
@@ -158,6 +112,11 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
 
     if (!isOpen) return null;
 
+    const partesRut = rut.includes("-") ? rut.split("-") : [];
+    const rutValido = partesRut.length === 2 && partesRut[0].trim() && partesRut[1].trim()
+        ? calcularRut(partesRut[0], partesRut[1])
+        : null;
+
     return (
         <div className="modal-overlay" onClick={handleCancelar}>
             <div
@@ -187,7 +146,7 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                             </div>
                         )}
 
-                        <h4 className="form-seccion-titulo">1. Atributos del Postulante (RF02)</h4>
+                        <h4 className="form-seccion-titulo">1. Atributos del Postulante</h4>
                         <div className="form-grid">
                             <div className="form-grupo">
                                 <label htmlFor="nuevo-rut">RUT *</label>
@@ -200,6 +159,19 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                                     onChange={(e) => setRut(e.target.value)}
                                     required
                                 />
+                                {rut.includes("-") && (
+                                    <div style={{ marginTop: "4px" }}>
+                                        {rutValido ? (
+                                            <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>
+                                                ✓ RUT válido
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
+                                                ✕ Dígito verificador inválido
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="form-grupo">
@@ -304,7 +276,7 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                             </div>
                         </div>
 
-                        <h4 className="form-seccion-titulo">2. Parámetros de la Solicitud (RF04, RF05)</h4>
+                        <h4 className="form-seccion-titulo">2. Parámetros de la Solicitud</h4>
                         <div className="form-grid">
                             <div className="form-grupo">
                                 <label htmlFor="familiaCargo">Familia de Cargo *</label>

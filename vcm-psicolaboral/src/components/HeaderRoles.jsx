@@ -1,10 +1,13 @@
-/** Barra superior de navegación, pestañas y selector de roles simulados (RF01)
- * @Autor Amaro Villalobos
- * Permite alternar entre los roles de empleado (Analista, Evaluador, Jefatura)
- * y navegar entre las vistas del sistema.
+/** Barra superior de navegación y pestañas
+ * Muestra el cargo del empleado asignado y el botón para salir al portal.
  **/
-
-function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolver, tabs: tabsProp }) {
+function HeaderRoles({
+    rolActual,
+    tabActiva,
+    onCambiarTab,
+    onVolver,
+    tabs: tabsProp,
+}) {
     const rolesInfo = {
         analista: { nombre: "Analista de Reclutamiento", descripcion: "Crea candidatos y gestiona solicitudes" },
         evaluador: { nombre: "Profesional Evaluador", descripcion: "Evalúa candidatos y califica" },
@@ -36,48 +39,41 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolve
                     </div>
                 </div>
 
-                <div className="selector-rol-container" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div className="selector-rol-container" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <span style={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
                         Cargo Activo:
                     </span>
 
-                    {onCambiarRol ? (
-                        <select
-                            value={rolActual}
-                            onChange={(e) => onCambiarRol(e.target.value)}
-                            style={{
-                                backgroundColor: "#e0f2fe",
-                                color: "#0369a1",
-                                border: "1px solid #7dd3fc",
-                                borderRadius: "6px",
-                                padding: "5px 10px",
-                                fontSize: "13px",
-                                fontWeight: "bold",
-                                cursor: "pointer",
-                            }}
-                            title="Cambiar cargo de empleado activo"
-                        >
-                            <option value="analista">Analista de Reclutamiento</option>
-                            <option value="evaluador">Profesional Evaluador</option>
-                            <option value="jefatura">Jefe de Área</option>
-                        </select>
-                    ) : (
-                        <span className="badge-rol">{infoActual.nombre}</span>
-                    )}
+                    {/* Nombre fijo del empleado/cargo */}
+                    <span
+                        className="badge-rol"
+                        style={{
+                            backgroundColor: "#e0f2fe",
+                            color: "#0369a1",
+                            border: "1px solid #7dd3fc",
+                            borderRadius: "6px",
+                            padding: "6px 14px",
+                            fontSize: "13px",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {infoActual.nombre}
+                    </span>
 
+                    {/* Botón Salir al Portal (idéntico al funcionamiento de Jefe de Área) */}
                     {onVolver && (
                         <button
                             type="button"
                             onClick={onVolver}
                             style={{
-                                background: "#f8f9fa",
+                                background: "#ffffff",
                                 border: "1px solid #ced4da",
                                 borderRadius: "6px",
-                                padding: "6px 12px",
-                                fontSize: "12px",
+                                padding: "6px 14px",
+                                fontSize: "13px",
                                 fontWeight: "600",
                                 cursor: "pointer",
-                                color: "#495057",
+                                color: "#0d47a1",
                                 transition: "all 0.2s ease",
                             }}
                             title="Volver a la selección de portal"

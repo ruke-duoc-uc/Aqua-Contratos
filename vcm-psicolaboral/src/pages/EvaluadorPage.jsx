@@ -5,7 +5,7 @@ import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { api } from "../services/api";
-import { cargarCandidatosGlobales, guardarCandidatosGlobales, EVENTO_ACTUALIZACION_CANDIDATOS } from "../services/candidatosStorage";
+import { cargarCandidatosGlobales, EVENTO_ACTUALIZACION_CANDIDATOS } from "../services/candidatosStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -14,24 +14,9 @@ import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
 import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
-const PLANTAS_DISPONIBLES = [
-    "Puerto Montt",
-    "Osorno",
-    "Castro",
-    "Calbuco",
-    "Frutillar",
-    "Puerto Varas",
-    "Ancud"
-];
+import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
 
-const EVALUADORES_DISPONIBLES = [
-    "Amaro Villalobos Caseres",
-    "Carolina Díaz Núñez",
-    "Felipe Muñoz Parra",
-    "Joaquín Oyarzún Leal"
-];
-
-function EvaluadorPage({ onVolver, onCambiarRol }) {
+function EvaluadorPage({ onVolver }) {
     const rolActual = "evaluador";
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
@@ -57,7 +42,7 @@ function EvaluadorPage({ onVolver, onCambiarRol }) {
         };
     }, []);
 
-    // Filtros de búsqueda (RF07)
+    // Filtros de búsqueda
     const [busqueda, setBusqueda] = useState("");
     const [filtroEstado, setFiltroEstado] = useState("todos");
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
@@ -139,10 +124,6 @@ function EvaluadorPage({ onVolver, onCambiarRol }) {
             });
         }
     };
-
-    useEffect(() => {
-        guardarCandidatosGlobales(candidatos);
-    }, [candidatos]);
 
     const pendientes = candidatos.filter(
         (c) => c.estado === "Pendiente" || c.estado === "En revisión"
@@ -250,7 +231,6 @@ function EvaluadorPage({ onVolver, onCambiarRol }) {
                 rolActual={rolActual}
                 tabActiva={tabActiva}
                 onCambiarTab={setTabActiva}
-                onCambiarRol={onCambiarRol}
                 onVolver={onVolver}
             />
 

@@ -33,15 +33,7 @@ import {
 
 const STORAGE_KEY_POSTULACIONES = "aqua_contratos_postulaciones_candidato_v1";
 
-const PLANTAS = [
-    "Puerto Montt",
-    "Osorno",
-    "Castro",
-    "Calbuco",
-    "Frutillar",
-    "Puerto Varas",
-    "Ancud",
-];
+import { PLANTAS_DISPONIBLES as PLANTAS } from "../utils/constantes";
 
 const PUESTOS_INICIALES = [
     {
@@ -264,7 +256,7 @@ function CandidatoPage({ onVolver }) {
         setPuestoSeleccionado(puesto);
     };
 
-    const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv }) => {
+    const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv, cvDataUrl }) => {
         const duplicada = postulaciones.some(
             (postulacion) =>
                 (postulacion.rut && rut && postulacion.rut === rut) ||
@@ -300,6 +292,7 @@ function CandidatoPage({ onVolver }) {
             fecha_nacimiento: fecha || "",
             cv_pdf: cvNombre,
             cvArchivo: cvNombre,
+            cvDataUrl: cvDataUrl || "",
             cargo: puestoTituloFinal,
             especialidad: puestoTituloFinal,
             familiaCargo: puestoCoincidente?.familiaCargo || "Operaciones Productivas",
@@ -339,6 +332,7 @@ function CandidatoPage({ onVolver }) {
             planta: plantaFinal,
             cv_pdf: cvNombre,
             cvArchivo: cvNombre,
+            cvDataUrl: cvDataUrl || "",
             cvTipo: archivoCv?.type || "application/pdf",
             cvPeso: archivoCv?.size || 0,
             fechaPostulacion: new Date().toISOString(),

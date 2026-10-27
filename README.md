@@ -6,7 +6,7 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 > **Sección:** 002D  
 > **Equipo:** Smiling Friends  
 > **Integrantes:** Amaro Villalobos · Cristóbal Loncón · Joaquín Oyarzún · Luis Villalón  
-> **Stack Principal:** React 19 · Vite · Node.js  
+> **Stack Principal:** React 19 · Vite · Bootstrap 5 · React Router 7 · Vitest · Node.js (Express + SQLite)  
 
 ---
 
@@ -19,8 +19,9 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 - [Flujo Principal del Proceso](#-flujo-principal-del-proceso)
 - [Estructura del Repositorio](#-estructura-del-repositorio)
 - [Cómo Ejecutar el Proyecto](#-cómo-ejecutar-el-proyecto)
-- [Diagnóstico Técnico y Errores Conocidos](#-diagnóstico-técnico-y-errores-conocidos)
-- [Convenciones de Estilo y CSS](#-convenciones-de-estilo-y-css)
+- [Ejecución de Pruebas Unitarias (Vitest)](#-ejecución-de-pruebas-unitarias-vitest)
+- [Diagnóstico Técnico y Estado de Correcciones](#-diagnóstico-técnico-y-estado-de-correcciones)
+- [Entregables Académicos (EP2)](#-entregables-académicos-ep2)
 - [Roadmap de Desarrollo](#-roadmap-de-desarrollo)
 
 ---
@@ -36,9 +37,12 @@ Actualmente, el proceso se realiza mediante documentos físicos en papel y herra
 ## 💡 Solución
 
 **Aqua-Contratos** es una aplicación web Full Stack que centraliza y estandariza la información clave del proceso de evaluación psicolaboral:
-- Registro y gestión de perfiles de candidatos.
-- Creación y seguimiento de solicitudes de evaluación con estados en tiempo real.
+- Registro y gestión de perfiles de candidatos con validación de RUT oficial (Módulo 11).
+- Creación y seguimiento de solicitudes de evaluación con estados en tiempo real (*Pendiente*, *En proceso*, *Finalizada*).
 - Registro de antecedentes, fechas de entrevista y calificaciones psicolaborales.
+- Navegación declarativa SPA mediante **React Router 7**.
+- Maquetación y estilos responsive con **Bootstrap 5**.
+- Verificación de calidad mediante pruebas unitarias automatizadas con **Vitest**.
 - Dashboard con indicadores operativos (KPIs) para jefaturas y analistas.
 
 ---
@@ -47,12 +51,12 @@ Actualmente, el proceso se realiza mediante documentos físicos en papel y herra
 
 De acuerdo con el levantamiento del caso y las bases del MVP:
 
-| Rol | ¿Qué puede ver? | ¿Qué puede hacer? | Restricciones clave |
-| :--- | :--- | :--- | :--- |
-| **Analista de Reclutamiento** | Perfiles de candidatos, solicitudes de contratación y resultados finales. | Crear perfiles de candidatos, emitir solicitudes de evaluación y revisar informes psicolaborales. | No puede saltarse etapas del flujo ni duplicar perfiles de una misma persona. |
-| **Profesional Evaluador** | Solicitudes asignadas, datos laborales del candidato e historial de evaluaciones. | Agendar fechas de entrevista, actualizar estados a *En proceso*, registrar observaciones y dictar resultado general. | No toma la decisión final de contratación ni altera datos personales del candidato. |
-| **Jefe de Área / Jefatura** | Dashboard con métricas agregadas y listado de solicitudes de su área (solo lectura). | Consultar el avance de evaluaciones solicitadas y revisar resultados consolidados. | No crea, edita ni elimina candidatos o evaluaciones. |
-| **Administrador Académico** | Todas las vistas, catálogos base y usuarios simulados. | Alternar entre roles simulados y gestionar datos base de prueba para demostración del MVP. | No ingresar datos sensibles o reales de trabajadores de la empresa. |
+| Rol | Ruta | ¿Qué puede ver? | ¿Qué puede hacer? | Restricciones clave |
+| :--- | :--- | :--- | :--- | :--- |
+| **Analista de Reclutamiento** | `/analista` | Perfiles de candidatos, solicitudes de contratación y resultados finales. | Crear perfiles de candidatos, emitir solicitudes de evaluación y revisar informes psicolaborales. | No puede saltarse etapas del flujo ni duplicar perfiles de una misma persona. |
+| **Profesional Evaluador** | `/evaluador` | Solicitudes asignadas, datos laborales del candidato e historial de evaluaciones. | Agendar fechas de entrevista, actualizar estados a *En proceso*, registrar observaciones y dictar resultado general. | No toma la decisión final de contratación ni altera datos personales del candidato. |
+| **Jefe de Área / Jefatura** | `/jefatura` | Dashboard con métricas agregadas y listado de solicitudes de su área (solo lectura). | Consultar el avance de evaluaciones solicitadas y revisar resultados consolidados. | No crea, edita ni elimina candidatos o evaluaciones. |
+| **Postulante a Trabajo** | `/candidato` | Ofertas laborales abiertas de plantas AquaChile y formulario de postulación. | Postular en línea con datos personales, adjuntar CV y obtener comprobante digital. | No accede a datos internos de otros postulantes ni a evaluaciones privadas. |
 
 ---
 
@@ -62,16 +66,16 @@ Estado de implementación respecto al alcance del MVP:
 
 | Código | Requisito Funcional | Prioridad | Estado Actual | Observaciones |
 | :--- | :--- | :---: | :---: | :--- |
-| **RF01** | Ingreso simple con usuarios ficticios o roles simulados | Alta | 🟢 Implementado | Implementado en `HeaderRoles.jsx` con selector para Analista, Evaluador y Jefatura. |
-| **RF02** | Registrar candidatos con datos mínimos obligatorios | Alta | 🟢 Implementado | Implementado en `ModalNuevaSolicitud.jsx` con captura y validación de campos obligatorios. |
-| **RF03** | Editar y consultar información principal de un candidato | Alta | 🟢 Implementado | Implementado en `ModalDetalleSolicitud.jsx` con antecedentes completos del postulante. |
+| **RF01** | Ingreso simple con usuarios ficticios o roles simulados | Alta | 🟢 Implementado | Implementado con **React Router 7** y `HeaderRoles.jsx` para Analista, Evaluador, Jefatura y Postulante. |
+| **RF02** | Registrar candidatos con datos mínimos obligatorios | Alta | 🟢 Implementado | Implementado en `ModalNuevaSolicitud.jsx` con validación de RUT (Módulo 11) y campos requeridos. |
+| **RF03** | Editar y consultar información principal de un candidato | Alta | 🟢 Implementado | Implementado en `ModalDetalleSolicitud.jsx` y `ModalEditarCandidato.jsx`. |
 | **RF04** | Crear solicitudes de evaluación asociadas a un candidato | Alta | 🟢 Implementado | Operativo desde el botón `+ Nueva solicitud` con vinculación de postulante y proceso. |
 | **RF05** | Registrar cargo, familia de cargo, fecha de solicitud y responsable | Alta | 🟢 Implementado | Selectores de catálogo para plantas AquaChile, familias de cargo y evaluadores. |
-| **RF06** | Visualizar listado de solicitudes y consultar su detalle | Alta | 🟢 Implementado | Listado con CSS Grid y visualización detallada accesible desde el botón `Detalle`. |
-| **RF07** | Buscar o filtrar solicitudes por estado, fecha, cargo o candidato | Media | 🟢 Implementado | Implementado en `BarraFiltros.jsx` con buscador en tiempo real, filtro por estado y por planta. |
+| **RF06** | Visualizar listado de solicitudes y consultar su detalle | Alta | 🟢 Implementado | Listado con badges de estado Bootstrap 5 y visualización accesible desde el botón `Detalle`. |
+| **RF07** | Buscar o filtrar solicitudes por estado, fecha, cargo o candidato | Media | 🟢 Implementado | Implementado en `BarraFiltros.jsx` con buscador en tiempo real, filtro por estado, planta y evaluador. |
 | **RF08** | Actualizar estado de la solicitud (*Pendiente*, *En proceso*, *Finalizada*) | Alta | 🟢 Implementado | Selector de cambio de estado interactivo disponible en el modal de detalle. |
 | **RF09** | Registrar fecha de evaluación, observaciones o resultado general | Alta | 🟢 Implementado | Formulario formal de evaluación en `ModalDetalleSolicitud.jsx` con fecha, dictamen y observaciones. |
-| **RF10** | Dashboard simple con indicadores generales del proceso | Media | 🟢 Implementado | 4 KPIs calculados dinámicamente en tiempo real según el estado de las solicitudes. |
+| **RF10** | Dashboard simple con indicadores generales del proceso | Media | 🟢 Implementado | 4 KPIs calculados dinámicamente en tiempo real en tarjetas responsive de Bootstrap 5. |
 
 ---
 
@@ -79,31 +83,31 @@ Estado de implementación respecto al alcance del MVP:
 
 ```mermaid
 flowchart TD
-    subgraph Analista ["👤 Rol: Analista de Reclutamiento"]
-        A(["Inicio: Ingresa a la Web y selecciona rol Analista"]) --> B["Vista Web: Gestión de Candidatos<br/>Completa formulario de nuevo candidato"]
-        B --> C{"¿Datos del candidato<br/>son válidos?"}
-        C -- "No" --> D["Muestra alerta de validación en el formulario"]
+    subgraph Analista ["👤 Rol: Analista de Reclutamiento (/analista)"]
+        A(["Inicio: Ingresa al Portal y navega a /analista"]) --> B["Gestión de Candidatos<br/>Completa formulario de nuevo candidato"]
+        B --> C{"¿Datos y RUT válidos?"}
+        C -- "No" --> D["Muestra alerta de validación en pantalla"]
         D --> B
-        C -- "Sí" --> E["Guarda candidato en el listado"]
-        E --> F["Vista Web: Solicitudes de Evaluación<br/>Crea solicitud asociada al candidato"]
+        C -- "Sí" --> E["Guarda candidato en el sistema"]
+        E --> F["Solicitudes de Evaluación<br/>Crea solicitud asociada al candidato"]
         F --> G["Asigna Cargo, Familia de Cargo,<br/>Evaluador Responsable y Observaciones"]
         G --> H["Guarda Solicitud con estado: PENDIENTE"]
     end
 
-    subgraph Evaluador ["🧠 Rol: Profesional Evaluador"]
-        H --> I["Vista Web: Solicitudes de Evaluación<br/>Filtra solicitudes en estado PENDIENTE"]
-        I --> J["Vista Web: Detalle y Evaluación<br/>Revisa antecedentes del candidato y cargo"]
+    subgraph Evaluador ["🧠 Rol: Profesional Evaluador (/evaluador)"]
+        H --> I["Listado de Solicitudes<br/>Filtra solicitudes en estado PENDIENTE"]
+        I --> J["Detalle y Evaluación<br/>Revisa antecedentes del candidato y cargo"]
         J --> K{"¿Antecedentes completos<br/>para agendar?"}
         K -- "Sí" --> L["Registra Fecha de Evaluación y<br/>cambia estado a: EN PROCESO"]
-        L --> M["Realiza evaluación, ingresa Observaciones<br/>y selecciona Categoría de Resultado<br/>(Recomendado / Con obs. / No recomendado)"]
+        L --> M["Realiza evaluación, ingresa Observaciones<br/>y selecciona Dictamen Psicolaboral<br/>(Recomendado / Con obs. / No recomendado)"]
         M --> N{"¿Formulario de evaluación<br/>completo?"}
         N -- "No" --> O["Muestra error de campos obligatorios"]
         O --> M
         N -- "Sí" --> P["Guarda evaluación y<br/>actualiza estado a: FINALIZADA"]
     end
 
-    subgraph Consulta ["📊 Rol: Analista / Jefatura"]
-        P --> Q["Vista Web: Dashboard de Inicio<br/>Actualiza tarjetas de indicadores (KPIs)"]
+    subgraph Consulta ["📊 Rol: Analista / Jefatura (/jefatura)"]
+        P --> Q["Dashboard de Inicio<br/>Actualiza tarjetas de indicadores (KPIs)"]
         Q --> R(["Fin: Consulta de solicitud y resultado consolidado"])
     end
 
@@ -119,43 +123,41 @@ flowchart TD
 
 ```
 Aqua-Contratos/
-├── CONTRIBUTING.md           # Normas de contribución y convenciones de CSS
+├── CONTRIBUTING.md           # Normas de contribución y convenciones
 ├── README.md                 # Documentación integral del proyecto
-├── evidencias/               # Documentación y pautas académicas del caso
+├── rubrica.pdf               # Pauta oficial de Evaluación Parcial 2
+├── evidencias/               # Documentos oficiales y entregables solicitados
+│   ├── ERS_AquaContratos_EP2.md              # Documento ERS actualizado (alcance y requerimientos)
+│   ├── Evidencia_Pruebas_Vitest_EP2.md       # Informe formal de testing automatizado (Vitest)
 │   └── Fullstack-Actividad_Bases_MVP_AquaChile_DSY1104.docx.pdf
-├── backend/                  # Capa de servicios y API REST (Node.js + Express)
-│   ├── package.json          # Dependencias (express, cors, dotenv)
-│   ├── README.md             # Especificación detallada de endpoints REST
+├── backend/                  # API REST en Node.js + Express (Etapa Full Stack)
+│   ├── package.json
+│   ├── README.md
 │   └── src/
-│       ├── app.js            # Configuración Express y middlewares
-│       ├── index.js          # Arranque del servidor (puerto 4000)
-│       ├── controllers/      # Controladores (candidatos, solicitudes, dashboard)
-│       ├── routes/           # Rutas API (/api/candidatos, /api/solicitudes, /api/dashboard)
-│       ├── data/             # Semilla y dataStore en memoria
-│       └── middlewares/      # Manejadores de errores y 404
-└── vcm-psicolaboral/         # Frontend de la aplicación (React + Vite)
+└── vcm-psicolaboral/         # Frontend React + Vite + Bootstrap 5 + Vitest
     ├── index.html            # Plantilla HTML base
-    ├── vite.config.js        # Configuración de compilación Vite
-    ├── package.json          # Dependencias y scripts npm
-    ├── eslint.config.js      # Reglas de linting (ESLint 10 flat config)
-    ├── public/               # Archivos estáticos públicos (favicons, SVG)
+    ├── vite.config.js        # Configuración de Vite y Vitest (jsdom)
+    ├── package.json          # Dependencias (react-router-dom, bootstrap, vitest, testing-library)
     └── src/
-        ├── main.jsx          # Punto de entrada de React (createRoot)
-        ├── App.jsx           # Componente contenedor principal
-        ├── index.css         # Variables de diseño y estilos globales
-        ├── pages/
-        │   └── DashBoardPage.jsx        # Página del Dashboard operativo
-        └── components/
-            ├── BotonOrange.jsx          # Botón reutilizable con animación hover y soporte click
-            ├── IndicadorCard.jsx        # Tarjeta para visualización de KPIs
-            ├── CandidatosRecientes.jsx  # Fila individual de tabla con badges de estado
-            ├── HeaderRoles.jsx          # Barra superior con selector de rol y pestañas de navegación (RF01) - Autor: Amaro
-            ├── BarraFiltros.jsx         # Barra de búsqueda y filtros en tiempo real (RF07) - Autor: Amaro
-            ├── GestionCandidatosView.jsx# Vista web dedicada para gestión y catálogo de candidatos (RF02, RF03) - Autor: Amaro
-            ├── ModalNuevaSolicitud.jsx  # Formulario modal para nuevo candidato y solicitud (RF02, RF04, RF05) - Autor: Amaro
-            ├── ModalEditarCandidato.jsx # Formulario modal para modificar información de candidato (RF03) - Autor: Amaro
-            ├── ModalDetalleSolicitud.jsx# Modal de consulta, rúbrica y dictamen psicolaboral (RF03, RF06, RF08, RF09) - Autor: Amaro
-            └── columnasTabla.js         # Configuración de distribución de columnas Grid
+        ├── main.jsx          # Punto de entrada con Bootstrap 5 y ReactDOM
+        ├── App.jsx           # Enrutamiento declarativo SPA (React Router 7)
+        ├── index.css         # Variables y estilos complementarios
+        ├── test/             # Suites de pruebas automatizadas Vitest
+        │   ├── setup.js              # Configuración de jest-dom
+        │   ├── calcularRut.test.js   # Pruebas de validación Módulo 11 y edad (7 tests)
+        │   ├── indicadores.test.js   # Pruebas de cálculo de métricas del Dashboard (2 tests)
+        │   ├── filtros.test.js       # Pruebas de búsqueda y filtros reactivos (6 tests)
+        │   ├── components.test.jsx   # Pruebas de componentes y Bootstrap (6 tests)
+        │   └── router.test.jsx       # Pruebas de navegación React Router (1 test)
+        ├── pages/            # Vistas principales vinculadas a rutas
+        │   ├── AnalistaPage.jsx
+        │   ├── EvaluadorPage.jsx
+        │   ├── JefaturaPage.jsx
+        │   ├── CandidatoPage.jsx
+        │   └── EmpleadosPage.jsx
+        ├── components/       # Componentes modulares reutilizables
+        ├── services/         # Servicios de persistencia y conexión API
+        └── utils/            # Funciones auxiliares (calcularRut, columnas)
 ```
 
 ---
@@ -163,92 +165,76 @@ Aqua-Contratos/
 ## 🚀 Cómo Ejecutar el Proyecto
 
 ### Prerrequisitos
-- Tener instalado **[Node.js](https://nodejs.org/)** (versión 18 LTS o superior, recomendado v20/v22).
-- Gestor de paquetes **npm** (incluido automáticamente con Node.js).
+- Tener instalado **[Node.js](https://nodejs.org/)** (v18, v20 o v24).
+- Gestor de paquetes **npm**.
 
-> **Verificación previa:** Comprueba que Node.js esté disponible en tu terminal ejecutando:
-> ```bash
-> node -v
-> npm -v
-> ```
-> *Si el comando no se reconoce, instala Node.js vía [sitio oficial](https://nodejs.org/) o mediante PowerShell con `winget install OpenJS.NodeJS.LTS` y reinicia tu terminal.*
+### Pasos de puesta en marcha
 
-### Pasos de instalación y puesta en marcha
-
-1. **Navegar a la carpeta del frontend:**
+1. **Instalar dependencias de todo el proyecto:**
    ```bash
-   cd vcm-psicolaboral
+   npm run install:all
    ```
 
-2. **Instalar dependencias:**
+2. **Iniciar el servidor de desarrollo del frontend:**
    ```bash
-   npm install
+   npm run dev:frontend
+   # o desde la carpeta: cd vcm-psicolaboral && npm run dev
    ```
 
-3. **Iniciar el servidor de desarrollo:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Acceder a la aplicación:**
-   Abre tu navegador en:
+3. **Acceder a la aplicación en el navegador:**
    👉 **[http://localhost:5173](http://localhost:5173)**
 
-### Scripts adicionales
-| Comando | Descripción |
-| :--- | :--- |
-| `npm run build` | Compila la versión de producción optimizada en la carpeta `dist`. |
-| `npm run preview` | Levanta un servidor local para probar la versión de producción compilada. |
-| `npm run lint` | Ejecuta el análisis estático de código con ESLint para detectar errores de sintaxis y buenas prácticas. |
+---
+
+## 🧪 Ejecución de Pruebas Unitarias (Vitest)
+
+Para ejecutar la suite completa de 22 pruebas automatizadas exigidas en la rúbrica (**IE2.2.1 / IE2.2.2**):
+
+```bash
+# Ejecutar todas las pruebas (modo single run)
+npm test
+
+# O directamente en el frontend:
+cd vcm-psicolaboral
+npm test
+
+# Modo observador interactivo:
+npm run test:watch
+```
+
+Resultado esperado:
+```text
+ ✓ src/test/filtros.test.js (6 tests)
+ ✓ src/test/calcularRut.test.js (7 tests)
+ ✓ src/test/indicadores.test.js (2 tests)
+ ✓ src/test/components.test.jsx (6 tests)
+ ✓ src/test/router.test.jsx (1 test)
+
+ Test Files  5 passed (5)
+      Tests  22 passed (22)
+   Duration  ~1.4s
+```
 
 ---
 
 ## 🛠️ Diagnóstico Técnico y Estado de Correcciones
 
-Estado tras auditorías y refactorizaciones del código:
+Estado del proyecto tras adecuarlo a la rúbrica de la Evaluación Parcial 2:
 
-1. **Imports no utilizados de JSX Runtime:**  
-   🟢 **Resuelto:** Eliminadas importaciones espurias de `_jsxDEV`.
-2. **Error tipográfico en nombre de componente:**  
-   🟢 **Resuelto:** Archivo renombrado a `CandidatosRecientes.jsx` con importaciones actualizadas.
-3. **Variable CSS mal posicionada:**  
-   🟢 **Resuelto:** `--radio-cuadros: 8px;` y demás variables de diseño organizadas dentro de `:root` en `index.css`.
-4. **Navegación e interactividad de enlaces:**  
-   🟢 **Resuelto:** Interacciones de botones (+ Nueva solicitud, Detalle, Editar) enlazadas mediante modales dinámicos y pestañas de vista.
-5. **Capa Backend, API REST y Persistencia:**  
-   🟢 **Resuelto:** Servidor Node.js + Express completamente integrado, API REST funcional, persistencia relacional con **SQLite** nativo y cliente HTTP conectado en React (`src/services/api.js`) con fallback inteligente.
+1. **Navegación SPA con React Router 7:**  
+   🟢 **Cumplido al 100%:** Migrada la navegación condicional a rutas formales (`/`, `/empleados`, `/analista`, `/evaluador`, `/jefatura`, `/candidato`), soportando URLs directas y botones de historial del navegador.
+2. **Estilos y Maquetación Responsive con Bootstrap 5:**  
+   🟢 **Cumplido al 100%:** Bootstrap 5 instalado e integrado en `main.jsx`. Implementadas clases de grid responsive (`container-fluid`, `row`, `col-*`), tarjetas (`card`), badges oficiales (`bg-warning`, `bg-primary`, `bg-success`) y controles de formulario (`form-control`, `form-select`).
+3. **Testing Automatizado con Vitest:**  
+   🟢 **Cumplido al 100%:** Vitest configurado con entorno `jsdom` y Testing Library. 22 pruebas unitarias pasando con 0 errores.
+4. **Documentación Oficial y Entregables:**  
+   🟢 **Cumplido al 100%:** Redactados el documento formal de ERS y el reporte de Evidencias de Pruebas Vitest en la carpeta `evidencias/`.
 
 ---
 
-## 🎨 Convenciones de Estilo y CSS
+## 📑 Entregables Académicos (EP2)
 
-Según lo estipulado en [CONTRIBUTING.md](file:///C:/Users/Usuario/OneDrive/Desktop/Aqua-Contratos/CONTRIBUTING.md):
-
-1. **Variables en `:root`:** Todo color o medida reutilizable debe declararse como variable CSS dentro del bloque `:root` en `src/index.css`.
-2. **Nombres de variables:** Deben contener entre **2 y 3 palabras** representativas (ejemplo: `--fondo-cuadros`, `--radio-cuadros`, `--borde-boton-hover`).
-3. **Uso de clases vs. estilos en línea:** Se recomienda migrar los estilos en línea (`style={{ ... }}`) a clases CSS en `index.css` o módulos para permitir el uso directo de `var(--nombre-variable)` y facilitar el mantenimiento.
-
----
-
-## 🗺️ Roadmap de Desarrollo
-
-- [x] **Fase 1: Correcciones inmediatas y limpieza técnica**
-  - [x] Eliminar imports espurios de `_jsxDEV`.
-  - [x] Corregir typo en `CandidatosRecientes.jsx`.
-  - [x] Reorganizar variables CSS en `:root`.
-- [x] **Fase 2: Arquitectura y Navegación**
-  - [x] Configurar selector de rol activo en la cabecera (RF01).
-  - [x] Implementar enrutamiento o navegación por pestañas/modales interactivos.
-- [x] **Fase 3: Funcionalidades del MVP (Frontend Completo)**
-  - [x] Métricas dinámicas en el Dashboard basadas en datos en tiempo real (RF10).
-  - [x] Formulario modal de nuevo candidato y emisión de solicitud (RF02, RF04, RF05).
-  - [x] Vista modal de Detalle y selector de cambio de estado (RF03, RF06, RF08).
-  - [x] Buscador y filtros de solicitudes por estado/cargo/candidato (RF07).
-  - [x] Interfaz dedicada de Evaluación psicológica con dictamen y rúbrica (RF09).
-- [x] **Fase 4: Backend y Persistencia**
-  - [x] Diseñar estructura de carpetas modular (`controllers`, `routes`, `dataStore`).
-  - [x] Definir especificación de la API REST (`/api/candidatos`, `/api/solicitudes`, `/api/dashboard`).
-  - [x] Configurar servidor Express con CORS y manejo centralizado de errores.
-  - [x] Conectar frontend (cliente HTTP en `api.js` conectado a `DashBoardPage.jsx`).
-  - [x] Integrar motor de base de datos persistente (SQLite nativo con esquema SQL relacional y persistencia en disco).
-
+1. **Código fuente:** En el repositorio GitHub en la rama principal.
+2. **README de ejecución:** Presente en la raíz del repositorio.
+3. **Documento ERS actualizado:** [`evidencias/ERS_AquaContratos_EP2.md`](evidencias/ERS_AquaContratos_EP2.md).
+4. **Evidencia breve de pruebas Vitest:** [`evidencias/Evidencia_Pruebas_Vitest_EP2.md`](evidencias/Evidencia_Pruebas_Vitest_EP2.md).
