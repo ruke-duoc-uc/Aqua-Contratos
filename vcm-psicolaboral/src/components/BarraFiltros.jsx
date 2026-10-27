@@ -93,7 +93,7 @@ function BarraFiltros({
                     onClick={onLimpiarFiltros}
                     title="Restablecer filtros"
                 >
-                    ✕ Limpiar filtros
+                    Limpiar filtros
                 </button>
             )}
 

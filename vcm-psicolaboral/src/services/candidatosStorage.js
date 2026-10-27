@@ -312,9 +312,9 @@ export async function registrarPostulanteGlobal(nuevoPostulante) {
     try {
         const actuales = cargarCandidatosGlobales();
         // Verificar si ya existe por RUT
-        const rutNuevo = (normalizado.rut || "").replace(/[\.\-]/g, "").trim().toLowerCase();
+        const rutNuevo = (normalizado.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
         const filtrados = actuales.filter((c) => {
-            const rutActual = (c.rut || "").replace(/[\.\-]/g, "").trim().toLowerCase();
+            const rutActual = (c.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
             return rutActual !== rutNuevo && c.id !== normalizado.id;
         });
 

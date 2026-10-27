@@ -11,7 +11,7 @@ function EncabezadoRegistro({ subtitulo, children }) {
         >
             <div>
                 <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                    📋 Registro Integral de Solicitudes de Evaluación
+                    Registro Integral de Solicitudes de Evaluación
                 </h2>
                 <span style={{ fontSize: "13px", color: "gray" }}>{subtitulo}</span>
             </div>

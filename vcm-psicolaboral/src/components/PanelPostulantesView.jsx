@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import BotonOrange from "./BotonOrange";
+
 
 const COLORES_FASE = {
     "en entrevista": {
@@ -80,7 +80,7 @@ function PanelPostulantesView({
         return { total, enEntrevista, aceptados, rechazados, esperando };
     }, [postulacionesDelCargo]);
 
-    const puestoActual = puestos.find((p) => String(p.id) === String(puestoSeleccionadoId));
+
 
     return (
         <section style={{ display: "flex", flexDirection: "column", gap: "20px" }}>

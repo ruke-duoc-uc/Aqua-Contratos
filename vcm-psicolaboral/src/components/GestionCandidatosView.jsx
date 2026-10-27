@@ -96,7 +96,7 @@ function GestionCandidatosView({
             >
                 <div>
                     <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                        👥 Catálogo de Postulantes (RF02, RF03)
+                        Catálogo de Postulantes (RF02, RF03)
                     </h2>
                     <span style={{ fontSize: "13px", color: "gray" }}>
                         Registro maestro con RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento, edad y CV
@@ -117,7 +117,7 @@ function GestionCandidatosView({
                     <input
                         type="text"
                         className="buscador-input"
-                        placeholder="🔍 Buscar por RUT, nombres, apellidos, dirección o comuna..."
+                        placeholder="Buscar por RUT, nombres, apellidos, dirección o comuna..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         aria-label="Buscar postulantes"
@@ -146,7 +146,7 @@ function GestionCandidatosView({
                         onClick={handleLimpiarFiltros}
                         title="Restablecer filtros"
                     >
-                        ✕ Limpiar
+                        Limpiar
                     </button>
                 )}
 
@@ -269,7 +269,7 @@ function GestionCandidatosView({
                                                         wordBreak: "break-all",
                                                     }}
                                                 >
-                                                    📄 {cvArchivo}
+                                                    {cvArchivo}
                                                 </span>
                                             ) : (
                                                 <span style={{ color: "#999", fontSize: "12px" }}>Sin CV</span>
@@ -319,7 +319,7 @@ function GestionCandidatosView({
                                                         }}
                                                         title="Editar datos del postulante"
                                                     >
-                                                        ✏️ Editar
+                                                        Editar
                                                     </button>
                                                 )}
                                             </div>

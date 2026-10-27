@@ -46,13 +46,13 @@ export default function BandejaInformesView({
     const obtenerBadgeUrgencia = (urg) => {
         switch (urg) {
             case "Urgente":
-                return <span style={{ backgroundColor: "#f8d7da", color: "#842029", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>🔴 Urgente</span>;
+                return <span style={{ backgroundColor: "#f8d7da", color: "#842029", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>Urgente</span>;
             case "Alta":
-                return <span style={{ backgroundColor: "#ffeeba", color: "#856404", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>🟠 Alta</span>;
+                return <span style={{ backgroundColor: "#ffeeba", color: "#856404", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>Alta</span>;
             case "Baja":
-                return <span style={{ backgroundColor: "#d1e7dd", color: "#0f5132", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>🟢 Baja</span>;
+                return <span style={{ backgroundColor: "#d1e7dd", color: "#0f5132", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>Baja</span>;
             default:
-                return <span style={{ backgroundColor: "#cff4fc", color: "#055160", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>🟡 Media</span>;
+                return <span style={{ backgroundColor: "#cff4fc", color: "#055160", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "11px" }}>Media</span>;
         }
     };
 
@@ -72,7 +72,7 @@ export default function BandejaInformesView({
             >
                 <div>
                     <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#212529" }}>
-                        📑 Solicitudes de Informes y Consultas sobre Candidatos
+                        Solicitudes de Informes y Consultas sobre Candidatos
                     </h2>
                     <span style={{ fontSize: "13px", color: "gray" }}>
                         {esJefe
@@ -230,7 +230,7 @@ export default function BandejaInformesView({
                                 </span>
                                 {Array.isArray(inf.destinatarios) && inf.destinatarios.length > 0 && (
                                     <span style={{ fontSize: "10px", color: "#0d6efd", fontWeight: "600", display: "block", marginTop: "2px" }}>
-                                        🎯 Dirigido a: {inf.destinatarios.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ")}
+                                        Dirigido a: {inf.destinatarios.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ")}
                                     </span>
                                 )}
                             </div>
@@ -248,7 +248,7 @@ export default function BandejaInformesView({
                                             fontWeight: "bold",
                                         }}
                                     >
-                                        ⚠️ Fuera de plazo
+                                        [Fuera de plazo]
                                     </span>
                                 )}
                             </div>
@@ -296,7 +296,7 @@ export default function BandejaInformesView({
             ) : (
                 <div style={{ padding: "40px 20px", textAlign: "center", color: "#6c757d" }}>
                     <p style={{ margin: "0 0 10px 0", fontSize: "15px" }}>
-                        🔍 No se encontraron solicitudes de informes.
+                        No se encontraron solicitudes de informes.
                     </p>
                     {esJefe && (
                         <BotonOrange

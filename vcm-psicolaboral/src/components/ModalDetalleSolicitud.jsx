@@ -16,7 +16,7 @@ function ModalDetalleSolicitud({
     onCerrar,
     onCambiarEstado,
     onGuardarEvaluacion,
-    onCambiarFase,
+
     rolActual,
 }) {
     const [resultadoPsicologico, setResultadoPsicologico] = useState(
@@ -27,9 +27,6 @@ function ModalDetalleSolicitud({
     );
     const [conclusiones, setConclusiones] = useState(
         solicitud?.conclusiones || ""
-    );
-    const [faseActual, setFaseActual] = useState(
-        solicitud?.fase || "esperando respuesta"
     );
     const [guardadoExitoso, setGuardadoExitoso] = useState(false);
 

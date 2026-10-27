@@ -1,10 +1,10 @@
 /** Barra superior de navegación, pestañas y selector de roles simulados (RF01)
  * @Autor Amaro Villalobos
  * Permite alternar entre los roles de empleado (Analista, Evaluador, Jefatura)
- * y navegar entre las 3 pestañas: Postulantes, Candidatos y Evaluaciones.
+ * y navegar entre las vistas del sistema.
  **/
 
-function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolver }) {
+function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolver, tabs: tabsProp }) {
     const rolesInfo = {
         analista: { nombre: "Analista de Reclutamiento", descripcion: "Crea candidatos y gestiona solicitudes" },
         evaluador: { nombre: "Profesional Evaluador", descripcion: "Evalúa candidatos y califica" },
@@ -13,11 +13,14 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolve
 
     const infoActual = rolesInfo[rolActual] || { nombre: "Empleado AquaChile", descripcion: "" };
 
-    const tabs = [
-        { id: "postulantes", label: "Postulantes" },
-        { id: "candidatos", label: "Candidatos" },
-        { id: "evaluaciones", label: "Evaluaciones" },
+    const tabsPorDefecto = [
+        { id: "dashboard", label: "Dashboard Operativo" },
+        { id: "candidatos", label: "Gestión de Candidatos" },
+        { id: "solicitudes", label: "Solicitudes de Evaluación" },
+        { id: "informes", label: "Informes de Candidatos" },
     ];
+
+    const tabs = tabsProp || tabsPorDefecto;
 
     return (
         <header className="header-roles" style={{ flexDirection: "column", gap: "10px" }}>
@@ -28,14 +31,14 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolve
                             AquaChile · Aqua-Contratos
                         </h1>
                         <span style={{ fontSize: "12px", color: "var(--color-texto-atenuado, #666)" }}>
-                            Portal de Empleados · Sistema Integrado de Evaluaciones
+                            {infoActual.nombre} · Sistema Integrado de Evaluaciones
                         </span>
                     </div>
                 </div>
 
                 <div className="selector-rol-container" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
-                        Rol de Empleado:
+                        Cargo Activo:
                     </span>
 
                     {onCambiarRol ? (
@@ -52,7 +55,7 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolve
                                 fontWeight: "bold",
                                 cursor: "pointer",
                             }}
-                            title="Cambiar rol de empleado activo"
+                            title="Cambiar cargo de empleado activo"
                         >
                             <option value="analista">Analista de Reclutamiento</option>
                             <option value="evaluador">Profesional Evaluador</option>
@@ -85,7 +88,7 @@ function HeaderRoles({ rolActual, tabActiva, onCambiarTab, onCambiarRol, onVolve
                 </div>
             </div>
 
-            {/* 3 Pestañas de Navegación: Postulantes, Candidatos, Evaluaciones */}
+            {/* Pestañas de Navegación de la Vista */}
             <nav className="nav-tabs-lista" aria-label="Navegación de vistas">
                 {tabs.map((tab) => (
                     <button

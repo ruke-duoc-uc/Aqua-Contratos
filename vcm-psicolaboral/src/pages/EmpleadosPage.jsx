@@ -13,7 +13,7 @@ import AlertaExitoCerrable from "../components/AlertaExitoCerrable";
 import { api } from "../services/api";
 import {
     cargarPostulacionesGlobales,
-    guardarPostulacionesGlobales,
+
     actualizarFasePostulacion,
     actualizarPostulacionGlobal,
     EVENTO_ACTUALIZACION_POSTULACIONES,
