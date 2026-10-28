@@ -1,4 +1,4 @@
-/** Modal de Consulta y Detalle de Solicitud de Evaluación (RF03, RF06, RF08, RF09)
+/** Modal de Consulta y Detalle de Solicitud de Evaluación
  * @Autor Amaro Villalobos
  * Permite visualizar el desglose del postulante (RUT, nombres, apellidos, dirección,
  * comuna, fecha de nacimiento, edad y CV), actualizar su estado y
@@ -7,6 +7,7 @@
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 import { calcularEdad } from "../utils/calcularRut";
+import { abrirCvDocumento } from "../utils/visorCv";
 
 const obtenerFechaHoy = () => new Date().toISOString().split("T")[0];
 
@@ -170,9 +171,20 @@ function ModalDetalleSolicitud({
                             <strong>Currículum Vitae (CV PDF):</strong>
                             <p style={{ margin: "4px 0 12px 0" }}>
                                 {cvArchivo ? (
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e3f2fd", color: "#0d47a1", padding: "5px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>
-                                        📄 {cvArchivo}
-                                    </span>
+                                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e3f2fd", color: "#0d47a1", padding: "5px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>
+                                            📄 {cvArchivo}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => abrirCvDocumento(solicitud)}
+                                            className="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm"
+                                            style={{ fontSize: "12px", padding: "4px 10px" }}
+                                            title="Abrir currículum en nueva pestaña"
+                                        >
+                                            ↗ Abrir CV en nueva pestaña
+                                        </button>
+                                    </div>
                                 ) : (
                                     <span style={{ color: "#888", fontStyle: "italic" }}>Sin archivo adjunto</span>
                                 )}
@@ -193,7 +205,7 @@ function ModalDetalleSolicitud({
                     </div>
 
                     {/* 2. Parámetros de la Solicitud y Estado */}
-                    <h4 className="form-seccion-titulo">2. Parámetros de la Solicitud (RF06, RF08)</h4>
+                    <h4 className="form-seccion-titulo">2. Parámetros de la Solicitud</h4>
                     <div className="form-grid">
                         <div>
                             <strong>Cargo Asignado:</strong>
@@ -244,7 +256,7 @@ function ModalDetalleSolicitud({
                                     htmlFor="cambio-estado-select"
                                     style={{ fontSize: "13px", fontWeight: "bold" }}
                                 >
-                                    Cambio Rápido de Estado (RF08):
+                                    Cambio Rápido de Estado:
                                 </label>
                                 <select
                                     id="cambio-estado-select"
@@ -264,10 +276,10 @@ function ModalDetalleSolicitud({
                         )}
                     </div>
 
-                    {/* 3. Sección de Evaluación Psicolaboral Formal (RF09) */}
+                    {/* 3. Sección de Evaluación Psicolaboral Formal */}
                     <div className="caja-evaluacion-psicolaboral">
                         <h4 style={{ margin: "0 0 12px 0", color: "#0e97b3", fontSize: "15px" }}>
-                            🧠 Formulario de Evaluación Psicolaboral (RF09)
+                            🧠 Formulario de Evaluación Psicolaboral
                         </h4>
 
                         {puedeEvaluar ? (

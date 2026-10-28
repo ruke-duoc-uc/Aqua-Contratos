@@ -9,6 +9,8 @@
     "dev:frontend": "npm --prefix vcm-psicolaboral run dev",
     "build:frontend": "npm --prefix vcm-psicolaboral run build",
     "lint:frontend": "npm --prefix vcm-psicolaboral run lint",
+    "test:frontend": "npm --prefix vcm-psicolaboral test",
+    "test": "npm --prefix vcm-psicolaboral test",
     "install:all": "npm --prefix backend install && npm --prefix vcm-psicolaboral install"
   },
   "keywords": [

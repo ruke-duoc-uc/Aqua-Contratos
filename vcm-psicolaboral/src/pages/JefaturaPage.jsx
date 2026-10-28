@@ -15,24 +15,9 @@ import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
 import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
-const PLANTAS_DISPONIBLES = [
-    "Puerto Montt",
-    "Osorno",
-    "Castro",
-    "Calbuco",
-    "Frutillar",
-    "Puerto Varas",
-    "Ancud"
-];
+import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
 
-const EVALUADORES_DISPONIBLES = [
-    "Amaro Villalobos Caseres",
-    "Carolina Díaz Núñez",
-    "Felipe Muñoz Parra",
-    "Joaquín Oyarzún Leal"
-];
-
-function JefaturaPage({ onVolver, onCambiarRol }) {
+function JefaturaPage({ onVolver }) {
     const rolActual = "jefatura";
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
@@ -58,7 +43,7 @@ function JefaturaPage({ onVolver, onCambiarRol }) {
         };
     }, []);
 
-    // Filtros de búsqueda (RF07)
+    // Filtros de búsqueda
     const [busqueda, setBusqueda] = useState("");
     const [filtroEstado, setFiltroEstado] = useState("todos");
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
@@ -250,7 +235,6 @@ function JefaturaPage({ onVolver, onCambiarRol }) {
                 rolActual={rolActual}
                 tabActiva={tabActiva}
                 onCambiarTab={setTabActiva}
-                onCambiarRol={onCambiarRol}
                 onVolver={onVolver}
             />
 

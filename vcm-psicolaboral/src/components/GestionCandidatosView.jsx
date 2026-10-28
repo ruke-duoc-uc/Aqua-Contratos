@@ -1,4 +1,4 @@
-/** Vista Web: Gestión y Catálogo de Candidatos y Postulantes (RF02, RF03)
+/** Vista Web: Gestión y Catálogo de Candidatos y Postulantes
  * @Autor Amaro Villalobos
  * Interfaz requerida en las bases del MVP para listar, registrar, buscar
  * y administrar información de los postulantes de AquaChile.
@@ -15,6 +15,7 @@
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange";
 import { calcularEdad } from "../utils/calcularRut";
+import { abrirCvDocumento } from "../utils/visorCv";
 
 function GestionCandidatosView({
     candidatos = [],
@@ -96,7 +97,7 @@ function GestionCandidatosView({
             >
                 <div>
                     <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                        Catálogo de Postulantes (RF02, RF03)
+                        Catálogo de Postulantes
                     </h2>
                     <span style={{ fontSize: "13px", color: "gray" }}>
                         Registro maestro con RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento, edad y CV
@@ -156,8 +157,8 @@ function GestionCandidatosView({
             </div>
 
             {/* Listado en Formato Tabla Acorde a los Atributos Solicitados */}
-            <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px" }}>
+            <div className="table-responsive shadow-sm" style={{ borderRadius: "8px" }}>
+                <table className="table table-hover align-middle mb-0" style={{ fontSize: "13.5px" }}>
                     <thead>
                         <tr style={{ backgroundColor: "#CDCDCD", color: "#333", textAlign: "left" }}>
                             <th style={{ padding: "12px 14px" }}>RUT</th>
@@ -254,23 +255,15 @@ function GestionCandidatosView({
                                         {/* 7. CV (PDF) */}
                                         <td style={{ padding: "12px 14px" }}>
                                             {cvArchivo ? (
-                                                <span
-                                                    title={`Documento: ${cvArchivo}`}
-                                                    style={{
-                                                        display: "inline-flex",
-                                                        alignItems: "center",
-                                                        gap: "5px",
-                                                        backgroundColor: "#e3f2fd",
-                                                        color: "#0d47a1",
-                                                        padding: "4px 8px",
-                                                        borderRadius: "4px",
-                                                        fontSize: "12px",
-                                                        fontWeight: "600",
-                                                        wordBreak: "break-all",
-                                                    }}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => abrirCvDocumento(c)}
+                                                    className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm"
+                                                    title={`Abrir ${cvArchivo} en nueva pestaña`}
+                                                    style={{ fontSize: "12px", padding: "3px 8px", cursor: "pointer" }}
                                                 >
-                                                    {cvArchivo}
-                                                </span>
+                                                    📄 {cvArchivo} ↗
+                                                </button>
                                             ) : (
                                                 <span style={{ color: "#999", fontSize: "12px" }}>Sin CV</span>
                                             )}

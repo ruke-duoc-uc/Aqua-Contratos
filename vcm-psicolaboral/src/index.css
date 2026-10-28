@@ -100,7 +100,7 @@ h1{
   align-self: center; 
 }
 
-/* Barra superior de contexto y selector de rol (RF01) */
+/* Barra superior de contexto y selector de rol */
 .header-roles {
   display: flex;
   justify-content: space-between;
@@ -176,7 +176,7 @@ h1{
   color: white;
 }
 
-/* Modal y Formulario para Nueva Solicitud (RF02, RF04, RF05) */
+/* Modal y Formulario para Nueva Solicitud */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -347,7 +347,7 @@ h1{
   color: #383d41;
 }
 
-/* Barra de Búsqueda y Filtros de Solicitudes (RF07) */
+/* Barra de Búsqueda y Filtros de Solicitudes */
 .filtros-barra-contenedor {
   display: flex;
   flex-wrap: wrap;
@@ -409,7 +409,7 @@ h1{
   color: #212529;
 }
 
-/* Badges de Resultado Psicolaboral (RF09) */
+/* Badges de Resultado Psicolaboral */
 .badge-dictamen {
   display: inline-block;
   padding: 4px 10px;
