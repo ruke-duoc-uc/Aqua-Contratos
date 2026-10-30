@@ -8,7 +8,11 @@ import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import GestionCandidatosView from "../components/GestionCandidatosView";
 import { api } from "../services/api";
-import { cargarCandidatosGlobales, EVENTO_ACTUALIZACION_CANDIDATOS } from "../services/candidatosStorage";
+import {
+    cargarCandidatosGlobales,
+    guardarCandidatosGlobales,
+    EVENTO_ACTUALIZACION_CANDIDATOS,
+} from "../services/candidatosStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -18,6 +22,7 @@ import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
 import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
+import { calcularIndicadores, aplicarFiltros } from "../utils/solicitudesUtils";
 
 function AnalistaPage({ onVolver }) {
     const rolActual = "analista";
@@ -33,7 +38,7 @@ function AnalistaPage({ onVolver }) {
     const [informes, setInformes] = useState(cargarInformesIniciales);
     const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
-    // Sincronización en tiempo real con postulantes inscritos desde la pantalla pública
+    // Sincronización en tiempo real con postulantes inscritos desde la pantalla pública o cambios de rol
     useEffect(() => {
         const handleRecargar = () => {
             const actualizados = cargarCandidatosGlobales();
@@ -69,6 +74,7 @@ function AnalistaPage({ onVolver }) {
                         fecha: new Date(item.fecha),
                     }));
                     setCandidatos(formateados);
+                    guardarCandidatosGlobales(formateados);
                     setBackendConectado(true);
                 }
 
@@ -130,45 +136,14 @@ function AnalistaPage({ onVolver }) {
         }
     };
 
-    const pendientes = candidatos.filter(
-        (c) => c.estado === "Pendiente" || c.estado === "En revisión"
-    ).length;
-    const enProceso = candidatos.filter((c) => c.estado === "En proceso").length;
-    const finalizadas = candidatos.filter(
-        (c) => c.estado === "Finalizado" || c.estado === "Finalizada"
-    ).length;
-
-    const indicadores = [
-        { id: 1, titulo: "Candidatos Totales", valor: candidatos.length },
-        { id: 2, titulo: "Solicitudes Pendientes", valor: pendientes },
-        { id: 3, titulo: "En proceso", valor: enProceso },
-        { id: 4, titulo: "Evaluaciones finalizadas", valor: finalizadas },
-    ];
+    const indicadores = useMemo(() => calcularIndicadores(candidatos), [candidatos]);
 
     const solicitudesFiltradas = useMemo(() => {
-        return candidatos.filter((c) => {
-            const termino = busqueda.toLowerCase().trim();
-            const coincideTexto =
-                !termino ||
-                c.nombre.toLowerCase().includes(termino) ||
-                c.rut.toLowerCase().includes(termino) ||
-                (c.cargo && c.cargo.toLowerCase().includes(termino)) ||
-                c.especialidad.toLowerCase().includes(termino) ||
-                c.evaluador.toLowerCase().includes(termino);
-
-            const coincideEstado =
-                filtroEstado === "todos" ||
-                c.estado.toLowerCase() === filtroEstado.toLowerCase();
-
-            const coincidePlanta =
-                filtroPlanta === "todas" ||
-                c.planta.toLowerCase() === filtroPlanta.toLowerCase();
-
-            const coincideEvaluador =
-                filtroEvaluador === "todos" ||
-                c.evaluador.toLowerCase() === filtroEvaluador.toLowerCase();
-
-            return coincideTexto && coincideEstado && coincidePlanta && coincideEvaluador;
+        return aplicarFiltros(candidatos, {
+            busqueda,
+            filtroEstado,
+            filtroPlanta,
+            filtroEvaluador,
         });
     }, [candidatos, busqueda, filtroEstado, filtroPlanta, filtroEvaluador]);
 
@@ -183,12 +158,20 @@ function AnalistaPage({ onVolver }) {
         try {
             const creada = await api.crearSolicitud(nuevaSolicitud);
             const formateada = { ...creada, fecha: new Date(creada.fecha) };
-            setCandidatos((prev) => [formateada, ...prev.filter((c) => c.id !== formateada.id)]);
+            setCandidatos((prev) => {
+                const actualizados = [formateada, ...prev.filter((c) => c.id !== formateada.id)];
+                guardarCandidatosGlobales(actualizados);
+                return actualizados;
+            });
             setBackendConectado(true);
             setAlertaExito(`✓ Solicitud guardada en base de datos para ${formateada.nombre} (${formateada.cargo})`);
         } catch (err) {
             console.warn("Guardado local:", err.message);
-            setCandidatos([nuevaSolicitud, ...candidatos]);
+            setCandidatos((prev) => {
+                const actualizados = [nuevaSolicitud, ...prev];
+                guardarCandidatosGlobales(actualizados);
+                return actualizados;
+            });
             setAlertaExito(`✓ Solicitud creada exitosamente para ${nuevaSolicitud.nombre} (${nuevaSolicitud.cargo})`);
         }
         setTimeout(() => setAlertaExito(""), 4500);
@@ -201,16 +184,20 @@ function AnalistaPage({ onVolver }) {
                 ...actualizado,
                 fecha: new Date(actualizado.fecha || candidatoActualizado.fecha),
             };
-            setCandidatos((prev) =>
-                prev.map((c) => (c.id === formateado.id ? { ...c, ...formateado } : c))
-            );
+            setCandidatos((prev) => {
+                const actualizados = prev.map((c) => (c.id === formateado.id ? { ...c, ...formateado } : c));
+                guardarCandidatosGlobales(actualizados);
+                return actualizados;
+            });
             setBackendConectado(true);
             setAlertaExito(`✓ Candidato actualizado en base de datos para ${formateado.nombre}`);
         } catch (err) {
             console.warn("Actualización local:", err.message);
-            setCandidatos((prev) =>
-                prev.map((c) => (c.id === candidatoActualizado.id ? { ...c, ...candidatoActualizado } : c))
-            );
+            setCandidatos((prev) => {
+                const actualizados = prev.map((c) => (c.id === candidatoActualizado.id ? { ...c, ...candidatoActualizado } : c));
+                guardarCandidatosGlobales(actualizados);
+                return actualizados;
+            });
             setAlertaExito(`✓ Información actualizada para el candidato ${candidatoActualizado.nombre}`);
         }
         setCandidatoAEditar(null);
@@ -218,9 +205,11 @@ function AnalistaPage({ onVolver }) {
     };
 
     const handleCambiarEstado = async (id, nuevoEstado) => {
-        setCandidatos((prev) =>
-            prev.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c))
-        );
+        setCandidatos((prev) => {
+            const actualizados = prev.map((c) => (c.id === id ? { ...c, estado: nuevoEstado } : c));
+            guardarCandidatosGlobales(actualizados);
+            return actualizados;
+        });
         if (solicitudSeleccionada && solicitudSeleccionada.id === id) {
             setSolicitudSeleccionada((prev) => ({ ...prev, estado: nuevoEstado }));
         }

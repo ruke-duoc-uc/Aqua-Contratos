@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import IndicadorCard from '../components/IndicadorCard';
 import AlertaExitoCerrable from '../components/AlertaExitoCerrable';
 import BarraFiltros from '../components/BarraFiltros';
+import ModalNuevaSolicitud from '../components/ModalNuevaSolicitud';
 
 describe('Componente: IndicadorCard', () => {
     it('debe renderizar el título y el valor numérico correctamente', () => {
@@ -82,5 +83,23 @@ describe('Componente: BarraFiltros', () => {
 
         fireEvent.click(botonLimpiar);
         expect(handleLimpiar).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('Componente: ModalNuevaSolicitud (Validación de Formulario)', () => {
+    it('debe bloquear el envío y mostrar alerta cuando el RUT tiene dígito verificador inválido', () => {
+        const handleGuardar = vi.fn();
+        render(<ModalNuevaSolicitud isOpen={true} onCerrar={() => {}} onGuardar={handleGuardar} />);
+
+        fireEvent.change(screen.getByLabelText(/RUT \*/i), { target: { value: '11.111.111-9' } });
+        fireEvent.change(screen.getByLabelText(/Nombres \*/i), { target: { value: 'Juan' } });
+        fireEvent.change(screen.getByLabelText(/Apellidos \*/i), { target: { value: 'Pérez' } });
+        fireEvent.change(screen.getByLabelText(/Cargo a Postular \*/i), { target: { value: 'Operario' } });
+
+        const btnSubmit = screen.getByRole('button', { name: /emitir solicitud/i });
+        fireEvent.click(btnSubmit);
+
+        expect(handleGuardar).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent(/módulo 11/i);
     });
 });

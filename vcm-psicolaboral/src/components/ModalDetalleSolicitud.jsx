@@ -30,6 +30,7 @@ function ModalDetalleSolicitud({
         solicitud?.conclusiones || ""
     );
     const [guardadoExitoso, setGuardadoExitoso] = useState(false);
+    const [errorEvaluacion, setErrorEvaluacion] = useState("");
 
     if (!isOpen || !solicitud) return null;
 
@@ -47,14 +48,29 @@ function ModalDetalleSolicitud({
 
     const handleGuardarEvaluacion = (e) => {
         e.preventDefault();
-        const nuevoEstado =
-            resultadoPsicologico !== "Pendiente" ? "Finalizado" : solicitud.estado;
+
+        if (!fechaEvaluacion) {
+            setErrorEvaluacion("Debe indicar la fecha de evaluación o entrevista.");
+            return;
+        }
+        if (!resultadoPsicologico || resultadoPsicologico === "Pendiente") {
+            setErrorEvaluacion("Debe seleccionar un Dictamen Psicolaboral formal (Recomendado, Con observaciones o No recomendado).");
+            return;
+        }
+        if (!conclusiones.trim()) {
+            setErrorEvaluacion("Las conclusiones y observaciones psicolaborales son obligatorias para emitir el dictamen.");
+            return;
+        }
+
+        setErrorEvaluacion("");
+
+        const nuevoEstado = "Finalizado";
 
         if (typeof onGuardarEvaluacion === "function") {
             onGuardarEvaluacion(solicitud.id, {
                 resultadoPsicologico,
                 fechaEvaluacion,
-                conclusiones,
+                conclusiones: conclusiones.trim(),
                 estado: nuevoEstado,
             });
         } else if (typeof onCambiarEstado === "function") {
@@ -171,7 +187,7 @@ function ModalDetalleSolicitud({
                             <strong>Currículum Vitae (CV PDF):</strong>
                             <p style={{ margin: "4px 0 12px 0" }}>
                                 {cvArchivo ? (
-                                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                                    <span className="d-inline-flex align-items-center gap-2 flex-wrap">
                                         <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e3f2fd", color: "#0d47a1", padding: "5px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>
                                             📄 {cvArchivo}
                                         </span>
@@ -184,7 +200,7 @@ function ModalDetalleSolicitud({
                                         >
                                             ↗ Abrir CV en nueva pestaña
                                         </button>
-                                    </div>
+                                    </span>
                                 ) : (
                                     <span style={{ color: "#888", fontStyle: "italic" }}>Sin archivo adjunto</span>
                                 )}
@@ -284,6 +300,12 @@ function ModalDetalleSolicitud({
 
                         {puedeEvaluar ? (
                             <form onSubmit={handleGuardarEvaluacion}>
+                                {errorEvaluacion && (
+                                    <div className="form-error-mensaje" role="alert" style={{ marginBottom: "12px" }}>
+                                        <strong>⚠️ Atención: </strong>{errorEvaluacion}
+                                    </div>
+                                )}
+
                                 <div className="form-grid" style={{ marginBottom: "12px" }}>
                                     <div className="form-grupo">
                                         <label htmlFor="fecha-evaluacion">
@@ -294,7 +316,10 @@ function ModalDetalleSolicitud({
                                             type="date"
                                             className="form-input"
                                             value={fechaEvaluacion}
-                                            onChange={(e) => setFechaEvaluacion(e.target.value)}
+                                            onChange={(e) => {
+                                                setFechaEvaluacion(e.target.value);
+                                                setErrorEvaluacion("");
+                                            }}
                                             required
                                         />
                                     </div>
@@ -307,7 +332,10 @@ function ModalDetalleSolicitud({
                                             id="resultado-psicologico"
                                             className="form-select"
                                             value={resultadoPsicologico}
-                                            onChange={(e) => setResultadoPsicologico(e.target.value)}
+                                            onChange={(e) => {
+                                                setResultadoPsicologico(e.target.value);
+                                                setErrorEvaluacion("");
+                                            }}
                                         >
                                             <option value="Pendiente">-- Pendiente de Dictamen --</option>
                                             <option value="Recomendado">Recomendado</option>
@@ -328,7 +356,10 @@ function ModalDetalleSolicitud({
                                             className="form-textarea"
                                             placeholder="Detalle aptitudes, competencias evaluadas, adaptabilidad al clima de trabajo de planta o recomendaciones..."
                                             value={conclusiones}
-                                            onChange={(e) => setConclusiones(e.target.value)}
+                                            onChange={(e) => {
+                                                setConclusiones(e.target.value);
+                                                setErrorEvaluacion("");
+                                            }}
                                         />
                                     </div>
                                 </div>

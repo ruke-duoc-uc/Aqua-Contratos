@@ -27,6 +27,26 @@ export function calcularRut(rut, verificador) {
 }
 
 /**
+ * Valida un RUT completo en formato "12.345.678-9" o "12345678-K".
+ * @param {string} rutCompleto
+ * @returns {boolean} True si el RUT completo es válido según Módulo 11.
+ */
+export function validarRutCompleto(rutCompleto) {
+    if (!rutCompleto || typeof rutCompleto !== "string") return false;
+    const limpio = rutCompleto.trim();
+    if (limpio.includes("-")) {
+        const partes = limpio.split("-");
+        if (partes.length !== 2) return false;
+        return calcularRut(partes[0], partes[1]);
+    }
+    const soloCaracteres = limpio.replace(/[^0-9kK]/g, "");
+    if (soloCaracteres.length < 8) return false;
+    const cuerpo = soloCaracteres.slice(0, -1);
+    const dv = soloCaracteres.slice(-1);
+    return calcularRut(cuerpo, dv);
+}
+
+/**
  * Calcula la edad en años a partir de una fecha de nacimiento (YYYY-MM-DD o Date)
  * @param {string|Date} fechaNacimiento
  * @returns {number|null} Edad en años cumplidos o null si es inválida

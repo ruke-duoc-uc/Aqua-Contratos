@@ -1,24 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-/**
- * Función que replica el cálculo de KPIs implementado en AnalistaPage, EvaluadorPage y JefaturaPage
- */
-function calcularIndicadores(candidatos) {
-    const pendientes = candidatos.filter(
-        (c) => c.estado === "Pendiente" || c.estado === "En revisión"
-    ).length;
-    const enProceso = candidatos.filter((c) => c.estado === "En proceso").length;
-    const finalizadas = candidatos.filter(
-        (c) => c.estado === "Finalizado" || c.estado === "Finalizada"
-    ).length;
-
-    return [
-        { id: 1, titulo: "Candidatos Totales", valor: candidatos.length },
-        { id: 2, titulo: "Solicitudes Pendientes", valor: pendientes },
-        { id: 3, titulo: "En proceso", valor: enProceso },
-        { id: 4, titulo: "Evaluaciones finalizadas", valor: finalizadas },
-    ];
-}
+import { calcularIndicadores } from '../utils/solicitudesUtils';
 
 describe('Lógica de Negocio: Cálculo de Indicadores Operativos (Dashboard KPIs)', () => {
     it('debe calcular métricas en 0 cuando la lista de candidatos está vacía', () => {

@@ -5,7 +5,7 @@
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
-import { calcularRut } from "../utils/calcularRut";
+import { validarRutCompleto } from "../utils/calcularRut";
 
 import { COMUNAS, FAMILIAS_CARGO, EVALUADORES_DISPONIBLES as EVALUADORES } from "../utils/constantes";
 
@@ -55,9 +55,13 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validaciones mínimas obligatorias según  y 
+        // Validaciones mínimas obligatorias según RF02 y RF04
         if (!rut.trim()) {
             setError("El RUT del postulante es obligatorio.");
+            return;
+        }
+        if (!validarRutCompleto(rut)) {
+            setError("El RUT ingresado no es válido según el algoritmo Módulo 11 (Ej: 11.111.111-1).");
             return;
         }
         if (!nombres.trim()) {
@@ -112,10 +116,8 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
 
     if (!isOpen) return null;
 
-    const partesRut = rut.includes("-") ? rut.split("-") : [];
-    const rutValido = partesRut.length === 2 && partesRut[0].trim() && partesRut[1].trim()
-        ? calcularRut(partesRut[0], partesRut[1])
-        : null;
+    const mostrarEstadoRut = rut.includes("-") || rut.replace(/[^0-9kK]/g, "").length >= 8;
+    const rutValido = mostrarEstadoRut ? validarRutCompleto(rut) : null;
 
     return (
         <div className="modal-overlay" onClick={handleCancelar}>
@@ -141,7 +143,7 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         {error && (
-                            <div className="form-error-mensaje">
+                            <div className="form-error-mensaje" role="alert">
                                 <strong>⚠️ Atención: </strong>{error}
                             </div>
                         )}
@@ -154,12 +156,15 @@ function ModalNuevaSolicitud({ isOpen, onCerrar, onGuardar }) {
                                     id="nuevo-rut"
                                     type="text"
                                     className="form-input"
-                                    placeholder="Ej: 19.876.543-2"
+                                    placeholder="Ej: 11.111.111-1"
                                     value={rut}
-                                    onChange={(e) => setRut(e.target.value)}
+                                    onChange={(e) => {
+                                        setRut(e.target.value);
+                                        setError("");
+                                    }}
                                     required
                                 />
-                                {rut.includes("-") && (
+                                {mostrarEstadoRut && (
                                     <div style={{ marginTop: "4px" }}>
                                         {rutValido ? (
                                             <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>

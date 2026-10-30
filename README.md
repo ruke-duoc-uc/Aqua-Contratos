@@ -22,7 +22,6 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 - [Ejecución de Pruebas Unitarias (Vitest)](#-ejecución-de-pruebas-unitarias-vitest)
 - [Diagnóstico Técnico y Estado de Correcciones](#-diagnóstico-técnico-y-estado-de-correcciones)
 - [Entregables Académicos (EP2)](#-entregables-académicos-ep2)
-- [Roadmap de Desarrollo](#-roadmap-de-desarrollo)
 
 ---
 
@@ -38,12 +37,12 @@ Actualmente, el proceso se realiza mediante documentos físicos en papel y herra
 
 **Aqua-Contratos** es una aplicación web Full Stack que centraliza y estandariza la información clave del proceso de evaluación psicolaboral:
 - Registro y gestión de perfiles de candidatos con validación de RUT oficial (Módulo 11).
-- Creación y seguimiento de solicitudes de evaluación con estados en tiempo real (*Pendiente*, *En proceso*, *Finalizada*).
+- Creación y seguimiento de solicitudes de evaluación con estados en tiempo real (*Pendiente*, *En proceso*, *Finalizado*).
 - Registro de antecedentes, fechas de entrevista y calificaciones psicolaborales.
 - Navegación declarativa SPA mediante **React Router 7**.
 - Maquetación y estilos responsive con **Bootstrap 5**.
-- Verificación de calidad mediante pruebas unitarias automatizadas con **Vitest**.
-- Dashboard con indicadores operativos (KPIs) para jefaturas y analistas.
+- Verificación de calidad mediante **25 pruebas unitarias automatizadas con Vitest**.
+- Dashboard con indicadores operativos (KPIs) para jefaturas, evaluadores y analistas.
 
 ---
 
@@ -53,9 +52,9 @@ De acuerdo con el levantamiento del caso y las bases del MVP:
 
 | Rol | Ruta | ¿Qué puede ver? | ¿Qué puede hacer? | Restricciones clave |
 | :--- | :--- | :--- | :--- | :--- |
-| **Analista de Reclutamiento** | `/analista` | Perfiles de candidatos, solicitudes de contratación y resultados finales. | Crear perfiles de candidatos, emitir solicitudes de evaluación y revisar informes psicolaborales. | No puede saltarse etapas del flujo ni duplicar perfiles de una misma persona. |
+| **Analista de Reclutamiento** | `/analista` | Perfiles de candidatos, solicitudes de contratación y resultados finales. | Crear perfiles de candidatos, emitir solicitudes de evaluación y revisar informes psicolaborales. | No puede saltarse etapas del flujo ni emitir el dictamen clínico formal. |
 | **Profesional Evaluador** | `/evaluador` | Solicitudes asignadas, datos laborales del candidato e historial de evaluaciones. | Agendar fechas de entrevista, actualizar estados a *En proceso*, registrar observaciones y dictar resultado general. | No toma la decisión final de contratación ni altera datos personales del candidato. |
-| **Jefe de Área / Jefatura** | `/jefatura` | Dashboard con métricas agregadas y listado de solicitudes de su área (solo lectura). | Consultar el avance de evaluaciones solicitadas y revisar resultados consolidados. | No crea, edita ni elimina candidatos o evaluaciones. |
+| **Jefe de Área / Jefatura** | `/jefatura` | Dashboard con métricas agregadas y listado de solicitudes de su área (solo lectura). | Consultar el avance de evaluaciones solicitadas, solicitar informes de gestión y revisar resultados consolidados. | No crea, edita ni elimina candidatos o evaluaciones. |
 | **Postulante a Trabajo** | `/candidato` | Ofertas laborales abiertas de plantas AquaChile y formulario de postulación. | Postular en línea con datos personales, adjuntar CV y obtener comprobante digital. | No accede a datos internos de otros postulantes ni a evaluaciones privadas. |
 
 ---
@@ -66,16 +65,16 @@ Estado de implementación respecto al alcance del MVP:
 
 | Código | Requisito Funcional | Prioridad | Estado Actual | Observaciones |
 | :--- | :--- | :---: | :---: | :--- |
-| **RF01** | Ingreso simple con usuarios ficticios o roles simulados | Alta | 🟢 Implementado | Implementado con **React Router 7** y `HeaderRoles.jsx` para Analista, Evaluador, Jefatura y Postulante. |
-| **RF02** | Registrar candidatos con datos mínimos obligatorios | Alta | 🟢 Implementado | Implementado en `ModalNuevaSolicitud.jsx` con validación de RUT (Módulo 11) y campos requeridos. |
+| **RF01** | Ingreso simple con usuarios ficticios o roles simulados | Alta | 🟢 Implementado | Implementado con **React Router 7** (`App.jsx`) y `HeaderRoles.jsx` para Analista, Evaluador, Jefatura y Postulante. |
+| **RF02** | Registrar candidatos con datos mínimos obligatorios | Alta | 🟢 Implementado | Implementado en `ModalNuevaSolicitud.jsx` y `FormularioPostulacion.jsx` con validación de RUT (Módulo 11) y campos requeridos. |
 | **RF03** | Editar y consultar información principal de un candidato | Alta | 🟢 Implementado | Implementado en `ModalDetalleSolicitud.jsx` y `ModalEditarCandidato.jsx`. |
 | **RF04** | Crear solicitudes de evaluación asociadas a un candidato | Alta | 🟢 Implementado | Operativo desde el botón `+ Nueva solicitud` con vinculación de postulante y proceso. |
-| **RF05** | Registrar cargo, familia de cargo, fecha de solicitud y responsable | Alta | 🟢 Implementado | Selectores de catálogo para plantas AquaChile, familias de cargo y evaluadores. |
+| **RF05** | Registrar cargo, familia de cargo, fecha de solicitud y responsable | Alta | 🟢 Implementado | Selectores de catálogo para plantas AquaChile, familias de cargo y evaluadores (`constantes.js`). |
 | **RF06** | Visualizar listado de solicitudes y consultar su detalle | Alta | 🟢 Implementado | Listado con badges de estado Bootstrap 5 y visualización accesible desde el botón `Detalle`. |
-| **RF07** | Buscar o filtrar solicitudes por estado, fecha, cargo o candidato | Media | 🟢 Implementado | Implementado en `BarraFiltros.jsx` con buscador en tiempo real, filtro por estado, planta y evaluador. |
-| **RF08** | Actualizar estado de la solicitud (*Pendiente*, *En proceso*, *Finalizada*) | Alta | 🟢 Implementado | Selector de cambio de estado interactivo disponible en el modal de detalle. |
-| **RF09** | Registrar fecha de evaluación, observaciones o resultado general | Alta | 🟢 Implementado | Formulario formal de evaluación en `ModalDetalleSolicitud.jsx` con fecha, dictamen y observaciones. |
-| **RF10** | Dashboard simple con indicadores generales del proceso | Media | 🟢 Implementado | 4 KPIs calculados dinámicamente en tiempo real en tarjetas responsive de Bootstrap 5. |
+| **RF07** | Buscar o filtrar solicitudes por estado, fecha, cargo o candidato | Media | 🟢 Implementado | Implementado en `BarraFiltros.jsx` y `solicitudesUtils.js` con buscador en tiempo real, filtro por estado, planta y evaluador. |
+| **RF08** | Actualizar estado de la solicitud (*Pendiente*, *En proceso*, *Finalizado*) | Alta | 🟢 Implementado | Selector de cambio de estado interactivo con persistencia global entre vistas. |
+| **RF09** | Registrar fecha de evaluación, observaciones o resultado general | Alta | 🟢 Implementado | Formulario formal validado en `ModalDetalleSolicitud.jsx` con fecha, dictamen y observaciones clínicas. |
+| **RF10** | Dashboard simple con indicadores generales del proceso | Media | 🟢 Implementado | KPIs calculados dinámicamente en tiempo real (`calcularIndicadores`) en tarjetas responsive de Bootstrap 5 (`IndicadorCard.jsx`). |
 
 ---
 
@@ -103,7 +102,7 @@ flowchart TD
         M --> N{"¿Formulario de evaluación<br/>completo?"}
         N -- "No" --> O["Muestra error de campos obligatorios"]
         O --> M
-        N -- "Sí" --> P["Guarda evaluación y<br/>actualiza estado a: FINALIZADA"]
+        N -- "Sí" --> P["Guarda evaluación y<br/>actualiza estado a: FINALIZADO"]
     end
 
     subgraph Consulta ["📊 Rol: Analista / Jefatura (/jefatura)"]
@@ -111,7 +110,6 @@ flowchart TD
         Q --> R(["Fin: Consulta de solicitud y resultado consolidado"])
     end
 
-    %% Estilos visuales para estados clave
     style H fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#000
     style L fill:#cfe2ff,stroke:#0d6efd,stroke-width:2px,color:#000
     style P fill:#d1e7dd,stroke:#198754,stroke-width:2px,color:#000
@@ -125,10 +123,11 @@ flowchart TD
 Aqua-Contratos/
 ├── CONTRIBUTING.md           # Normas de contribución y convenciones
 ├── README.md                 # Documentación integral del proyecto
-├── rubrica.pdf               # Pauta oficial de Evaluación Parcial 2
+├── DSY1104_Evaluacion_Parcial_2_Rubrica_VcM_React.pdf
 ├── evidencias/               # Documentos oficiales y entregables solicitados
 │   ├── ERS_AquaContratos_EP2.md              # Documento ERS actualizado (alcance y requerimientos)
 │   ├── Evidencia_Pruebas_Vitest_EP2.md       # Informe formal de testing automatizado (Vitest)
+│   ├── Guia_Defensa_Presentacion_EP2.md      # Guía maestra de defensa técnica (60% individual)
 │   └── Fullstack-Actividad_Bases_MVP_AquaChile_DSY1104.docx.pdf
 ├── backend/                  # API REST en Node.js + Express (Etapa Full Stack)
 │   ├── package.json
@@ -140,24 +139,23 @@ Aqua-Contratos/
     ├── package.json          # Dependencias (react-router-dom, bootstrap, vitest, testing-library)
     └── src/
         ├── main.jsx          # Punto de entrada con Bootstrap 5 y ReactDOM
-        ├── App.jsx           # Enrutamiento declarativo SPA (React Router 7)
+        ├── App.jsx           # Enrutamiento declarativo SPA (React Router 7) y selectores de portal
         ├── index.css         # Variables y estilos complementarios
-        ├── test/             # Suites de pruebas automatizadas Vitest
+        ├── test/             # Suites de pruebas automatizadas Vitest (25 tests)
         │   ├── setup.js              # Configuración de jest-dom
-        │   ├── calcularRut.test.js   # Pruebas de validación Módulo 11 y edad (7 tests)
+        │   ├── calcularRut.test.js   # Pruebas de validación Módulo 11, RUT completo y edad (8 tests)
         │   ├── indicadores.test.js   # Pruebas de cálculo de métricas del Dashboard (2 tests)
         │   ├── filtros.test.js       # Pruebas de búsqueda y filtros reactivos (6 tests)
-        │   ├── components.test.jsx   # Pruebas de componentes y Bootstrap (6 tests)
-        │   └── router.test.jsx       # Pruebas de navegación React Router (1 test)
+        │   ├── components.test.jsx   # Pruebas de componentes, validación modal y Bootstrap (7 tests)
+        │   └── router.test.jsx       # Pruebas de navegación React Router (2 tests)
         ├── pages/            # Vistas principales vinculadas a rutas
         │   ├── AnalistaPage.jsx
         │   ├── EvaluadorPage.jsx
         │   ├── JefaturaPage.jsx
-        │   ├── CandidatoPage.jsx
-        │   └── EmpleadosPage.jsx
+        │   └── CandidatoPage.jsx
         ├── components/       # Componentes modulares reutilizables
-        ├── services/         # Servicios de persistencia y conexión API
-        └── utils/            # Funciones auxiliares (calcularRut, columnas)
+        ├── services/         # Servicios de persistencia (localStorage) y conexión API
+        └── utils/            # Funciones auxiliares (calcularRut, solicitudesUtils, constantes, visorCv)
 ```
 
 ---
@@ -188,7 +186,7 @@ Aqua-Contratos/
 
 ## 🧪 Ejecución de Pruebas Unitarias (Vitest)
 
-Para ejecutar la suite completa de 22 pruebas automatizadas exigidas en la rúbrica (**IE2.2.1 / IE2.2.2**):
+Para ejecutar la suite completa de **25 pruebas automatizadas** exigidas en la rúbrica (**IE2.2.1 / IE2.2.2**):
 
 ```bash
 # Ejecutar todas las pruebas (modo single run)
@@ -199,20 +197,20 @@ cd vcm-psicolaboral
 npm test
 
 # Modo observador interactivo:
-npm run test:watch
+npm --prefix vcm-psicolaboral run test:watch
 ```
 
 Resultado esperado:
 ```text
- ✓ src/test/filtros.test.js (6 tests)
- ✓ src/test/calcularRut.test.js (7 tests)
+ ✓ src/test/calcularRut.test.js (8 tests)
  ✓ src/test/indicadores.test.js (2 tests)
- ✓ src/test/components.test.jsx (6 tests)
- ✓ src/test/router.test.jsx (1 test)
+ ✓ src/test/filtros.test.js (6 tests)
+ ✓ src/test/components.test.jsx (7 tests)
+ ✓ src/test/router.test.jsx (2 tests)
 
  Test Files  5 passed (5)
-      Tests  22 passed (22)
-   Duration  ~1.4s
+      Tests  25 passed (25)
+   Duration  ~2.0s
 ```
 
 ---
@@ -222,13 +220,13 @@ Resultado esperado:
 Estado del proyecto tras adecuarlo a la rúbrica de la Evaluación Parcial 2:
 
 1. **Navegación SPA con React Router 7:**  
-   🟢 **Cumplido al 100%:** Migrada la navegación condicional a rutas formales (`/`, `/empleados`, `/analista`, `/evaluador`, `/jefatura`, `/candidato`), soportando URLs directas y botones de historial del navegador.
+   🟢 **Cumplido al 100%:** Navegación declarativa mediante rutas formales (`/`, `/empleados`, `/analista`, `/evaluador`, `/jefatura`, `/candidato`, `/postular`) con persistencia sincronizada en `localStorage` al cambiar entre roles.
 2. **Estilos y Maquetación Responsive con Bootstrap 5:**  
-   🟢 **Cumplido al 100%:** Bootstrap 5 instalado e integrado en `main.jsx`. Implementadas clases de grid responsive (`container-fluid`, `row`, `col-*`), tarjetas (`card`), badges oficiales (`bg-warning`, `bg-primary`, `bg-success`) y controles de formulario (`form-control`, `form-select`).
+   🟢 **Cumplido al 100%:** Bootstrap 5 instalado e integrado en `main.jsx`. Implementadas clases de grid responsive (`container-fluid`, `row`, `col-*`), tarjetas (`card`), tablas (`table-responsive`, `table-hover`), badges contextuales (`bg-warning`, `bg-primary`, `bg-success`) y controles de formulario (`form-control`, `form-select`).
 3. **Testing Automatizado con Vitest:**  
-   🟢 **Cumplido al 100%:** Vitest configurado con entorno `jsdom` y Testing Library. 22 pruebas unitarias pasando con 0 errores.
+   🟢 **Cumplido al 100%:** Vitest configurado con entorno `jsdom` y Testing Library. **25 pruebas unitarias** ejecutando código real de `src/utils/` y `src/components/` con 0 errores.
 4. **Documentación Oficial y Entregables:**  
-   🟢 **Cumplido al 100%:** Redactados el documento formal de ERS y el reporte de Evidencias de Pruebas Vitest en la carpeta `evidencias/`.
+   🟢 **Cumplido al 100%:** Redactados el documento formal de ERS, el reporte de Evidencias de Pruebas Vitest y la Guía de Defensa Técnica en la carpeta `evidencias/`.
 
 ---
 
@@ -238,3 +236,4 @@ Estado del proyecto tras adecuarlo a la rúbrica de la Evaluación Parcial 2:
 2. **README de ejecución:** Presente en la raíz del repositorio.
 3. **Documento ERS actualizado:** [`evidencias/ERS_AquaContratos_EP2.md`](evidencias/ERS_AquaContratos_EP2.md).
 4. **Evidencia breve de pruebas Vitest:** [`evidencias/Evidencia_Pruebas_Vitest_EP2.md`](evidencias/Evidencia_Pruebas_Vitest_EP2.md).
+5. **Guía de Defensa Técnica Individual:** [`evidencias/Guia_Defensa_Presentacion_EP2.md`](evidencias/Guia_Defensa_Presentacion_EP2.md).

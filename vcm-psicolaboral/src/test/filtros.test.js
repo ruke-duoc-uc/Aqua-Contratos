@@ -1,34 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-/**
- * Función que replica el algoritmo de filtrado utilizado en las vistas operativas
- */
-function aplicarFiltros(candidatos, { busqueda = "", filtroEstado = "todos", filtroPlanta = "todas", filtroEvaluador = "todos" }) {
-    return candidatos.filter((c) => {
-        const termino = busqueda.toLowerCase().trim();
-        const coincideTexto =
-            !termino ||
-            c.nombre.toLowerCase().includes(termino) ||
-            c.rut.toLowerCase().includes(termino) ||
-            (c.cargo && c.cargo.toLowerCase().includes(termino)) ||
-            (c.especialidad && c.especialidad.toLowerCase().includes(termino)) ||
-            (c.evaluador && c.evaluador.toLowerCase().includes(termino));
-
-        const coincideEstado =
-            filtroEstado === "todos" ||
-            c.estado.toLowerCase() === filtroEstado.toLowerCase();
-
-        const coincidePlanta =
-            filtroPlanta === "todas" ||
-            c.planta.toLowerCase() === filtroPlanta.toLowerCase();
-
-        const coincideEvaluador =
-            filtroEvaluador === "todos" ||
-            c.evaluador.toLowerCase() === filtroEvaluador.toLowerCase();
-
-        return coincideTexto && coincideEstado && coincidePlanta && coincideEvaluador;
-    });
-}
+import { aplicarFiltros } from '../utils/solicitudesUtils';
 
 const datosMock = [
     { id: 1, nombre: 'Valentina Silva', rut: '18.234.567-8', cargo: 'Operario de Planta', especialidad: 'Producción', planta: 'Puerto Montt', evaluador: 'Amaro Villalobos Caseres', estado: 'Pendiente' },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcularRut, calcularEdad } from '../utils/calcularRut';
+import { calcularRut, validarRutCompleto, calcularEdad } from '../utils/calcularRut';
 
 describe('Utilidad: calcularRut (Validación Módulo 11)', () => {
     it('debe validar correctamente un RUT chileno válido con dígito numérico', () => {
@@ -35,6 +35,13 @@ describe('Utilidad: calcularRut (Validación Módulo 11)', () => {
         expect(calcularRut('11.111.111', '1')).toBe(true);
         expect(calcularRut('11-111-111', '1')).toBe(true);
         expect(calcularRut('11.111.112', 'k')).toBe(true);
+    });
+
+    it('debe validar strings de RUT completo con o sin formato (validarRutCompleto)', () => {
+        expect(validarRutCompleto('11.111.111-1')).toBe(true);
+        expect(validarRutCompleto('11111112-K')).toBe(true);
+        expect(validarRutCompleto('11.111.111-9')).toBe(false);
+        expect(validarRutCompleto('')).toBe(false);
     });
 });
 

@@ -5,39 +5,8 @@
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
-
-const COMUNAS = [
-    "Ancud", 
-    "Calbuco", 
-    "Castro", 
-    "Chaitén", 
-    "Chonchi", 
-    "Cochamó",
-    "Curaco de Vélez", 
-    "Dalcahue", 
-    "Fresia", 
-    "Frutillar", 
-    "Futaleufú", 
-    "Hualaihué", 
-    "Llanquihue", 
-    "Los Muermos", 
-    "Maullín", 
-    "Osorno", 
-    "Palena", 
-    "Puerto Montt", 
-    "Puerto Octay", 
-    "Puerto Varas", 
-    "Puqueldón", 
-    "Purranque", 
-    "Puyehue", 
-    "Queilén", 
-    "Quellón", 
-    "Quemchi", 
-    "Quinchao", 
-    "Río Negro", 
-    "San Juan de la Costa", 
-    "San Pablo"
-];
+import { validarRutCompleto } from "../utils/calcularRut";
+import { COMUNAS } from "../utils/constantes";
 
 function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
     const nombresIniciales = candidato?.nombres || (candidato?.nombre ? candidato.nombre.split(" ").slice(0, -2).join(" ") || candidato.nombre.split(" ")[0] : "");
@@ -61,6 +30,10 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
 
         if (!rut.trim()) {
             setError("El RUT es obligatorio.");
+            return;
+        }
+        if (!validarRutCompleto(rut)) {
+            setError("El RUT ingresado no es válido según el algoritmo Módulo 11.");
             return;
         }
         if (!nombres.trim()) {
@@ -94,6 +67,9 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
         onCerrar();
     };
 
+    const mostrarEstadoRut = rut.includes("-") || rut.replace(/[^0-9kK]/g, "").length >= 8;
+    const rutValido = mostrarEstadoRut ? validarRutCompleto(rut) : null;
+
     return (
         <div className="modal-overlay" onClick={onCerrar}>
             <div
@@ -118,7 +94,7 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         {error && (
-                            <div className="form-error-mensaje">
+                            <div className="form-error-mensaje" role="alert">
                                 <strong>⚠️ Atención: </strong>{error}
                             </div>
                         )}
@@ -131,10 +107,26 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                                     type="text"
                                     className="form-input"
                                     value={rut}
-                                    onChange={(e) => setRut(e.target.value)}
-                                    placeholder="12.345.678-9"
+                                    onChange={(e) => {
+                                        setRut(e.target.value);
+                                        setError("");
+                                    }}
+                                    placeholder="11.111.111-1"
                                     required
                                 />
+                                {mostrarEstadoRut && (
+                                    <div style={{ marginTop: "4px" }}>
+                                        {rutValido ? (
+                                            <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>
+                                                ✓ RUT válido
+                                            </span>
+                                        ) : (
+                                            <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
+                                                ✕ Dígito verificador inválido
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="form-grupo">
