@@ -1,4 +1,4 @@
-# AQUA-CONTRATOS 🐟📋
+# AQUA-CONTRATOS 
 
 Sistema web para la centralización y digitalización del proceso de evaluación psicolaboral del área de Reclutamiento y Selección de **AquaChile**.
 
@@ -10,7 +10,7 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 
 ---
 
-## 📑 Índice
+##  Índice
 
 - [Problemática](#-problemática)
 - [Solución](#-solución)
@@ -25,7 +25,7 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 
 ---
 
-## 🏢 Problemática
+## Problemática
 
 AquaChile es una empresa del rubro acuícola que desarrolla operaciones productivas y administrativas en distintas áreas de gestión. Dentro de sus procesos internos, el área de Reclutamiento y Selección requiere coordinar evaluaciones psicolaborales para candidatos que postulan a diversos cargos en plantas y oficinas.
 
@@ -33,7 +33,7 @@ Actualmente, el proceso se realiza mediante documentos físicos en papel y herra
 
 ---
 
-## 💡 Solución
+##  Solución
 
 **Aqua-Contratos** es una aplicación web Full Stack que centraliza y estandariza la información clave del proceso de evaluación psicolaboral:
 - Registro y gestión de perfiles de candidatos con validación de RUT oficial (Módulo 11).
@@ -46,7 +46,7 @@ Actualmente, el proceso se realiza mediante documentos físicos en papel y herra
 
 ---
 
-## 👥 Roles y Permisos
+##  Roles y Permisos
 
 De acuerdo con el levantamiento del caso y las bases del MVP:
 
@@ -59,7 +59,7 @@ De acuerdo con el levantamiento del caso y las bases del MVP:
 
 ---
 
-## 🎯 Requisitos Funcionales y Estado
+##  Requisitos Funcionales y Estado
 
 Estado de implementación respecto al alcance del MVP:
 
@@ -78,7 +78,7 @@ Estado de implementación respecto al alcance del MVP:
 
 ---
 
-## 🔄 Flujo Principal del Proceso
+##  Flujo Principal del Proceso
 
 ```mermaid
 flowchart TD
@@ -160,7 +160,7 @@ Aqua-Contratos/
 
 ---
 
-## 🚀 Cómo Ejecutar el Proyecto
+##  Cómo Ejecutar el Proyecto
 
 ### Prerrequisitos
 - Tener instalado **[Node.js](https://nodejs.org/)** (v18, v20 o v24).
@@ -180,11 +180,11 @@ Aqua-Contratos/
    ```
 
 3. **Acceder a la aplicación en el navegador:**
-   👉 **[http://localhost:5173](http://localhost:5173)**
+    **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
-## 🧪 Ejecución de Pruebas Unitarias (Vitest)
+##  Ejecución de Pruebas Unitarias (Vitest)
 
 Para ejecutar la suite completa de **25 pruebas automatizadas** exigidas en la rúbrica (**IE2.2.1 / IE2.2.2**):
 
@@ -230,7 +230,7 @@ Estado del proyecto tras adecuarlo a la rúbrica de la Evaluación Parcial 2:
 
 ---
 
-## 📑 Entregables Académicos (EP2)
+##  Entregables Académicos (EP2)
 
 1. **Código fuente:** En el repositorio GitHub en la rama principal.
 2. **README de ejecución:** Presente en la raíz del repositorio.
