@@ -3,17 +3,45 @@ import BotonOrange from "./BotonOrange";
 import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
 import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
 import { calcularRut } from "../utils/calcularRut";
+import { api } from "../services/api";
 
 
 function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
     const [datos, setDatos] = useState({
-        nombre: "",
-        apellido: "",
-        rut: "",
-        dv: "",
-        fecha: "",
-        comuna: "",
+        nombre: "", apellido: "", rut: "", dv: "",
+        fecha: "", comuna: "", direccion: "", email: "",
     });
+    function cambiar(e){
+        setDatos({...datos, [e.target.name]: e.target.value})
+    }
+
+    /**
+     * Registra el candidato en la API REST del backend Express.
+     * Se envía solo el nombre del archivo CV (cv_pdf); los bytes del CV se
+     * conservan localmente para el comprobante y no se incluyen en el JSON.
+     */
+    async function enviar(postulacion) {
+        return api.crearCandidato({
+            nombre: postulacion.nombre,
+            apellido: postulacion.apellido,
+            nombres: postulacion.nombre,
+            apellidos: postulacion.apellido,
+            rut: postulacion.rut,
+            email: postulacion.email,
+            direccion: postulacion.direccion,
+            comuna: postulacion.comuna,
+            fecha_nacimiento: postulacion.fecha,
+            cv_pdf: postulacion.cvNombre,
+            cargo: postulacion.cargo,
+            especialidad: postulacion.cargo,
+            planta: puesto?.planta || postulacion.comuna,
+            antecedentes: `Postulación pública al cargo '${postulacion.cargo}'. Comuna: ${postulacion.comuna || "No informada"}. Dirección: ${postulacion.direccion || "No informada"}.`,
+            evaluador: "Amaro Villalobos Caseres",
+            estado: "Pendiente",
+            resultadoPsicologico: "Pendiente",
+        });
+    }
+
     const COMUNAS = [
         "Ancud", 
         "Calbuco", 
@@ -108,34 +136,44 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
         }
     };
 
-    const manejarEnvio = (evento) => {
+    const manejarEnvio = async (evento) => {
         evento.preventDefault();
-
-        if (!datos.nombre.trim() || !datos.apellido.trim() || !cargo.trim()) {
-            setError("El nombre, el apellido y el cargo al que postulas son obligatorios.");
+        setError("");
+        if (!datos.email.trim()) {
+            setError("El e-mail es obligatorio.");
             return;
         }
-        if (!calcularRut(datos.rut, datos.dv)) {
-            setError("El RUT ingresado no es válido. Revisa el número y el dígito verificador.");
+        if (!cvDataUrl) {
+            setError("El CV todavía se está cargando, intenta de nuevo.");
             return;
         }
         if (!archivoCv) {
-            setError("Adjunta tu currículum (PDF o Word) para enviar la postulación.");
+            setError("Debes adjuntar tu currículum (CV).");
             return;
         }
 
-        onEnviar({
+        const postulacion = {
             nombre: datos.nombre.trim(),
             apellido: datos.apellido.trim(),
             rut: `${datos.rut}-${datos.dv}`,
             fecha: datos.fecha,
             comuna: datos.comuna,
-            direccion: datos.direccion?.trim() || "",
-            email: datos.email?.trim() || "",
+            direccion: datos.direccion.trim(),
+            email: datos.email.trim(),
             cargo: cargo.trim(),
-            archivoCv,
+            cvNombre: archivoCv.name,
             cvDataUrl,
-        });
+        };
+
+        try {
+            await enviar(postulacion);
+            onEnviar({ ...postulacion, archivoCv });
+        } catch (err) {
+            const mensaje = err?.status
+                ? err.message
+                : "No se pudo conectar con el servidor. Verifica que el backend esté en ejecución e intenta de nuevo.";
+            setError(mensaje);
+        }
     };
 
     const rutCompleto = Boolean(datos.rut && datos.dv);

@@ -506,7 +506,7 @@ export const db = {
                 "nombre", "nombres", "apellidos", "rut", "direccion", "comuna", "fecha_nacimiento", "cv_pdf",
                 "email", "telefono", "especialidad", "planta", "cargo",
                 "familiaCargo", "evaluador", "estado", "antecedentes", "infoMedica",
-                "experienciaLaboral", "resultadoPsicologico", "fechaEvaluacion", "conclusiones"
+                "experienciaLaboral", "resultadoPsicologico", "fechaEvaluacion", "conclusiones", "fecha"
             ];
 
             for (const campo of camposValidos) {

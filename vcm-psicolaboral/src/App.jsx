@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import AnalistaPage from "./pages/AnalistaPage";
-import EvaluadorPage from "./pages/EvaluadorPage";
-import JefaturaPage from "./pages/JefaturaPage";
-import CandidatoPage from "./pages/CandidatoPage";
+import AnalistaPage from "./pages/AnalistaPage.jsx";
+import EvaluadorPage from "./pages/EvaluadorPage.jsx";
+import JefaturaPage from "./pages/JefaturaPage.jsx";
+import CandidatoPage from "./pages/CandidatoPage.jsx";
 
 /**
  * 1. Portal Principal de Inicio (2 Accesos Principales: Empleados y Candidatos)

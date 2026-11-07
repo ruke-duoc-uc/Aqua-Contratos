@@ -6,8 +6,6 @@
  * (Analista de Reclutamiento, Profesional Evaluador y Jefe de Área).
  */
 
-import { api } from "./api.js";
-
 export const STORAGE_KEY_CANDIDATOS = "aqua_contratos_datos_mvp_v1";
 export const EVENTO_ACTUALIZACION_CANDIDATOS = "aqua_contratos_actualizados";
 
@@ -298,7 +296,9 @@ export function guardarCandidatosGlobales(candidatos) {
 
 /**
  * Registra un nuevo candidato globalmente (desde la vista de Postulantes o desde Analista).
- * Se guarda inmediatamente en localStorage y sincroniza con el backend si está en línea.
+ * Se guarda inmediatamente en localStorage para que las pantallas de empleados lo vean.
+ * El registro en el backend lo realiza FormularioPostulacion mediante POST /api/candidatos,
+ * por lo que aquí no se vuelve a crear el candidato (evita duplicados por RUT).
  */
 export async function registrarPostulanteGlobal(nuevoPostulante) {
     const normalizado = normalizarCandidato({
@@ -308,7 +308,7 @@ export async function registrarPostulanteGlobal(nuevoPostulante) {
         resultadoPsicologico: "Pendiente",
     });
 
-    // 1. Guardar en almacenamiento local
+    // Guardar en almacenamiento local compartido
     try {
         const actuales = cargarCandidatosGlobales();
         // Verificar si ya existe por RUT
@@ -323,13 +323,6 @@ export async function registrarPostulanteGlobal(nuevoPostulante) {
         notificarCambioGlobal();
     } catch (e) {
         console.error("Error guardando postulante en almacenamiento global:", e);
-    }
-
-    // 2. Intentar registrar en el Backend Express + SQLite
-    try {
-        await api.crearSolicitud(normalizado);
-    } catch (err) {
-        console.warn("Backend no disponible al registrar postulante (permanece en modo local global):", err.message);
     }
 
     return normalizado;

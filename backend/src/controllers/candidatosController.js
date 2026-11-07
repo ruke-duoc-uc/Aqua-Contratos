@@ -4,6 +4,17 @@
  * Los datos del candidato están desacoplados de la planta (la planta pertenece al puesto de trabajo).
  */
 import { dataStore } from "../data/dataStore.js";
+import { enviarCorreosPostulacion } from "../services/emailService.js";
+
+/**
+ * Dispara las notificaciones por correo sin bloquear la respuesta HTTP.
+ * Si Resend falla, la postulación ya quedó guardada y solo se registra el aviso.
+ */
+function notificarPostulacion({ nombre, email, rut, cargo }) {
+    enviarCorreosPostulacion({ nombre, email, rut, cargo }).catch((error) => {
+        console.error("[correo] Error inesperado al enviar notificaciones:", error);
+    });
+}
 
 export const candidatosController = {
     /**
@@ -71,9 +82,15 @@ export const candidatosController = {
         try {
             const {
                 nombre,
+                nombres,
+                apellidos,
                 rut,
                 email,
                 telefono,
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
                 especialidad,
                 planta,
                 cargo,
@@ -82,31 +99,67 @@ export const candidatosController = {
                 infoMedica,
                 experienciaLaboral,
                 evaluador,
+                fecha,
+                estado,
+                resultadoPsicologico,
             } = req.body;
 
             // Validación de campos obligatorios mínimos
-            if (!nombre || !rut || !especialidad) {
+            if (!nombre || !rut) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "Faltan campos obligatorios: nombre, rut y especialidad son requeridos.",
+                    mensaje: "Faltan campos obligatorios: nombre y rut son requeridos.",
                 });
             }
 
-            // Regla de negocio: No duplicar perfiles de una misma persona
+            // Si el RUT ya existe, se reemplazan los datos anteriores (incluido el CV)
             const candidatoExistente = dataStore.buscarCandidatoPorRut(rut);
             if (candidatoExistente) {
-                return res.status(409).json({
-                    ok: false,
-                    mensaje: `Ya existe un candidato registrado con el RUT ${rut} (${candidatoExistente.nombre}).`,
+                const candidatoActualizado = dataStore.actualizarCandidato(candidatoExistente.id, {
+                    nombre,
+                    nombres,
+                    apellidos,
+                    rut,
+                    email,
+                    telefono,
+                    direccion,
+                    comuna,
+                    fecha_nacimiento,
+                    cv_pdf,
+                    especialidad: especialidad || cargo || candidatoExistente.especialidad,
+                    planta,
+                    cargo,
+                    familiaCargo,
+                    antecedentes,
+                    infoMedica,
+                    experienciaLaboral,
+                    evaluador,
+                    estado,
+                    resultadoPsicologico,
+                    fecha: fecha || new Date().toISOString(),
+                });
+
+                notificarPostulacion({ nombre, email, rut, cargo });
+
+                return res.status(200).json({
+                    ok: true,
+                    mensaje: `Se actualizó el candidato con RUT ${rut}: sus datos y CV anteriores fueron reemplazados por los nuevos.`,
+                    datos: candidatoActualizado,
                 });
             }
 
             const nuevoCandidato = dataStore.crearCandidato({
                 nombre,
+                nombres,
+                apellidos,
                 rut,
                 email,
                 telefono,
-                especialidad,
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
+                especialidad: especialidad || cargo || "No especificada",
                 planta,
                 cargo,
                 familiaCargo,
@@ -114,7 +167,12 @@ export const candidatosController = {
                 infoMedica,
                 experienciaLaboral,
                 evaluador,
+                fecha,
+                estado,
+                resultadoPsicologico,
             });
+
+            notificarPostulacion({ nombre, email, rut, cargo });
 
             return res.status(201).json({
                 ok: true,

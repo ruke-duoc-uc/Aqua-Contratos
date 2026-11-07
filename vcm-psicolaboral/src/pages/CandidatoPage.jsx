@@ -257,19 +257,6 @@ function CandidatoPage({ onVolver }) {
     };
 
     const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv, cvDataUrl }) => {
-        const duplicada = postulaciones.some(
-            (postulacion) =>
-                (postulacion.rut && rut && postulacion.rut === rut) ||
-                (postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
-                postulacion.nombre.toLowerCase() === nombre.toLowerCase() &&
-                postulacion.apellido.toLowerCase() === apellido.toLowerCase())
-        );
-
-        if (duplicada) {
-            setAlertaError(`Ya existe una postulación registrada para ${nombre} ${apellido} en '${cargo}'.`);
-            return;
-        }
-
         const nuevoPostulanteId = Date.now();
         const cvNombre = archivoCv?.name || `cv_${nombre.toLowerCase().replace(/\s+/g, "_")}.pdf`;
 
@@ -342,7 +329,14 @@ function CandidatoPage({ onVolver }) {
             encargado: "Amaro Villalobos Caseres",
         };
 
-        setPostulaciones((prev) => [nueva, ...prev.filter((p) => p.id !== nueva.id)]);
+        setPostulaciones((prev) => [
+            nueva,
+            ...prev.filter(
+                (p) =>
+                    p.id !== nueva.id &&
+                    !(nueva.rut && p.rut === nueva.rut && p.puestoTrabajoId === nueva.puestoTrabajoId)
+            ),
+        ]);
         setPuestoSeleccionado(null);
         setVersionFormulario((v) => v + 1); 
         setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
