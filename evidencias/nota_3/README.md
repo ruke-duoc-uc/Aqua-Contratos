@@ -74,17 +74,6 @@ El jefe puede cerrar o reabrir los informes en cualquier momento
 
 Estos botones crean postulantes en las pantallas de los empleados, lo que no sera parte del flujo final
 
-### Cambio / Postulantes y candidatos
-
-Las 4 secciones actuales se reduciran a 2
-
-Lista de postulantes: Todos los usuarios que se registraron a la página
-Lista de candidatos: Lista filtrada por usuarios que se han postulado a un puesto de trabajo
-
-### Mejora / Informes + Evaluacion Psicolaboral
-
-Para agilizar el acceso a la informacion de los postulantes se fusionaran ambas funciones, dando acceso a las 2 en la misma ventana emergente.
-
 ### Novedad / Cuentas de postulantes
 
 Cada usuario debe crear una cuenta en la pagina. Debemos considerar varios puntos para las mismas
@@ -115,6 +104,26 @@ Se mantendra la estructura de datos para un trabajo actual, agregando datos como
 
 Estos datos estan pensados para que se pueda modificar las condiciones de los trabajos postulados, mientras se mantiene la transparencia con los postulantes
 
+### Novedad / Segregacion de areas
+
+Cada area de trabajo en Aquachile tiene su propia jefatura, por ende asumiremos que la falta de personal en una no necesariamente compete en otra, por ello se tomaran medidas adicionales
+- Los jefes seran identificados por su area
+- Solo podran interactuar directamente con los postulantes en trabajos de su area
+- Solo pueden crear areas que competan a su area
+
+
+### Cambio / Postulantes y candidatos
+
+Las 4 secciones actuales se reduciran a 2
+
+Lista de postulantes: Todos los usuarios que se registraron a la página
+Lista de candidatos: Lista filtrada por usuarios que se han postulado a un puesto de trabajo
+
+### Mejora / Informes + Evaluacion Psicolaboral
+
+Para agilizar el acceso a la informacion de los postulantes se fusionaran ambas funciones, dando acceso a las 2 en la misma ventana emergente.
+
+
 ### Novedad / Citaciones reales
 
 En clases se presentaron herramientas reales para coordinacion de citas a travez de Google.
@@ -136,14 +145,25 @@ Junto a otras fechas que pueden ser competentes:
 
 Ademas se agregara una seccion ``Calendario``, en la misma se podra planear con mayor facilidad las citaciones que hagan falta
 
-### Novedad / Segregacion de areas
-
-Cada area de trabajo en Aquachile tiene su propia jefatura, por ende asumiremos que la falta de personal en una no necesariamente compete en otra, por ello se tomaran medidas adicionales
-- Los jefes seran identificados por su area
-- Solo podran interactuar directamente con los postulantes en trabajos de su area
-- Solo pueden crear areas que competan a su area
 
 ## Funciones fuera de scope
 
 - Chat con postulantes
 - Chat entre empleados
+- Configuraciones de usuario
+- Barra lateral
+
+```mermaid
+graph TD
+    A[Eliminar botones]
+    A2[Datos Postulantes]-->B1[Crear Usuario Postulantes]
+    B1-->B2[Inicio de sesion Postulantes]
+    A-->C1[Areas de trabajo]
+    C1-->C2[Datos Empleados]
+    C2-->D1[Creacion de trabajos Jefe]
+    D1-->D2[Contadores e historial de postulaciones]
+    D2-->D3[Citaciones Google]-->B3
+    B2-->B3[Pantalla principal Postulantes]
+    B3-->B4[Pantalla perfil Postulantes]
+    B4-->B5[Pantalla editar datos Postulantes]
+```
