@@ -20,7 +20,7 @@ graph TD
     E1-->E2[Citaciones Google]
     E2-->E3[Implemento Calendario <br/> Pantalla principal Postulantes]
     E3-->E4[Postulantes <br/> Pantalla Postulaciones activas]-->F3
-    F3-->F5[Todos <br/> Ventana Detalles de Trabajo]-->D2
+    F3-->F6[Todos <br/> Tarjetas de oferta de trabajo]-->D2
     D2[Empleados <br/> Pantalla Postulantes]
     D2-.-D2A[Los candidatos son los postulantes que estan inscritos en un oferta especifica <br/>]
     D2A-.-D2B[Ejemplo: Rafael esta buscando trabajar de Buzo, pero solo es candidato en ofertas de poca profundidad y sin licencia de conducir]
