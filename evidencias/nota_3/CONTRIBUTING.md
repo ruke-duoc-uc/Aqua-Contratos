@@ -14,14 +14,14 @@ graph TD
     F1-->F4[Filtros de trabajo]
     F4-->F2[Jefes <br/> Pantalla Creacion/Edicion ofertas de trabajo]
     F2-->F3[Postulantes <br/>Pantalla ofertas de trabajo]
-
     B3-->B4[Postulantes <br/> Pantalla Editar Perfil]
     B4 --->|Los postulantes necesitan terminar su perfil para postular|F3
     B3-->E1[Pantalla Creacion/Edicion de citas <br/> Empleados]
     E1-->E2[Citaciones Google]
     E2-->E3[Implemento Calendario <br/> Pantalla principal Postulantes]
     E3-->E4[Postulantes <br/> Pantalla Postulaciones activas]-->F3
-    F3-->D2[Empleados <br/> Pantalla Postulantes]
+    F3-->F5[Todos <br/> Ventana Detalles de Trabajo]-->D2
+    D2[Empleados <br/> Pantalla Postulantes]
     D2-.-D2A[Los candidatos son los postulantes que estan inscritos en un oferta especifica <br/>]
     D2A-.-D2B[Ejemplo: Rafael esta buscando trabajar de Buzo, pero solo es candidato en ofertas de poca profundidad y sin licencia de conducir]
     D2-->D3[Empleados <br/> Pantalla Candidatos]
