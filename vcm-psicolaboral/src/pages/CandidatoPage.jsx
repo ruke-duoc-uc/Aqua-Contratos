@@ -17,12 +17,18 @@ import TarjetaOferta from "../components/tarjetaOferta";
 import FormularioPostulacion from "../components/FormularioPostulacion";
 import ComprobantePostulacion from "../components/ComprobantePostulacion";
 import AlertaAviso from "../components/AlertaAviso";
+import PortalAuthPostulante from "../components/PortalAuthPostulante";
 import { api } from "../services/api";
 import { NARANJA } from "../components/Estilos";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import EstadoVacio from "../components/EstadoVacio";
 import { useState, useEffect, useMemo } from "react";
-import { registrarPostulanteGlobal } from "../services/candidatosStorage";
+import {
+    registrarPostulanteGlobal,
+    obtenerSesionPostulante,
+    guardarSesionPostulante,
+    cerrarSesionPostulante,
+} from "../services/candidatosStorage";
 import {
     crearPostulacionGlobal,
     cargarPostulacionesGlobales,
@@ -139,6 +145,7 @@ const guardarPostulacionesLocales = (postulaciones) => {
 /* ============================ PANTALLA PRINCIPAL ========================== */
 
 function CandidatoPage({ onVolver }) {
+    const [sesionPostulante, setSesionPostulante] = useState(obtenerSesionPostulante);
     const [puestos, setPuestos] = useState(PUESTOS_INICIALES);
     const [postulaciones, setPostulaciones] = useState(cargarPostulacionesLocales);
     const [puestoSeleccionado, setPuestoSeleccionado] = useState(null);
@@ -148,6 +155,13 @@ function CandidatoPage({ onVolver }) {
     const [alertaExito, setAlertaExito] = useState("");
     const [alertaError, setAlertaError] = useState("");
     const [versionFormulario, setVersionFormulario] = useState(0);
+
+    const handleCerrarSesion = () => {
+        cerrarSesionPostulante();
+        setSesionPostulante(null);
+        setAlertaExito("");
+        setAlertaError("");
+    };
 
     /* Carga las ofertas desde la API y, si no responde, mantiene el catálogo local. */
     useEffect(() => {
@@ -343,10 +357,44 @@ function CandidatoPage({ onVolver }) {
         };
 
         setPostulaciones((prev) => [nueva, ...prev.filter((p) => p.id !== nueva.id)]);
+        if (sesionPostulante) {
+            const sesionActualizada = {
+                ...sesionPostulante,
+                candidato: {
+                    ...sesionPostulante.candidato,
+                    nombres: nombre,
+                    apellidos: apellido,
+                    nombre: `${nombre} ${apellido}`,
+                    rut: rut || sesionPostulante.candidato?.rut || "",
+                    direccion: direccion || sesionPostulante.candidato?.direccion || "",
+                    comuna: comuna || sesionPostulante.candidato?.comuna || "",
+                    fecha_nacimiento: fecha || sesionPostulante.candidato?.fecha_nacimiento || "",
+                    cv_pdf: cvNombre,
+                    cvArchivo: cvNombre,
+                    cvDataUrl: cvDataUrl || sesionPostulante.candidato?.cvDataUrl || "",
+                },
+            };
+            setSesionPostulante(sesionActualizada);
+            guardarSesionPostulante(sesionActualizada);
+        }
         setPuestoSeleccionado(null);
         setVersionFormulario((v) => v + 1); 
         setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
     };
+
+    if (!sesionPostulante) {
+        return (
+            <PortalAuthPostulante
+                onAutenticado={(nuevaSesion) => {
+                    setSesionPostulante(nuevaSesion);
+                    setVersionFormulario((v) => v + 1);
+                }}
+                onVolver={onVolver}
+            />
+        );
+    }
+
+    const candidatoActivo = sesionPostulante.candidato;
 
     return ( 
         <main
@@ -374,20 +422,33 @@ function CandidatoPage({ onVolver }) {
                 <div>
                     <h1 style={{ margin: 0, fontSize: "1.2rem" }}>AquaChile · Aqua-Contratos</h1>
                     <span style={{ fontSize: "12px", color: "#666" }}>
-                        Portal de Postulación · Sistema Integrado de Evaluaciones Psicolaborales
+                        Portal de Postulación · Postulante conectado:{" "}
+                        <strong>{candidatoActivo?.nombre || sesionPostulante.usuario?.nombre}</strong>
+                        {candidatoActivo?.rut ? ` (${candidatoActivo.rut})` : ""}
                     </span>
                 </div>
 
-                {onVolver && (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                     <button
                         type="button"
                         className="boton-secundario"
-                        onClick={onVolver}
-                        title="Volver a la selección de usuarios"
+                        onClick={handleCerrarSesion}
+                        title="Cerrar sesión de postulante"
                     >
-                        ← Cambiar de Pantalla
+                        Cerrar Sesión
                     </button>
-                )}
+
+                    {onVolver && (
+                        <button
+                            type="button"
+                            className="boton-secundario"
+                            onClick={onVolver}
+                            title="Volver a la selección de usuarios"
+                        >
+                            ← Cambiar de Pantalla
+                        </button>
+                    )}
+                </div>
             </header>
 
             <div
@@ -418,7 +479,7 @@ function CandidatoPage({ onVolver }) {
                     />
                     <strong>
                         {backendConectado
-                            ? "Ofertas sincronizadas con la API REST (Backend Express + SQLite)"
+                            ? "Ofertas sincronizadas con la API REST (Backend Express + MongoDB)"
                             : "Modo Local (catálogo de ofertas de demostración)"}
                     </strong>
                 </div>
@@ -452,8 +513,9 @@ function CandidatoPage({ onVolver }) {
 
             <div style={{ marginBottom: "24px" }}>
                 <FormularioPostulacion
-                    key={versionFormulario}
+                    key={`${versionFormulario}-${candidatoActivo?.id || "anon"}`}
                     puesto={puestoSeleccionado}
+                    perfilPostulante={candidatoActivo}
                     onCancelar={() => setPuestoSeleccionado(null)}
                     onEnviar={handleEnviarPostulacion}
                 />

@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "candidatoId": 1,
+    "puestoTrabajoId": 1,
+    "estado": "En proceso",
+    "fechaPostulacion": "2026-10-05T10:00:00.000Z",
+    "evaluadorAsignado": "Amaro Villalobos Caseres",
+    "fechaEntrevista": "2026-10-22T15:00:00",
+    "respuestaCandidato": "Aceptada",
+    "sugerenciaFecha": null,
+    "dictamenPsicologico": "Pendiente",
+    "observaciones": "Entrevista técnica aprobada. Pendiente dictamen psicolaboral.",
+    "conclusiones": null,
+    "decisionFinal": "Pendiente"
+  },
+  {
+    "id": 2,
+    "candidatoId": 2,
+    "puestoTrabajoId": 2,
+    "estado": "Entrevista agendada",
+    "fechaPostulacion": "2026-10-04T11:30:00.000Z",
+    "evaluadorAsignado": "Carolina Díaz Núñez",
+    "fechaEntrevista": "2026-10-24T10:30:00",
+    "respuestaCandidato": "Sugerir cambio",
+    "sugerenciaFecha": "Solicito reagendar para el viernes 24 a las 15:00 hrs por turno actual.",
+    "dictamenPsicologico": "Pendiente",
+    "observaciones": "Candidata solicitó ajuste de horario para la entrevista.",
+    "conclusiones": null,
+    "decisionFinal": "Pendiente"
+  },
+  {
+    "id": 3,
+    "candidatoId": 3,
+    "puestoTrabajoId": 3,
+    "estado": "En proceso",
+    "fechaPostulacion": "2026-10-04T15:00:00.000Z",
+    "evaluadorAsignado": "Amaro Villalobos Caseres",
+    "fechaEntrevista": "2026-10-20T11:00:00",
+    "respuestaCandidato": "Aceptada",
+    "sugerenciaFecha": null,
+    "dictamenPsicologico": "Pendiente",
+    "observaciones": "Evaluación psicométrica completada, en análisis de resultados.",
+    "conclusiones": null,
+    "decisionFinal": "Pendiente"
+  },
+  {
+    "id": 4,
+    "candidatoId": 4,
+    "puestoTrabajoId": 4,
+    "estado": "Finalizado",
+    "fechaPostulacion": "2026-10-03T09:15:00.000Z",
+    "evaluadorAsignado": "Felipe Muñoz Parra",
+    "fechaEntrevista": "2026-10-03T10:00:00",
+    "respuestaCandidato": "Aceptada",
+    "sugerenciaFecha": null,
+    "dictamenPsicologico": "Recomendado",
+    "observaciones": "Excelente desempeño en pruebas psicotécnicas.",
+    "conclusiones": "Alta capacidad de trabajo en equipo y apego a protocolos de la empresa.",
+    "decisionFinal": "Contratado"
+  }
+]

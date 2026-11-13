@@ -1,19 +1,16 @@
 /**
  * Controlador de Solicitudes de Informes (por Candidato o por Puesto de Trabajo)
- * Permite a la Jefatura solicitar información adicional a evaluadores y analistas,
- * formular preguntas múltiples, repreguntar y responder manteniendo la trazabilidad.
  */
 import { dataStore } from "../data/dataStore.js";
 
 export const informesController = {
     /**
      * GET /api/solicitudes-informe
-     * Lista todas las solicitudes de informe con filtros opcionales.
      */
-    listar(req, res) {
+    async listar(req, res) {
         try {
             const { busqueda, estado, candidatoId, puestoTrabajoId, urgencia, tipo } = req.query;
-            const informes = dataStore.obtenerSolicitudesInforme({
+            const informes = await dataStore.obtenerSolicitudesInforme({
                 busqueda,
                 estado,
                 candidatoId,
@@ -38,12 +35,11 @@ export const informesController = {
 
     /**
      * GET /api/solicitudes-informe/:id
-     * Obtiene el detalle de la solicitud de informe junto con la ficha del candidato y del puesto.
      */
-    obtenerPorId(req, res) {
+    async obtenerPorId(req, res) {
         try {
             const { id } = req.params;
-            const informe = dataStore.obtenerSolicitudInformePorId(id);
+            const informe = await dataStore.obtenerSolicitudInformePorId(id);
 
             if (!informe) {
                 return res.status(404).json({
@@ -54,12 +50,12 @@ export const informesController = {
 
             let candidato = null;
             if (informe.candidatoId) {
-                candidato = dataStore.obtenerCandidatoPorId(informe.candidatoId);
+                candidato = await dataStore.obtenerCandidatoPorId(informe.candidatoId);
             }
 
             let puesto = null;
             if (informe.puestoTrabajoId) {
-                puesto = dataStore.obtenerPuestoPorId(informe.puestoTrabajoId);
+                puesto = await dataStore.obtenerPuestoPorId(informe.puestoTrabajoId);
             }
 
             return res.status(200).json({
@@ -81,9 +77,8 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe
-     * Crea una nueva solicitud de informe emitida por Jefatura (por candidato o por puesto).
      */
-    crear(req, res) {
+    async crear(req, res) {
         try {
             const {
                 candidatoId,
@@ -106,7 +101,7 @@ export const informesController = {
 
             let nombreFinal = candidatoNombre;
             if (candidatoId) {
-                const candidato = dataStore.obtenerCandidatoPorId(candidatoId);
+                const candidato = await dataStore.obtenerCandidatoPorId(candidatoId);
                 if (!candidato) {
                     return res.status(404).json({
                         ok: false,
@@ -117,7 +112,7 @@ export const informesController = {
             }
 
             if (puestoTrabajoId) {
-                const puesto = dataStore.obtenerPuestoPorId(puestoTrabajoId);
+                const puesto = await dataStore.obtenerPuestoPorId(puestoTrabajoId);
                 if (!puesto) {
                     return res.status(404).json({
                         ok: false,
@@ -137,7 +132,7 @@ export const informesController = {
                 });
             }
 
-            const nuevaSolicitud = dataStore.crearSolicitudInforme({
+            const nuevaSolicitud = await dataStore.crearSolicitudInforme({
                 candidatoId: candidatoId ? Number(candidatoId) : null,
                 candidatoNombre: nombreFinal || "Solicitud por Puesto",
                 puestoTrabajoId: puestoTrabajoId ? Number(puestoTrabajoId) : null,
@@ -165,9 +160,8 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe/:id/preguntas
-     * Agrega una repregunta o nueva pregunta formulada por Jefatura.
      */
-    agregarPregunta(req, res) {
+    async agregarPregunta(req, res) {
         try {
             const { id } = req.params;
             const { texto, creadaPor } = req.body;
@@ -179,7 +173,7 @@ export const informesController = {
                 });
             }
 
-            const informe = dataStore.agregarPreguntaInforme(id, {
+            const informe = await dataStore.agregarPreguntaInforme(id, {
                 texto: texto.trim(),
                 creadaPor: creadaPor || "Jefe de Área",
             });
@@ -207,9 +201,8 @@ export const informesController = {
 
     /**
      * POST /api/solicitudes-informe/:id/preguntas/:preguntaId/respuestas
-     * Registra una respuesta de Analista o Evaluador con comentarios técnicos.
      */
-    agregarRespuesta(req, res) {
+    async agregarRespuesta(req, res) {
         try {
             const { id, preguntaId } = req.params;
             const { autor, rol, texto } = req.body;
@@ -221,7 +214,7 @@ export const informesController = {
                 });
             }
 
-            const informe = dataStore.agregarRespuestaInforme(id, preguntaId, {
+            const informe = await dataStore.agregarRespuestaInforme(id, preguntaId, {
                 autor,
                 rol: rol || "evaluador",
                 texto: texto.trim(),
@@ -250,9 +243,8 @@ export const informesController = {
 
     /**
      * PATCH /api/solicitudes-informe/:id/estado
-     * Permite cerrar o reactivar la solicitud de informe.
      */
-    cambiarEstado(req, res) {
+    async cambiarEstado(req, res) {
         try {
             const { id } = req.params;
             const { estado } = req.body;
@@ -264,7 +256,7 @@ export const informesController = {
                 });
             }
 
-            const informe = dataStore.actualizarEstadoSolicitudInforme(id, estado);
+            const informe = await dataStore.actualizarEstadoSolicitudInforme(id, estado);
             if (!informe) {
                 return res.status(404).json({
                     ok: false,

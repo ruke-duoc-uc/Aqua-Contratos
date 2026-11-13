@@ -49,10 +49,15 @@ export const api = {
         return res.datos;
     },
 
-    async login({ email, password }) {
+    async login({ identificador, email, rut, password }) {
         const res = await request("/auth/login", {
             method: "POST",
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({
+                identificador: identificador || email || rut,
+                email: email || identificador,
+                rut,
+                password,
+            }),
         });
         return res.datos;
     },

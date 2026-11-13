@@ -1,5 +1,5 @@
 /**
- * Punto de entrada del servidor Backend
+ * Punto de entrada del servidor Backend (Node.js + Express + MongoDB/Mongoose)
  */
 import dotenv from "dotenv";
 import app from "./app.js";
@@ -14,6 +14,12 @@ app.listen(PORT, () => {
     console.log(`🐟 Aqua-Contratos API REST en ejecución`);
     console.log(`🚀 Servidor escuchando en: http://localhost:${PORT}`);
     console.log(`📋 Documentación base: http://localhost:${PORT}/api`);
-    console.log(`💾 Base de datos: ${db.isUsingSQLite() ? "SQLite Nativo (" + db.getDbFilePath() + ")" : "JSON Fallback"}`);
+    console.log(
+        `💾 Base de datos: ${
+            db.isUsingMongo()
+                ? "MongoDB Conectado (" + db.getMongoUri() + ")"
+                : "Respaldo JSON Local (" + db.getDbFilePath() + ")"
+        }`
+    );
     console.log(`=========================================`);
 });

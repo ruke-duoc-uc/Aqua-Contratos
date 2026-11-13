@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "titulo": "Desarrollador Full Stack",
+    "planta": "Puerto Montt",
+    "familiaCargo": "Sistemas y TI",
+    "descripcion": "Mantención y evolución de plataformas web corporativas y digitalización de procesos de planta.",
+    "requisitos": "Experiencia en React, Node.js y bases de datos relacionales. Deseable trabajo en equipo ágil.",
+    "vacantes": 2,
+    "estado": "Abierto",
+    "creadoPor": "Carlos Mendoza (Jefe TI)",
+    "fechaCreacion": "2026-10-01T08:30:00.000Z"
+  },
+  {
+    "id": 2,
+    "titulo": "Prevencionista de Faena",
+    "planta": "Osorno",
+    "familiaCargo": "Calidad y Prevención de Riesgos",
+    "descripcion": "Supervisar el cumplimiento de normativas de seguridad, protocolos sanitarios y evaluación de riesgos en faena.",
+    "requisitos": "Título de Ingeniero o Técnico en Prevención de Riesgos con registro SNS vigente. Experiencia en plantas de salmónidos.",
+    "vacantes": 1,
+    "estado": "Abierto",
+    "creadoPor": "Mariana Almonacid (Jefa Prevención)",
+    "fechaCreacion": "2026-10-02T09:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "titulo": "Técnico de Mantenimiento",
+    "planta": "Puerto Varas",
+    "familiaCargo": "Mantenimiento Industrial",
+    "descripcion": "Ejecución del plan de mantenimiento preventivo y correctivo en líneas de proceso y sistemas hidráulicos.",
+    "requisitos": "Técnico nivel superior en Mecánica Industrial o Electromecánica. Manejo de bombas y refrigeración.",
+    "vacantes": 3,
+    "estado": "Abierto",
+    "creadoPor": "Hernán Soto (Jefe Mantenimiento)",
+    "fechaCreacion": "2026-10-02T10:15:00.000Z"
+  },
+  {
+    "id": 4,
+    "titulo": "Asistente Administrativo",
+    "planta": "Puerto Montt",
+    "familiaCargo": "Administración y Finanzas",
+    "descripcion": "Soporte administrativo en recepción documental, gestión de contratos y coordinación de proveedores.",
+    "requisitos": "Técnico en Administración de Empresas o carrera afín. Manejo de herramientas ofimáticas y ERP.",
+    "vacantes": 1,
+    "estado": "Abierto",
+    "creadoPor": "Lorena Silva (Jefa Administración)",
+    "fechaCreacion": "2026-10-03T11:00:00.000Z"
+  },
+  {
+    "id": 5,
+    "titulo": "Eléctrico de Turno",
+    "planta": "Castro",
+    "familiaCargo": "Mantenimiento Industrial",
+    "descripcion": "Atención de contingencias operativas en sistemas eléctricos de fuerza y control en planta de procesos.",
+    "requisitos": "Certificación SEC clase B o superior. Disponibilidad para turnos rotativos en faena.",
+    "vacantes": 2,
+    "estado": "Abierto",
+    "creadoPor": "Hernán Soto (Jefe Mantenimiento)",
+    "fechaCreacion": "2026-10-03T14:20:00.000Z"
+  },
+  {
+    "id": 6,
+    "titulo": "Coordinador de Despacho",
+    "planta": "Calbuco",
+    "familiaCargo": "Logística y Abastecimiento",
+    "descripcion": "Coordinar despachos de producto terminado, control de cámaras de frío y trazabilidad logística marítima/terrestre.",
+    "requisitos": "Técnico o Ingeniero en Logística. Experiencia mínima de 2 años en logística de productos perecibles.",
+    "vacantes": 1,
+    "estado": "Abierto",
+    "creadoPor": "Rodrigo Morales (Jefe Logística)",
+    "fechaCreacion": "2026-10-04T08:00:00.000Z"
+  }
+]

@@ -1,7 +1,5 @@
 /**
  * Controlador de Postulaciones (Vínculo Candidato + Puesto de Trabajo)
- * Gestiona el ciclo completo: postulación, citación a entrevista, respuesta del candidato,
- * dictamen psicolaboral y decisión final de contratación.
  */
 import { dataStore } from "../data/dataStore.js";
 
@@ -9,10 +7,10 @@ export const postulacionesController = {
     /**
      * GET /api/postulaciones
      */
-    listar(req, res) {
+    async listar(req, res) {
         try {
             const { candidatoId, puestoTrabajoId, estado, evaluador } = req.query;
-            const postulaciones = dataStore.obtenerPostulaciones({
+            const postulaciones = await dataStore.obtenerPostulaciones({
                 candidatoId,
                 puestoTrabajoId,
                 estado,
@@ -36,10 +34,10 @@ export const postulacionesController = {
     /**
      * GET /api/postulaciones/:id
      */
-    obtenerPorId(req, res) {
+    async obtenerPorId(req, res) {
         try {
             const { id } = req.params;
-            const postulacion = dataStore.obtenerPostulacionPorId(id);
+            const postulacion = await dataStore.obtenerPostulacionPorId(id);
 
             if (!postulacion) {
                 return res.status(404).json({
@@ -62,9 +60,9 @@ export const postulacionesController = {
     },
 
     /**
-     * POST /api/postulaciones (Candidato se postula a un puesto de trabajo)
+     * POST /api/postulaciones
      */
-    crear(req, res) {
+    async crear(req, res) {
         try {
             const { candidatoId, puestoTrabajoId, evaluadorAsignado } = req.body;
 
@@ -82,7 +80,7 @@ export const postulacionesController = {
                 });
             }
 
-            const candidato = dataStore.obtenerCandidatoPorId(candidatoId);
+            const candidato = await dataStore.obtenerCandidatoPorId(candidatoId);
             if (!candidato) {
                 return res.status(404).json({
                     ok: false,
@@ -90,7 +88,7 @@ export const postulacionesController = {
                 });
             }
 
-            const puesto = dataStore.obtenerPuestoPorId(puestoTrabajoId);
+            const puesto = await dataStore.obtenerPuestoPorId(puestoTrabajoId);
             if (!puesto) {
                 return res.status(404).json({
                     ok: false,
@@ -105,7 +103,7 @@ export const postulacionesController = {
                 });
             }
 
-            const nueva = dataStore.crearPostulacion({
+            const nueva = await dataStore.crearPostulacion({
                 candidatoId,
                 puestoTrabajoId,
                 evaluadorAsignado,
@@ -134,7 +132,7 @@ export const postulacionesController = {
     /**
      * PATCH /api/postulaciones/:id/estado
      */
-    cambiarEstado(req, res) {
+    async cambiarEstado(req, res) {
         try {
             const { id } = req.params;
             const { estado } = req.body;
@@ -146,7 +144,7 @@ export const postulacionesController = {
                 });
             }
 
-            const actualizada = dataStore.actualizarEstadoPostulacion(id, estado);
+            const actualizada = await dataStore.actualizarEstadoPostulacion(id, estado);
             if (!actualizada) {
                 return res.status(404).json({
                     ok: false,
@@ -169,9 +167,9 @@ export const postulacionesController = {
     },
 
     /**
-     * PATCH /api/postulaciones/:id/agendar (Evaluador/Analista agenda entrevista)
+     * PATCH /api/postulaciones/:id/agendar
      */
-    agendarEntrevista(req, res) {
+    async agendarEntrevista(req, res) {
         try {
             const { id } = req.params;
             const { fechaEntrevista, evaluadorAsignado, observaciones } = req.body;
@@ -183,7 +181,7 @@ export const postulacionesController = {
                 });
             }
 
-            const actualizada = dataStore.agendarEntrevistaPostulacion(id, {
+            const actualizada = await dataStore.agendarEntrevistaPostulacion(id, {
                 fechaEntrevista,
                 evaluadorAsignado,
                 observaciones,
@@ -211,9 +209,9 @@ export const postulacionesController = {
     },
 
     /**
-     * PATCH /api/postulaciones/:id/respuesta-candidato (Candidato responde Aceptar o Sugerir cambio)
+     * PATCH /api/postulaciones/:id/respuesta-candidato
      */
-    responderCandidato(req, res) {
+    async responderCandidato(req, res) {
         try {
             const { id } = req.params;
             const { respuesta, sugerenciaFecha } = req.body;
@@ -232,7 +230,7 @@ export const postulacionesController = {
                 });
             }
 
-            const actualizada = dataStore.responderCandidatoPostulacion(id, {
+            const actualizada = await dataStore.responderCandidatoPostulacion(id, {
                 respuesta,
                 sugerenciaFecha,
             });
@@ -261,9 +259,9 @@ export const postulacionesController = {
     },
 
     /**
-     * PATCH /api/postulaciones/:id/evaluacion (Evaluador registra dictamen y rúbrica)
+     * PATCH /api/postulaciones/:id/evaluacion
      */
-    registrarEvaluacion(req, res) {
+    async registrarEvaluacion(req, res) {
         try {
             const { id } = req.params;
             const { dictamenPsicologico, observaciones, conclusiones } = req.body;
@@ -275,7 +273,7 @@ export const postulacionesController = {
                 });
             }
 
-            const actualizada = dataStore.evaluarPostulacion(id, {
+            const actualizada = await dataStore.evaluarPostulacion(id, {
                 dictamenPsicologico,
                 observaciones,
                 conclusiones,
@@ -303,9 +301,9 @@ export const postulacionesController = {
     },
 
     /**
-     * PATCH /api/postulaciones/:id/decision-final (Analista decide Contratar o No Contratar)
+     * PATCH /api/postulaciones/:id/decision-final
      */
-    decidirContratacion(req, res) {
+    async decidirContratacion(req, res) {
         try {
             const { id } = req.params;
             const { decisionFinal } = req.body;
@@ -317,7 +315,7 @@ export const postulacionesController = {
                 });
             }
 
-            const actualizada = dataStore.decidirContratacionPostulacion(id, decisionFinal);
+            const actualizada = await dataStore.decidirContratacionPostulacion(id, decisionFinal);
             if (!actualizada) {
                 return res.status(404).json({
                     ok: false,

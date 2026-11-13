@@ -1,19 +1,17 @@
 /**
- * Controlador de Candidatos
- * Reglas de negocio y manejo de peticiones HTTP para el perfil del Candidato.
- * Los datos del candidato están desacoplados de la planta (la planta pertenece al puesto de trabajo).
+ * Controlador de Candidatos / Postulantes
+ * Reglas de negocio y manejo de peticiones HTTP asíncronas sobre MongoDB.
  */
 import { dataStore } from "../data/dataStore.js";
 
 export const candidatosController = {
     /**
      * GET /api/candidatos
-     * Lista todos los candidatos con soporte opcional de búsqueda y filtro por planta (legacy).
      */
-    listar(req, res) {
+    async listar(req, res) {
         try {
             const { busqueda, planta } = req.query;
-            const candidatos = dataStore.obtenerCandidatos({ busqueda, planta });
+            const candidatos = await dataStore.obtenerCandidatos({ busqueda, planta });
             return res.status(200).json({
                 ok: true,
                 total: candidatos.length,
@@ -30,12 +28,11 @@ export const candidatosController = {
 
     /**
      * GET /api/candidatos/:id
-     * Obtiene un candidato por su ID junto a su historial de postulaciones.
      */
-    obtenerPorId(req, res) {
+    async obtenerPorId(req, res) {
         try {
             const { id } = req.params;
-            const candidato = dataStore.obtenerCandidatoPorId(id);
+            const candidato = await dataStore.obtenerCandidatoPorId(id);
 
             if (!candidato) {
                 return res.status(404).json({
@@ -44,8 +41,7 @@ export const candidatosController = {
                 });
             }
 
-            // Adjuntar historial completo de postulaciones
-            const postulaciones = dataStore.obtenerPostulaciones({ candidatoId: Number(id) });
+            const postulaciones = await dataStore.obtenerPostulaciones({ candidatoId: Number(id) });
 
             return res.status(200).json({
                 ok: true,
@@ -65,15 +61,21 @@ export const candidatosController = {
 
     /**
      * POST /api/candidatos
-     * Registra un nuevo candidato. La planta es opcional (pertenece a los puestos de trabajo).
      */
-    crear(req, res) {
+    async crear(req, res) {
         try {
             const {
                 nombre,
+                nombres,
+                apellidos,
                 rut,
                 email,
                 telefono,
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
+                cvDataUrl,
                 especialidad,
                 planta,
                 cargo,
@@ -84,16 +86,16 @@ export const candidatosController = {
                 evaluador,
             } = req.body;
 
-            // Validación de campos obligatorios mínimos
-            if (!nombre || !rut || !especialidad) {
+            const nombreFinal = (nombre || `${nombres || ""} ${apellidos || ""}`).trim();
+
+            if (!nombreFinal || !rut) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "Faltan campos obligatorios: nombre, rut y especialidad son requeridos.",
+                    mensaje: "Faltan campos obligatorios: nombre y rut son requeridos.",
                 });
             }
 
-            // Regla de negocio: No duplicar perfiles de una misma persona
-            const candidatoExistente = dataStore.buscarCandidatoPorRut(rut);
+            const candidatoExistente = await dataStore.buscarCandidatoPorRut(rut);
             if (candidatoExistente) {
                 return res.status(409).json({
                     ok: false,
@@ -101,14 +103,21 @@ export const candidatosController = {
                 });
             }
 
-            const nuevoCandidato = dataStore.crearCandidato({
-                nombre,
+            const nuevoCandidato = await dataStore.crearCandidato({
+                nombre: nombreFinal,
+                nombres,
+                apellidos,
                 rut,
                 email,
                 telefono,
-                especialidad,
+                direccion,
+                comuna,
+                fecha_nacimiento,
+                cv_pdf,
+                cvDataUrl,
+                especialidad: especialidad || cargo || "Postulante General",
                 planta,
-                cargo,
+                cargo: cargo || especialidad || "Postulante General",
                 familiaCargo,
                 antecedentes,
                 infoMedica,
@@ -132,12 +141,11 @@ export const candidatosController = {
 
     /**
      * PUT /api/candidatos/:id
-     * Actualiza la información personal, médica y profesional de un candidato (RF03).
      */
-    actualizar(req, res) {
+    async actualizar(req, res) {
         try {
             const { id } = req.params;
-            const candidatoExistente = dataStore.obtenerCandidatoPorId(id);
+            const candidatoExistente = await dataStore.obtenerCandidatoPorId(id);
 
             if (!candidatoExistente) {
                 return res.status(404).json({
@@ -146,10 +154,9 @@ export const candidatosController = {
                 });
             }
 
-            // Si se modifica el RUT, verificar que no colisione con otro candidato
             if (req.body.rut && req.body.rut !== candidatoExistente.rut) {
-                const rutColision = dataStore.buscarCandidatoPorRut(req.body.rut);
-                if (rutColision && rutColision.id !== Number(id)) {
+                const rutColision = await dataStore.buscarCandidatoPorRut(req.body.rut);
+                if (rutColision && Number(rutColision.id) !== Number(id)) {
                     return res.status(409).json({
                         ok: false,
                         mensaje: `El RUT ${req.body.rut} ya se encuentra asignado a otro candidato.`,
@@ -157,7 +164,7 @@ export const candidatosController = {
                 }
             }
 
-            const candidatoActualizado = dataStore.actualizarCandidato(id, req.body);
+            const candidatoActualizado = await dataStore.actualizarCandidato(id, req.body);
 
             return res.status(200).json({
                 ok: true,
@@ -175,12 +182,11 @@ export const candidatosController = {
 
     /**
      * DELETE /api/candidatos/:id
-     * Elimina un candidato del sistema.
      */
-    eliminar(req, res) {
+    async eliminar(req, res) {
         try {
             const { id } = req.params;
-            const eliminado = dataStore.eliminarCandidato(id);
+            const eliminado = await dataStore.eliminarCandidato(id);
 
             if (!eliminado) {
                 return res.status(404).json({

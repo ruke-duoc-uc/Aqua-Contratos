@@ -5,14 +5,33 @@ import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
 import { calcularRut } from "../utils/calcularRut";
 
 
-function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
+function separarRutInicial(rutCompleto = "") {
+    const limpio = String(rutCompleto).replace(/\./g, "").trim();
+    if (!limpio) return { cuerpo: "", dv: "" };
+    if (limpio.includes("-")) {
+        const [cuerpo, dv] = limpio.split("-");
+        return {
+            cuerpo: (cuerpo || "").replace(/\D/g, "").slice(0, 8),
+            dv: (dv || "").replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1),
+        };
+    }
+    return {
+        cuerpo: limpio.slice(0, -1).replace(/\D/g, "").slice(0, 8),
+        dv: limpio.slice(-1).replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1),
+    };
+}
+
+function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar }) {
+    const rutSeparado = separarRutInicial(perfilPostulante?.rut);
     const [datos, setDatos] = useState({
-        nombre: "",
-        apellido: "",
-        rut: "",
-        dv: "",
-        fecha: "",
-        comuna: "",
+        nombre: perfilPostulante?.nombres || perfilPostulante?.nombre?.split(" ")[0] || "",
+        apellido: perfilPostulante?.apellidos || perfilPostulante?.nombre?.split(" ").slice(1).join(" ") || "",
+        rut: rutSeparado.cuerpo,
+        dv: rutSeparado.dv,
+        fecha: perfilPostulante?.fecha_nacimiento || "",
+        comuna: perfilPostulante?.comuna || "",
+        direccion: perfilPostulante?.direccion && perfilPostulante.direccion !== "Dirección no informada" ? perfilPostulante.direccion : "",
+        email: perfilPostulante?.email || "",
     });
     const COMUNAS = [
         "Ancud", 
@@ -119,7 +138,7 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             setError("El RUT ingresado no es válido. Revisa el número y el dígito verificador.");
             return;
         }
-        if (!archivoCv) {
+        if (!archivoCv && !perfilPostulante?.cv_pdf) {
             setError("Adjunta tu currículum (PDF o Word) para enviar la postulación.");
             return;
         }
@@ -133,8 +152,8 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             direccion: datos.direccion?.trim() || "",
             email: datos.email?.trim() || "",
             cargo: cargo.trim(),
-            archivoCv,
-            cvDataUrl,
+            archivoCv: archivoCv || (perfilPostulante?.cv_pdf ? { name: perfilPostulante.cv_pdf } : null),
+            cvDataUrl: cvDataUrl || perfilPostulante?.cvDataUrl || "",
         });
     };
 
@@ -337,12 +356,14 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                             <span
                                 style={{
                                     fontSize: "13px",
-                                    color: archivoCv ? "#333" : "#6c757d",
+                                    color: archivoCv || perfilPostulante?.cv_pdf ? "#333" : "#6c757d",
                                     wordBreak: "break-word",
                                 }}
                             >
                                 {archivoCv
                                     ? archivoCv.name
+                                    : perfilPostulante?.cv_pdf
+                                    ? `CV de perfil activo: ${perfilPostulante.cv_pdf}`
                                     : "Ningún archivo seleccionado (PDF o Word, máx. 10 MB)"}
                             </span>
                         </div>
