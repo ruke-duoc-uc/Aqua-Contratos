@@ -3,45 +3,36 @@ import BotonOrange from "./BotonOrange";
 import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
 import BarraValorFormularioPostulante from "./BarraValorFormularioPostulante";
 import { calcularRut } from "../utils/calcularRut";
-import { api } from "../services/api";
 
 
-function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
+function separarRutInicial(rutCompleto = "") {
+    const limpio = String(rutCompleto).replace(/\./g, "").trim();
+    if (!limpio) return { cuerpo: "", dv: "" };
+    if (limpio.includes("-")) {
+        const [cuerpo, dv] = limpio.split("-");
+        return {
+            cuerpo: (cuerpo || "").replace(/\D/g, "").slice(0, 8),
+            dv: (dv || "").replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1),
+        };
+    }
+    return {
+        cuerpo: limpio.slice(0, -1).replace(/\D/g, "").slice(0, 8),
+        dv: limpio.slice(-1).replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1),
+    };
+}
+
+function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar }) {
+    const rutSeparado = separarRutInicial(perfilPostulante?.rut);
     const [datos, setDatos] = useState({
-        nombre: "", apellido: "", rut: "", dv: "",
-        fecha: "", comuna: "", direccion: "", email: "",
+        nombre: perfilPostulante?.nombres || perfilPostulante?.nombre?.split(" ")[0] || "",
+        apellido: perfilPostulante?.apellidos || perfilPostulante?.nombre?.split(" ").slice(1).join(" ") || "",
+        rut: rutSeparado.cuerpo,
+        dv: rutSeparado.dv,
+        fecha: perfilPostulante?.fecha_nacimiento || "",
+        comuna: perfilPostulante?.comuna || "",
+        direccion: perfilPostulante?.direccion && perfilPostulante.direccion !== "Dirección no informada" ? perfilPostulante.direccion : "",
+        email: perfilPostulante?.email || "",
     });
-    function cambiar(e){
-        setDatos({...datos, [e.target.name]: e.target.value})
-    }
-
-    /**
-     * Registra el candidato en la API REST del backend Express.
-     * Se envía solo el nombre del archivo CV (cv_pdf); los bytes del CV se
-     * conservan localmente para el comprobante y no se incluyen en el JSON.
-     */
-    async function enviar(postulacion) {
-        return api.crearCandidato({
-            nombre: postulacion.nombre,
-            apellido: postulacion.apellido,
-            nombres: postulacion.nombre,
-            apellidos: postulacion.apellido,
-            rut: postulacion.rut,
-            email: postulacion.email,
-            direccion: postulacion.direccion,
-            comuna: postulacion.comuna,
-            fecha_nacimiento: postulacion.fecha,
-            cv_pdf: postulacion.cvNombre,
-            cargo: postulacion.cargo,
-            especialidad: postulacion.cargo,
-            planta: puesto?.planta || postulacion.comuna,
-            antecedentes: `Postulación pública al cargo '${postulacion.cargo}'. Comuna: ${postulacion.comuna || "No informada"}. Dirección: ${postulacion.direccion || "No informada"}.`,
-            evaluador: "Amaro Villalobos Caseres",
-            estado: "Pendiente",
-            resultadoPsicologico: "Pendiente",
-        });
-    }
-
     const COMUNAS = [
         "Ancud", 
         "Calbuco", 
@@ -147,8 +138,8 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             setError("El CV todavía se está cargando, intenta de nuevo.");
             return;
         }
-        if (!archivoCv) {
-            setError("Debes adjuntar tu currículum (CV).");
+        if (!archivoCv && !perfilPostulante?.cv_pdf) {
+            setError("Adjunta tu currículum (PDF o Word) para enviar la postulación.");
             return;
         }
 
@@ -161,19 +152,9 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
             direccion: datos.direccion.trim(),
             email: datos.email.trim(),
             cargo: cargo.trim(),
-            cvNombre: archivoCv.name,
-            cvDataUrl,
-        };
-
-        try {
-            await enviar(postulacion);
-            onEnviar({ ...postulacion, archivoCv });
-        } catch (err) {
-            const mensaje = err?.status
-                ? err.message
-                : "No se pudo conectar con el servidor. Verifica que el backend esté en ejecución e intenta de nuevo.";
-            setError(mensaje);
-        }
+            archivoCv: archivoCv || (perfilPostulante?.cv_pdf ? { name: perfilPostulante.cv_pdf } : null),
+            cvDataUrl: cvDataUrl || perfilPostulante?.cvDataUrl || "",
+        });
     };
 
     const rutCompleto = Boolean(datos.rut && datos.dv);
@@ -375,12 +356,14 @@ function FormularioPostulacion({ puesto, onCancelar, onEnviar }) {
                             <span
                                 style={{
                                     fontSize: "13px",
-                                    color: archivoCv ? "#333" : "#6c757d",
+                                    color: archivoCv || perfilPostulante?.cv_pdf ? "#333" : "#6c757d",
                                     wordBreak: "break-word",
                                 }}
                             >
                                 {archivoCv
                                     ? archivoCv.name
+                                    : perfilPostulante?.cv_pdf
+                                    ? `CV de perfil activo: ${perfilPostulante.cv_pdf}`
                                     : "Ningún archivo seleccionado (PDF o Word, máx. 10 MB)"}
                             </span>
                         </div>

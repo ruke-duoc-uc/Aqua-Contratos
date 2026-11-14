@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import IndicadorCard from '../components/IndicadorCard';
 import AlertaExitoCerrable from '../components/AlertaExitoCerrable';
 import BarraFiltros from '../components/BarraFiltros';
-import ModalNuevaSolicitud from '../components/ModalNuevaSolicitud';
+import PortalAuthPostulante from '../components/PortalAuthPostulante';
 
 describe('Componente: IndicadorCard', () => {
     it('debe renderizar el título y el valor numérico correctamente', () => {
@@ -86,20 +86,27 @@ describe('Componente: BarraFiltros', () => {
     });
 });
 
-describe('Componente: ModalNuevaSolicitud (Validación de Formulario)', () => {
-    it('debe bloquear el envío y mostrar alerta cuando el RUT tiene dígito verificador inválido', () => {
-        const handleGuardar = vi.fn();
-        render(<ModalNuevaSolicitud isOpen={true} onCerrar={() => {}} onGuardar={handleGuardar} />);
+describe('Componente: PortalAuthPostulante (Registro e Inicio de Sesión B1 / B2)', () => {
+    it('debe bloquear el registro y mostrar alerta cuando el RUT tiene dígito verificador inválido', () => {
+        const handleAutenticado = vi.fn();
+        render(<PortalAuthPostulante onAutenticado={handleAutenticado} onVolver={() => {}} />);
 
-        fireEvent.change(screen.getByLabelText(/RUT \*/i), { target: { value: '11.111.111-9' } });
+        // Cambiar a la pestaña de Crear Usuario Postulante (B1)
+        const tabRegistro = screen.getByRole('button', { name: /crear usuario postulante/i });
+        fireEvent.click(tabRegistro);
+
+        fireEvent.change(screen.getByLabelText(/RUT \*/i), { target: { value: '11111111' } });
+        fireEvent.change(screen.getByLabelText(/dígito verificador/i), { target: { value: '9' } });
         fireEvent.change(screen.getByLabelText(/Nombres \*/i), { target: { value: 'Juan' } });
         fireEvent.change(screen.getByLabelText(/Apellidos \*/i), { target: { value: 'Pérez' } });
-        fireEvent.change(screen.getByLabelText(/Cargo a Postular \*/i), { target: { value: 'Operario' } });
+        fireEvent.change(screen.getByLabelText(/Correo Electrónico/i), { target: { value: 'juan.perez@gmail.com' } });
+        fireEvent.change(screen.getByLabelText(/Contraseña \* \(mín\. 6 caracteres\)/i), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByLabelText(/Confirmar Contraseña \*/i), { target: { value: 'password123' } });
 
-        const btnSubmit = screen.getByRole('button', { name: /emitir solicitud/i });
+        const btnSubmit = screen.getByRole('button', { name: /registrar cuenta de postulante/i });
         fireEvent.click(btnSubmit);
 
-        expect(handleGuardar).not.toHaveBeenCalled();
+        expect(handleAutenticado).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(/módulo 11/i);
     });
 });

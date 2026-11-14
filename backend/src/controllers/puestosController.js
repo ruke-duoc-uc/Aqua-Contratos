@@ -7,10 +7,10 @@ export const puestosController = {
     /**
      * GET /api/puestos
      */
-    listar(req, res) {
+    async listar(req, res) {
         try {
             const { busqueda, planta, familiaCargo, estado } = req.query;
-            const puestos = dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado });
+            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado });
 
             return res.status(200).json({
                 ok: true,
@@ -29,10 +29,10 @@ export const puestosController = {
     /**
      * GET /api/puestos/:id
      */
-    obtenerPorId(req, res) {
+    async obtenerPorId(req, res) {
         try {
             const { id } = req.params;
-            const puesto = dataStore.obtenerPuestoPorId(id);
+            const puesto = await dataStore.obtenerPuestoPorId(id);
 
             if (!puesto) {
                 return res.status(404).json({
@@ -41,8 +41,7 @@ export const puestosController = {
                 });
             }
 
-            // Añadir conteo de postulaciones asociadas
-            const postulaciones = dataStore.obtenerPostulaciones({ puestoTrabajoId: Number(id) });
+            const postulaciones = await dataStore.obtenerPostulaciones({ puestoTrabajoId: Number(id) });
             const detalle = {
                 ...puesto,
                 totalPostulantes: postulaciones.length,
@@ -65,7 +64,7 @@ export const puestosController = {
     /**
      * POST /api/puestos
      */
-    crear(req, res) {
+    async crear(req, res) {
         try {
             const { titulo, planta, familiaCargo, descripcion, requisitos, vacantes, creadoPor } = req.body;
 
@@ -90,7 +89,7 @@ export const puestosController = {
                 });
             }
 
-            const nuevo = dataStore.crearPuesto({
+            const nuevo = await dataStore.crearPuesto({
                 titulo,
                 planta,
                 familiaCargo,
@@ -117,10 +116,10 @@ export const puestosController = {
     /**
      * PUT /api/puestos/:id
      */
-    actualizar(req, res) {
+    async actualizar(req, res) {
         try {
             const { id } = req.params;
-            const actualizado = dataStore.actualizarPuesto(id, req.body);
+            const actualizado = await dataStore.actualizarPuesto(id, req.body);
 
             if (!actualizado) {
                 return res.status(404).json({
@@ -146,7 +145,7 @@ export const puestosController = {
     /**
      * PATCH /api/puestos/:id/estado
      */
-    cambiarEstado(req, res) {
+    async cambiarEstado(req, res) {
         try {
             const { id } = req.params;
             const { estado } = req.body;
@@ -158,7 +157,7 @@ export const puestosController = {
                 });
             }
 
-            const actualizado = dataStore.cambiarEstadoPuesto(id, estado);
+            const actualizado = await dataStore.cambiarEstadoPuesto(id, estado);
 
             if (!actualizado) {
                 return res.status(404).json({
@@ -184,10 +183,10 @@ export const puestosController = {
     /**
      * DELETE /api/puestos/:id
      */
-    eliminar(req, res) {
+    async eliminar(req, res) {
         try {
             const { id } = req.params;
-            const eliminado = dataStore.eliminarPuesto(id);
+            const eliminado = await dataStore.eliminarPuesto(id);
 
             if (!eliminado) {
                 return res.status(404).json({

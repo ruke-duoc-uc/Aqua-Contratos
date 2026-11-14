@@ -1,13 +1,13 @@
 /**
  * Capa de almacenamiento y reglas de datos para el MVP Aqua-Contratos
- * Conecta los controladores con la base de datos persistente (SQLite/JSON).
+ * Conecta los controladores con la base de datos MongoDB (Mongoose) / Fallback.
  */
 import { db } from "./db.js";
 
 export const dataStore = {
     // ==================== CANDIDATOS ====================
-    obtenerCandidatos({ busqueda, planta } = {}) {
-        const todos = db.obtenerTodos();
+    async obtenerCandidatos({ busqueda, planta } = {}) {
+        const todos = await db.obtenerTodos();
         return todos.filter((c) => {
             const termino = busqueda ? busqueda.toLowerCase().trim() : "";
             const coincideTexto =
@@ -26,73 +26,73 @@ export const dataStore = {
         });
     },
 
-    obtenerCandidatoPorId(id) {
+    async obtenerCandidatoPorId(id) {
         return db.obtenerPorId(id);
     },
 
-    buscarCandidatoPorRut(rut) {
+    async buscarCandidatoPorRut(rut) {
         return db.buscarPorRut(rut);
     },
 
-    crearCandidato(datos) {
+    async crearCandidato(datos) {
         return db.insertarCandidato(datos);
     },
 
-    actualizarCandidato(id, datosActualizados) {
+    async actualizarCandidato(id, datosActualizados) {
         return db.actualizarCandidato(id, datosActualizados);
     },
 
-    eliminarCandidato(id) {
+    async eliminarCandidato(id) {
         return db.eliminarCandidato(id);
     },
 
     // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
-    obtenerPuestos(filtros) {
+    async obtenerPuestos(filtros) {
         return db.obtenerPuestos(filtros);
     },
 
-    obtenerPuestoPorId(id) {
+    async obtenerPuestoPorId(id) {
         return db.obtenerPuestoPorId(id);
     },
 
-    crearPuesto(datos) {
+    async crearPuesto(datos) {
         return db.insertarPuesto(datos);
     },
 
-    actualizarPuesto(id, datos) {
+    async actualizarPuesto(id, datos) {
         return db.actualizarPuesto(id, datos);
     },
 
-    cambiarEstadoPuesto(id, nuevoEstado) {
+    async cambiarEstadoPuesto(id, nuevoEstado) {
         return db.actualizarPuesto(id, { estado: nuevoEstado });
     },
 
-    eliminarPuesto(id) {
+    async eliminarPuesto(id) {
         return db.eliminarPuesto(id);
     },
 
     // ==================== POSTULACIONES ====================
-    obtenerPostulaciones(filtros) {
+    async obtenerPostulaciones(filtros) {
         return db.obtenerPostulaciones(filtros);
     },
 
-    obtenerPostulacionPorId(id) {
+    async obtenerPostulacionPorId(id) {
         return db.obtenerPostulacionPorId(id);
     },
 
-    crearPostulacion(datos) {
+    async crearPostulacion(datos) {
         return db.insertarPostulacion(datos);
     },
 
-    actualizarPostulacion(id, datos) {
+    async actualizarPostulacion(id, datos) {
         return db.actualizarPostulacion(id, datos);
     },
 
-    actualizarEstadoPostulacion(id, nuevoEstado) {
+    async actualizarEstadoPostulacion(id, nuevoEstado) {
         return db.actualizarPostulacion(id, { estado: nuevoEstado });
     },
 
-    agendarEntrevistaPostulacion(id, { fechaEntrevista, evaluadorAsignado, observaciones }) {
+    async agendarEntrevistaPostulacion(id, { fechaEntrevista, evaluadorAsignado, observaciones }) {
         const payload = {
             fechaEntrevista,
             estado: "Entrevista agendada",
@@ -103,7 +103,7 @@ export const dataStore = {
         return db.actualizarPostulacion(id, payload);
     },
 
-    responderCandidatoPostulacion(id, { respuesta, sugerenciaFecha }) {
+    async responderCandidatoPostulacion(id, { respuesta, sugerenciaFecha }) {
         const payload = {
             respuestaCandidato: respuesta, // "Aceptada" | "Sugerir cambio"
         };
@@ -114,7 +114,7 @@ export const dataStore = {
         return db.actualizarPostulacion(id, payload);
     },
 
-    evaluarPostulacion(id, { dictamenPsicologico, observaciones, conclusiones }) {
+    async evaluarPostulacion(id, { dictamenPsicologico, observaciones, conclusiones }) {
         return db.actualizarPostulacion(id, {
             dictamenPsicologico,
             observaciones,
@@ -123,36 +123,36 @@ export const dataStore = {
         });
     },
 
-    decidirContratacionPostulacion(id, decisionFinal) {
+    async decidirContratacionPostulacion(id, decisionFinal) {
         return db.actualizarPostulacion(id, {
             decisionFinal, // "Contratado" | "No contratado"
         });
     },
 
     // ==================== USUARIOS / AUTENTICACIÓN ====================
-    obtenerUsuarios() {
+    async obtenerUsuarios() {
         return db.obtenerUsuarios();
     },
 
-    obtenerUsuarioPorId(id) {
+    async obtenerUsuarioPorId(id) {
         return db.obtenerUsuarioPorId(id);
     },
 
-    obtenerUsuarioPorEmail(email) {
+    async obtenerUsuarioPorEmail(email) {
         return db.obtenerUsuarioPorEmail(email);
     },
 
-    registrarUsuario(datos) {
+    async registrarUsuario(datos) {
         return db.insertarUsuario(datos);
     },
 
-    loginUsuario({ email, password }) {
-        return db.autenticarUsuario({ email, password });
+    async loginUsuario({ email, rut, identificador, password }) {
+        return db.autenticarUsuario({ email, rut, identificador, password });
     },
 
     // ==================== SOLICITUDES (Compatibilidad Legacy) ====================
-    obtenerSolicitudes({ busqueda, estado, planta, evaluador } = {}) {
-        const todos = db.obtenerTodos();
+    async obtenerSolicitudes({ busqueda, estado, planta, evaluador } = {}) {
+        const todos = await db.obtenerTodos();
         return todos.filter((c) => {
             const termino = busqueda ? busqueda.toLowerCase().trim() : "";
             const coincideTexto =
@@ -182,15 +182,15 @@ export const dataStore = {
         });
     },
 
-    obtenerSolicitudPorId(id) {
+    async obtenerSolicitudPorId(id) {
         return this.obtenerCandidatoPorId(id);
     },
 
-    actualizarEstadoSolicitud(id, nuevoEstado) {
+    async actualizarEstadoSolicitud(id, nuevoEstado) {
         return db.actualizarCandidato(id, { estado: nuevoEstado });
     },
 
-    actualizarEvaluacionSolicitud(id, { resultadoPsicologico, fechaEvaluacion, conclusiones, estado }) {
+    async actualizarEvaluacionSolicitud(id, { resultadoPsicologico, fechaEvaluacion, conclusiones, estado }) {
         const payload = {};
         if (resultadoPsicologico !== undefined) payload.resultadoPsicologico = resultadoPsicologico;
         if (fechaEvaluacion !== undefined) payload.fechaEvaluacion = fechaEvaluacion;
@@ -201,8 +201,13 @@ export const dataStore = {
     },
 
     // ==================== DASHBOARD / KPIS ====================
-    obtenerKPIs() {
-        const todos = db.obtenerTodos();
+    async obtenerKPIs() {
+        const [todos, puestos, postulaciones] = await Promise.all([
+            db.obtenerTodos(),
+            db.obtenerPuestos(),
+            db.obtenerPostulaciones(),
+        ]);
+
         const total = todos.length;
         const pendientes = todos.filter(
             (c) => c.estado === "Pendiente" || c.estado === "En revisión"
@@ -211,10 +216,6 @@ export const dataStore = {
         const finalizadas = todos.filter(
             (c) => c.estado === "Finalizado" || c.estado === "Finalizada"
         ).length;
-
-        // Métricas extendidas de puestos y postulaciones
-        const puestos = db.obtenerPuestos();
-        const postulaciones = db.obtenerPostulaciones();
 
         return {
             totalCandidatos: total,
@@ -234,37 +235,37 @@ export const dataStore = {
     },
 
     // ==================== SOLICITUDES DE INFORME ====================
-    obtenerSolicitudesInforme(filtros) {
+    async obtenerSolicitudesInforme(filtros) {
         return db.obtenerSolicitudesInforme(filtros);
     },
 
-    obtenerSolicitudInformePorId(id) {
+    async obtenerSolicitudInformePorId(id) {
         return db.obtenerSolicitudInformePorId(id);
     },
 
-    crearSolicitudInforme(datos) {
+    async crearSolicitudInforme(datos) {
         return db.insertarSolicitudInforme(datos);
     },
 
-    agregarPreguntaInforme(id, datosPregunta) {
+    async agregarPreguntaInforme(id, datosPregunta) {
         return db.agregarPreguntaInforme(id, datosPregunta);
     },
 
-    agregarRespuestaInforme(id, preguntaId, datosRespuesta) {
+    async agregarRespuestaInforme(id, preguntaId, datosRespuesta) {
         return db.agregarRespuestaInforme(id, preguntaId, datosRespuesta);
     },
 
-    actualizarEstadoSolicitudInforme(id, estado) {
+    async actualizarEstadoSolicitudInforme(id, estado) {
         return db.actualizarEstadoSolicitudInforme(id, estado);
     },
 
     // ==================== REINICIO PARA DEMOSTRACIÓN (Admin Académico) ====================
-    restablecerDatosDemo() {
-        const resultado = db.restablecerDemo();
+    async restablecerDatosDemo() {
+        const resultado = await db.restablecerDemo();
         return {
             mensaje: "Base de datos persistente restablecida con los datos iniciales de demostración.",
             totales: resultado,
-            motorBD: db.isUsingSQLite() ? "SQLite (archivo persistente)" : "Archivo JSON",
+            motorBD: db.isUsingMongo() ? `MongoDB (${db.getMongoUri()})` : "Archivo JSON (Fallback)",
         };
     },
 };
