@@ -1,7 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import BotonOrange from "../components/BotonOrange";
 import HeaderRoles from "../components/HeaderRoles";
-import ModalNuevaSolicitud from "../components/ModalNuevaSolicitud";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalEditarCandidato from "../components/ModalEditarCandidato";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
@@ -31,7 +29,6 @@ function AnalistaPage({ onVolver }) {
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
 
-    const [modalNuevaAbierto, setModalNuevaAbierto] = useState(false);
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [candidatoAEditar, setCandidatoAEditar] = useState(null);
     const [alertaExito, setAlertaExito] = useState("");
@@ -154,28 +151,6 @@ function AnalistaPage({ onVolver }) {
         setFiltroEvaluador("todos");
     };
 
-    const handleGuardarSolicitud = async (nuevaSolicitud) => {
-        try {
-            const creada = await api.crearSolicitud(nuevaSolicitud);
-            const formateada = { ...creada, fecha: new Date(creada.fecha) };
-            setCandidatos((prev) => {
-                const actualizados = [formateada, ...prev.filter((c) => c.id !== formateada.id)];
-                guardarCandidatosGlobales(actualizados);
-                return actualizados;
-            });
-            setBackendConectado(true);
-            setAlertaExito(`✓ Solicitud guardada en base de datos para ${formateada.nombre} (${formateada.cargo})`);
-        } catch (err) {
-            console.warn("Guardado local:", err.message);
-            setCandidatos((prev) => {
-                const actualizados = [nuevaSolicitud, ...prev];
-                guardarCandidatosGlobales(actualizados);
-                return actualizados;
-            });
-            setAlertaExito(`✓ Solicitud creada exitosamente para ${nuevaSolicitud.nombre} (${nuevaSolicitud.cargo})`);
-        }
-        setTimeout(() => setAlertaExito(""), 4500);
-    };
 
     const handleGuardarCandidatoEditado = async (candidatoActualizado) => {
         try {
@@ -257,13 +232,7 @@ function AnalistaPage({ onVolver }) {
 
             {tabActiva === "dashboard" && (
                 <>
-                    <EncabezadoDashboard subtitulo="Analista de Reclutamiento · Emisión y gestión integral de solicitudes">
-                        <BotonOrange
-                            texto="+ Nueva solicitud"
-                            onClick={() => setModalNuevaAbierto(true)}
-                        />
-                    </EncabezadoDashboard>
-
+                    <EncabezadoDashboard subtitulo="Analista de Reclutamiento · Emisión y gestión integral de solicitudes"/>
                     <GrillaIndicadores indicadores={indicadores} />
 
                     <PanelSolicitudes
@@ -280,7 +249,6 @@ function AnalistaPage({ onVolver }) {
                 <GestionCandidatosView
                     candidatos={candidatos}
                     rolActual={rolActual}
-                    onAbrirNuevoCandidato={() => setModalNuevaAbierto(true)}
                     onEditarCandidato={(cand) => setCandidatoAEditar(cand)}
                     onVerDetalle={(cand) => setSolicitudSeleccionada(cand)}
                 />
@@ -290,10 +258,6 @@ function AnalistaPage({ onVolver }) {
                 <PanelSolicitudes
                     encabezado={
                         <EncabezadoRegistro subtitulo="Seguimiento de postulaciones y emisión de solicitudes">
-                            <BotonOrange
-                                texto="+ Nueva Solicitud"
-                                onClick={() => setModalNuevaAbierto(true)}
-                            />
                         </EncabezadoRegistro>
                     }
                     filtros={propsFiltros}
@@ -310,12 +274,6 @@ function AnalistaPage({ onVolver }) {
                     onVerDetalle={(inf) => setInformeSeleccionado(inf)}
                 />
             )}
-
-            <ModalNuevaSolicitud
-                isOpen={modalNuevaAbierto}
-                onCerrar={() => setModalNuevaAbierto(false)}
-                onGuardar={handleGuardarSolicitud}
-            />
 
             <ModalDetalleSolicitud
                 key={solicitudSeleccionada?.id || "modal-detalle"}
