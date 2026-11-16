@@ -18,6 +18,7 @@ function HeaderRoles({
 
     const tabsPorDefecto = [
         { id: "dashboard", label: "Dashboard Operativo" },
+        { id: "entrevistas", label: "Agenda de Entrevistas" },
         { id: "candidatos", label: "Gestión de Candidatos" },
         { id: "solicitudes", label: "Solicitudes de Evaluación" },
         { id: "informes", label: "Informes de Candidatos" },

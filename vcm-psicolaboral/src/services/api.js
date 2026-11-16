@@ -118,6 +118,20 @@ export const api = {
         });
     },
 
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async getEtiquetas() {
+        const res = await request("/etiquetas");
+        return res.datos;
+    },
+
+    async crearEtiqueta(nombre) {
+        const res = await request("/etiquetas", {
+            method: "POST",
+            body: JSON.stringify({ nombre }),
+        });
+        return res.datos;
+    },
+
     // ==================== POSTULACIONES ====================
     async getPostulaciones({ candidatoId, puestoTrabajoId, estado, evaluador } = {}) {
         const params = new URLSearchParams();

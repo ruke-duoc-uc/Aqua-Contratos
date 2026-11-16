@@ -66,7 +66,7 @@ export const puestosController = {
      */
     async crear(req, res) {
         try {
-            const { titulo, planta, familiaCargo, descripcion, requisitos, vacantes, creadoPor } = req.body;
+            const { titulo, planta, familiaCargo, descripcion, requisitos, etiquetas, vacantes, creadoPor } = req.body;
 
             if (!titulo || !titulo.trim()) {
                 return res.status(400).json({
@@ -95,6 +95,7 @@ export const puestosController = {
                 familiaCargo,
                 descripcion,
                 requisitos,
+                etiquetas,
                 vacantes: Number(vacantes) || 1,
                 creadoPor: creadoPor || "Jefe de Área",
             });

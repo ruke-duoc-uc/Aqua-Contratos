@@ -10,6 +10,7 @@ import informesRoutes from "./routes/informesRoutes.js";
 import puestosRoutes from "./routes/puestosRoutes.js";
 import postulacionesRoutes from "./routes/postulacionesRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import etiquetasRoutes from "./routes/etiquetasRoutes.js";
 import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -37,6 +38,7 @@ app.get("/api", (req, res) => {
             solicitudes: "/api/solicitudes",
             dashboard: "/api/dashboard",
             solicitudesInforme: "/api/solicitudes-informe",
+            etiquetas: "/api/etiquetas",
         },
     });
 });
@@ -49,6 +51,7 @@ app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/solicitudes-informe", informesRoutes);
+app.use("/api/etiquetas", etiquetasRoutes);
 
 // Manejo de errores y 404
 app.use(notFoundHandler);

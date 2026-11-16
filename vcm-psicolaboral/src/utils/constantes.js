@@ -61,3 +61,18 @@ export const COMUNAS = [
     "San Juan de la Costa",
     "San Pablo",
 ];
+
+export const ETIQUETAS_SUGERIDAS = [
+    "Trabajo en equipo",
+    "Liderazgo",
+    "Resolución de problemas",
+    "Comunicación efectiva",
+    "Puntualidad",
+    "Organización",
+    "React",
+    "Node.js",
+    "Prevención de riesgos",
+    "Mecánica industrial",
+    "Logística",
+    "Adaptabilidad",
+];

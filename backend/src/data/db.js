@@ -14,6 +14,7 @@ import {
     PostulacionModel,
     SolicitudInformeModel,
     UsuarioModel,
+    EtiquetaModel,
 } from "./models.js";
 import {
     CANDIDATOS_SEED,
@@ -22,6 +23,7 @@ import {
     PUESTOS_SEED,
     POSTULACIONES_SEED,
     USUARIOS_SEED,
+    ETIQUETAS_SEED,
 } from "./seedData.js";
 
 dotenv.config();
@@ -36,6 +38,7 @@ const JSON_INFORMES_FILE = path.join(__dirname, "aqua_informes.json");
 const JSON_PUESTOS_FILE = path.join(__dirname, "aqua_puestos.json");
 const JSON_POSTULACIONES_FILE = path.join(__dirname, "aqua_postulaciones.json");
 const JSON_USUARIOS_FILE = path.join(__dirname, "aqua_usuarios.json");
+const JSON_ETIQUETAS_FILE = path.join(__dirname, "aqua_etiquetas.json");
 
 let useMongo = false;
 
@@ -45,6 +48,7 @@ let memoryStoreInformes = [];
 let memoryStorePuestos = [];
 let memoryStorePostulaciones = [];
 let memoryStoreUsuarios = [];
+let memoryStoreEtiquetas = [];
 
 const limpiarRut = (rut) => (rut || "").replace(/[.-]/g, "").trim().toLowerCase();
 
@@ -72,6 +76,7 @@ function inicializarFallbackJson() {
     memoryStorePostulaciones = cargarJSON(JSON_POSTULACIONES_FILE, POSTULACIONES_SEED);
     memoryStoreInformes = cargarJSON(JSON_INFORMES_FILE, INFORMES_SEED);
     memoryStoreUsuarios = cargarJSON(JSON_USUARIOS_FILE, USUARIOS_SEED);
+    memoryStoreEtiquetas = cargarJSON(JSON_ETIQUETAS_FILE, ETIQUETAS_SEED);
 
     // Asegurar que todos los usuarios semilla existan en el fallback
     for (const uSeed of USUARIOS_SEED) {
@@ -89,6 +94,7 @@ function persistJson(tipo) {
         if (tipo === "postulaciones" || !tipo) fs.writeFileSync(JSON_POSTULACIONES_FILE, JSON.stringify(memoryStorePostulaciones, null, 2), "utf-8");
         if (tipo === "informes" || !tipo) fs.writeFileSync(JSON_INFORMES_FILE, JSON.stringify(memoryStoreInformes, null, 2), "utf-8");
         if (tipo === "usuarios" || !tipo) fs.writeFileSync(JSON_USUARIOS_FILE, JSON.stringify(memoryStoreUsuarios, null, 2), "utf-8");
+        if (tipo === "etiquetas" || !tipo) fs.writeFileSync(JSON_ETIQUETAS_FILE, JSON.stringify(memoryStoreEtiquetas, null, 2), "utf-8");
     } catch {
         // Ignorar
     }
@@ -113,6 +119,11 @@ async function poblarSemillasMongo() {
     const countInformes = await SolicitudInformeModel.countDocuments();
     if (countInformes === 0) {
         await SolicitudInformeModel.insertMany(INFORMES_SEED);
+    }
+
+    const countEtiquetas = await EtiquetaModel.countDocuments();
+    if (countEtiquetas === 0) {
+        await EtiquetaModel.insertMany(ETIQUETAS_SEED);
     }
 
     const countUsuarios = await UsuarioModel.countDocuments();
@@ -376,6 +387,15 @@ export const db = {
         const creadoPor = datos.creadoPor || "Jefe de Área";
         const nuevoId = await siguienteIdMongo(PuestoTrabajoModel, memoryStorePuestos);
 
+        const etiquetas = Array.isArray(datos.etiquetas)
+            ? datos.etiquetas.map((t) => String(t).trim()).filter(Boolean)
+            : [];
+
+        // Asegurar que las etiquetas queden guardadas en el catálogo global
+        for (const tag of etiquetas) {
+            await this.insertarEtiqueta(tag);
+        }
+
         const nuevoPuesto = {
             id: nuevoId,
             titulo: datos.titulo.trim(),
@@ -383,6 +403,7 @@ export const db = {
             familiaCargo: datos.familiaCargo.trim(),
             descripcion: datos.descripcion?.trim() || "",
             requisitos: datos.requisitos?.trim() || "",
+            etiquetas,
             vacantes,
             estado,
             creadoPor,
@@ -402,11 +423,22 @@ export const db = {
 
     async actualizarPuesto(id, datos) {
         const numId = Number(id);
-        const camposPermitidos = ["titulo", "planta", "familiaCargo", "descripcion", "requisitos", "vacantes", "estado"];
+        const camposPermitidos = ["titulo", "planta", "familiaCargo", "descripcion", "requisitos", "etiquetas", "vacantes", "estado"];
         const payload = {};
         for (const campo of camposPermitidos) {
             if (datos[campo] !== undefined) {
-                payload[campo] = campo === "vacantes" ? Number(datos[campo]) : datos[campo];
+                if (campo === "vacantes") {
+                    payload[campo] = Number(datos[campo]);
+                } else if (campo === "etiquetas") {
+                    payload[campo] = Array.isArray(datos[campo])
+                        ? datos[campo].map((t) => String(t).trim()).filter(Boolean)
+                        : [];
+                    for (const tag of payload[campo]) {
+                        await this.insertarEtiqueta(tag);
+                    }
+                } else {
+                    payload[campo] = datos[campo];
+                }
             }
         }
 
@@ -907,6 +939,7 @@ export const db = {
                 PostulacionModel.deleteMany({}),
                 SolicitudInformeModel.deleteMany({}),
                 UsuarioModel.deleteMany({}),
+                EtiquetaModel.deleteMany({}),
             ]);
 
             await Promise.all([
@@ -915,6 +948,7 @@ export const db = {
                 PostulacionModel.insertMany(POSTULACIONES_SEED),
                 SolicitudInformeModel.insertMany(INFORMES_SEED),
                 UsuarioModel.insertMany(USUARIOS_SEED),
+                EtiquetaModel.insertMany(ETIQUETAS_SEED),
             ]);
 
             return {
@@ -923,6 +957,7 @@ export const db = {
                 totalPostulaciones: POSTULACIONES_SEED.length,
                 totalInformes: INFORMES_SEED.length,
                 totalUsuarios: USUARIOS_SEED.length,
+                totalEtiquetas: ETIQUETAS_SEED.length,
             };
         }
 
@@ -931,6 +966,7 @@ export const db = {
         memoryStorePostulaciones = JSON.parse(JSON.stringify(POSTULACIONES_SEED));
         memoryStoreInformes = JSON.parse(JSON.stringify(INFORMES_SEED));
         memoryStoreUsuarios = JSON.parse(JSON.stringify(USUARIOS_SEED));
+        memoryStoreEtiquetas = JSON.parse(JSON.stringify(ETIQUETAS_SEED));
         persistJson();
 
         return {
@@ -939,7 +975,47 @@ export const db = {
             totalPostulaciones: memoryStorePostulaciones.length,
             totalInformes: memoryStoreInformes.length,
             totalUsuarios: memoryStoreUsuarios.length,
+            totalEtiquetas: memoryStoreEtiquetas.length,
         };
+    },
+
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async obtenerEtiquetas() {
+        if (this.isUsingMongo()) {
+            const docs = await EtiquetaModel.find().sort({ nombre: 1 });
+            return docs.map((d) => d.toJSON());
+        }
+        return [...(memoryStoreEtiquetas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    },
+
+    async insertarEtiqueta(nombre) {
+        const nombreLimpio = String(nombre || "").trim();
+        if (!nombreLimpio) return null;
+
+        if (this.isUsingMongo()) {
+            const existe = await EtiquetaModel.findOne({
+                nombre: { $regex: new RegExp(`^${nombreLimpio}$`, "i") },
+            });
+            if (existe) return existe.toJSON();
+
+            const nuevoId = await siguienteIdMongo(EtiquetaModel, memoryStoreEtiquetas);
+            const doc = await EtiquetaModel.create({ id: nuevoId, nombre: nombreLimpio });
+            return doc.toJSON();
+        }
+
+        if (!memoryStoreEtiquetas) memoryStoreEtiquetas = [];
+        const existe = memoryStoreEtiquetas.find(
+            (e) => e.nombre.toLowerCase() === nombreLimpio.toLowerCase()
+        );
+        if (existe) return existe;
+
+        const nuevoId = memoryStoreEtiquetas.length > 0
+            ? Math.max(...memoryStoreEtiquetas.map((e) => Number(e.id) || 0)) + 1
+            : 1;
+        const nueva = { id: nuevoId, nombre: nombreLimpio };
+        memoryStoreEtiquetas.push(nueva);
+        persistJson("etiquetas");
+        return nueva;
     },
 
     obtenerCatalogos() {

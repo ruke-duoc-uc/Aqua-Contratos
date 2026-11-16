@@ -259,6 +259,15 @@ export const dataStore = {
         return db.actualizarEstadoSolicitudInforme(id, estado);
     },
 
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async obtenerEtiquetas() {
+        return db.obtenerEtiquetas();
+    },
+
+    async crearEtiqueta(nombre) {
+        return db.insertarEtiqueta(nombre);
+    },
+
     // ==================== REINICIO PARA DEMOSTRACIÓN (Admin Académico) ====================
     async restablecerDatosDemo() {
         const resultado = await db.restablecerDemo();
