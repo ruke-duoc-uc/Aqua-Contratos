@@ -333,4 +333,19 @@ export const api = {
         });
         return res.datos;
     },
+
+    // ==================== ÁREAS DE TRABAJO ====================
+    async getAreas({ busqueda } = {}) {
+        const params = new URLSearchParams();
+        if (busqueda) params.append("busqueda", busqueda);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/areas${query}`);
+        return res.datos;
+    },
+
+    async getAreaPorId(id) {
+        const res = await request(`/areas/${id}`);
+        return res.datos;
+    },
 };

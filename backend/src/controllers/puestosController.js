@@ -9,8 +9,8 @@ export const puestosController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, planta, familiaCargo, estado } = req.query;
-            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado });
+            const { busqueda, planta, familiaCargo, estado, areaId } = req.query;
+            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId });
 
             return res.status(200).json({
                 ok: true,

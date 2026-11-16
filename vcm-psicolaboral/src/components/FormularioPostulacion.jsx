@@ -154,7 +154,9 @@ function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar 
             cargo: cargo.trim(),
             archivoCv: archivoCv || (perfilPostulante?.cv_pdf ? { name: perfilPostulante.cv_pdf } : null),
             cvDataUrl: cvDataUrl || perfilPostulante?.cvDataUrl || "",
-        });
+        };
+
+        onEnviar(postulacion);
     };
 
     const rutCompleto = Boolean(datos.rut && datos.dv);
