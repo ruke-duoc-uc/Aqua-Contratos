@@ -25,7 +25,7 @@ const candidatoSchema = new mongoose.Schema(
         email: { type: String, default: "", trim: true, lowercase: true },
         telefono: { type: String, default: "", trim: true },
         direccion: { type: String, default: "", trim: true },
-        comuna: { type: String, default: "Puerto Montt", trim: true },
+        comuna: { type: String, default: "", trim: true },
         fecha_nacimiento: { type: String, default: "" },
         cv_pdf: { type: String, default: "" },
         cvDataUrl: { type: String, default: "" },
@@ -131,6 +131,35 @@ const usuarioSchema = new mongoose.Schema(
     },
     {
         collection: "usuarios",
+        toJSON: toCleanObject,
+        toObject: toCleanObject,
+    }
+);
+
+// 6. Esquema de Areas de trabajo 
+
+const areasSchema = new mongoose.Schema(
+    {
+        id:{type: String, required: true, unique: true, index: true},
+        tipo_area:{type:String, required:true},
+    },
+    {
+        collection: "areas de trabajo",
+        toJSON: toCleanObject,
+        toObject: toCleanObject,
+    }
+)
+
+const empleadoSchema = new mongoose.Schema(
+    {
+        id: { type: Number, required: true, unique: true, index: true },
+        email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+        password: { type: String, required: true },
+        nombre: { type: String, required: true, trim: true },
+        area_id: { type: Number, default: null },
+    },
+    {
+        collection: "emplados",
         toJSON: toCleanObject,
         toObject: toCleanObject,
     }

@@ -6,7 +6,7 @@ Sistema web para la centralización y digitalización del proceso de evaluación
 > **Sección:** 002D  
 > **Equipo:** Smiling Friends  
 > **Integrantes:** Amaro Villalobos · Cristóbal Loncón · Joaquín Oyarzún · Luis Villalón  
-> **Stack Principal:** React 19 · Vite · Bootstrap 5 · React Router 7 · Vitest · Node.js (Express + SQLite)  
+> **Stack Principal:** React 19 · Vite · Bootstrap 5 · React Router 7 · Vitest · Node.js (Express + MongoDB)  
 
 ---
 

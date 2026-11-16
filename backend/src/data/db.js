@@ -158,10 +158,6 @@ export const db = {
         return useMongo && mongoose.connection.readyState === 1;
     },
 
-    isUsingSQLite() {
-        return this.isUsingMongo();
-    },
-
     getMongoUri() {
         return MONGODB_URI;
     },
