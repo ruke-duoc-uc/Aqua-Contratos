@@ -60,6 +60,7 @@ const puestoTrabajoSchema = new mongoose.Schema(
         familiaCargo: { type: String, required: true, trim: true },
         descripcion: { type: String, default: "" },
         requisitos: { type: String, default: "" },
+        etiquetas: { type: [String], default: [] },
         vacantes: { type: Number, default: 1 },
         estado: { type: String, default: "Abierto" },
         creadoPor: { type: String, default: "Jefe de Área" },
@@ -153,6 +154,14 @@ const areasSchema = new mongoose.Schema(
     },
     {
         collection: "areas_trabajo",
+// 6. Esquema de Etiquetas / Cualidades Reutilizables
+const etiquetaSchema = new mongoose.Schema(
+    {
+        id: { type: Number, required: true, unique: true, index: true },
+        nombre: { type: String, required: true, unique: true, trim: true },
+    },
+    {
+        collection: "etiquetas",
         toJSON: toCleanObject,
         toObject: toCleanObject,
     }
@@ -170,3 +179,5 @@ export const UsuarioModel =
     mongoose.models.Usuario || mongoose.model("Usuario", usuarioSchema);
 export const AreaTrabajoModel =
     mongoose.models.AreaTrabajo || mongoose.model("AreaTrabajo", areasSchema);
+export const EtiquetaModel =
+    mongoose.models.Etiqueta || mongoose.model("Etiqueta", etiquetaSchema);

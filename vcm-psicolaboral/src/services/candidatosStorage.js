@@ -370,6 +370,58 @@ export function notificarCambioGlobal() {
     }
 }
 
+export async function actualizarDatosPersonalesCandidato(id, datosPersonales) {
+    const numId = Number(id);
+    const actuales = cargarCandidatosGlobales();
+    const listaActualizada = actuales.map((c) => {
+        if (Number(c.id) === numId || limpiarRut(c.rut) === limpiarRut(datosPersonales.rut)) {
+            return {
+                ...c,
+                ...datosPersonales,
+                id: c.id,
+            };
+        }
+        return c;
+    });
+
+    guardarCandidatosGlobales(listaActualizada);
+
+    // Intentar actualizar en el backend
+    try {
+        if (numId) {
+            await api.actualizarCandidato(numId, datosPersonales);
+        }
+    } catch (err) {
+        console.warn("Backend no disponible al actualizar perfil:", err.message);
+    }
+
+    // Actualizar sesión si es el usuario activo
+    const sesionActual = obtenerSesionPostulante();
+    if (
+        sesionActual &&
+        (Number(sesionActual.candidato?.id) === numId ||
+            limpiarRut(sesionActual.candidato?.rut) === limpiarRut(datosPersonales.rut))
+    ) {
+        const sesionUpd = {
+            ...sesionActual,
+            candidato: {
+                ...sesionActual.candidato,
+                ...datosPersonales,
+            },
+            usuario: {
+                ...sesionActual.usuario,
+                nombre: datosPersonales.nombre || sesionActual.usuario?.nombre,
+                email: datosPersonales.email || sesionActual.usuario?.email,
+                rut: datosPersonales.rut || sesionActual.usuario?.rut,
+            },
+        };
+        guardarSesionPostulante(sesionUpd);
+        return sesionUpd;
+    }
+
+    return null;
+}
+
 /* ==================== CUENTAS Y SESIÓN DE POSTULANTES (B1 / B2) ==================== */
 
 export function cargarUsuariosPostulantesLocales() {

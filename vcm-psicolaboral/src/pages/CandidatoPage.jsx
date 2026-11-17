@@ -16,6 +16,8 @@
 import TarjetaOferta from "../components/tarjetaOferta";
 import FormularioPostulacion from "../components/FormularioPostulacion";
 import ComprobantePostulacion from "../components/ComprobantePostulacion";
+import MisPostulacionesView from "../components/MisPostulacionesView";
+import EditarPerfilPostulanteView from "../components/EditarPerfilPostulanteView";
 import AlertaAviso from "../components/AlertaAviso";
 import PortalAuthPostulante from "../components/PortalAuthPostulante";
 import { api } from "../services/api";
@@ -25,6 +27,7 @@ import EstadoVacio from "../components/EstadoVacio";
 import { useState, useEffect, useMemo } from "react";
 import {
     registrarPostulanteGlobal,
+    actualizarDatosPersonalesCandidato,
     obtenerSesionPostulante,
     guardarSesionPostulante,
     cerrarSesionPostulante,
@@ -51,6 +54,7 @@ const PUESTOS_INICIALES = [
             "Mantención y evolución de plataformas web corporativas y digitalización de procesos de planta.",
         requisitos:
             "Experiencia en React, Node.js y bases de datos relacionales. Deseable trabajo en equipo ágil.",
+        etiquetas: ["React", "Node.js", "Trabajo en equipo", "Resolución de problemas"],
         vacantes: 2,
         estado: "Abierto",
         creadoPor: "Carlos Mendoza (Jefe TI)",
@@ -64,6 +68,7 @@ const PUESTOS_INICIALES = [
             "Supervisar el cumplimiento de normativas de seguridad, protocolos sanitarios y evaluación de riesgos en faena.",
         requisitos:
             "Título de Ingeniero o Técnico en Prevención de Riesgos con registro SNS vigente. Experiencia en plantas de salmónidos.",
+        etiquetas: ["Prevención de riesgos", "Liderazgo", "Comunicación efectiva", "Resolución de problemas"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Mariana Almonacid (Jefa Prevención)",
@@ -77,6 +82,7 @@ const PUESTOS_INICIALES = [
             "Ejecución del plan de mantenimiento preventivo y correctivo en líneas de proceso y sistemas hidráulicos.",
         requisitos:
             "Técnico nivel superior en Mecánica Industrial o Electromecánica. Manejo de bombas y refrigeración.",
+        etiquetas: ["Mecánica industrial", "Puntualidad", "Resolución de problemas", "Trabajo en equipo"],
         vacantes: 3,
         estado: "Abierto",
         creadoPor: "Hernán Soto (Jefe Mantenimiento)",
@@ -90,6 +96,7 @@ const PUESTOS_INICIALES = [
             "Apoyo en control de gestión, compras de insumos menores y respaldo en tareas de recursos humanos.",
         requisitos:
             "Formación técnica en administración o contabilidad. Manejo de planillas de Excel y archivo documental.",
+        etiquetas: ["Organización", "Comunicación efectiva", "Puntualidad", "Adaptabilidad"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Lorena Silva (Jefa Administración)",
@@ -103,6 +110,7 @@ const PUESTOS_INICIALES = [
             "Operación y mantención de instalaciones eléctricas en turno, con apoyo en Barrow y Chilquinta.",
         requisitos:
             "Certificación SEC vigente clase B. Experiencia comprobada en turnos de planta industrial.",
+        etiquetas: ["Mecánica industrial", "Resolución de problemas", "Trabajo en equipo", "Puntualidad"],
         vacantes: 2,
         estado: "Abierto",
         creadoPor: "Rodrigo Palma (Jefe Electrical)",
@@ -116,6 +124,7 @@ const PUESTOS_INICIALES = [
             "Atención primaria de Accidentados y enfermedad profesional, controles de salud ocupacional y protocolos sanitarios.",
         requisitos:
             "Registro profesional vigente y experiencia en salas de primeros auxilios en plantas industriales.",
+        etiquetas: ["Salud ocupacional", "Primeros auxilios", "Atención al detalle", "Comunicación efectiva"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Mariana Almonacid (Jefa Prevención)",
@@ -145,6 +154,8 @@ const guardarPostulacionesLocales = (postulaciones) => {
 /* ============================ PANTALLA PRINCIPAL ========================== */
 
 function CandidatoPage({ onVolver }) {
+    const [tabActiva, setTabActiva] = useState("postulaciones_activas");
+    const [editandoPerfil, setEditandoPerfil] = useState(false);
     const [sesionPostulante, setSesionPostulante] = useState(obtenerSesionPostulante);
     const [puestos, setPuestos] = useState(PUESTOS_INICIALES);
     const [postulaciones, setPostulaciones] = useState(cargarPostulacionesLocales);
@@ -383,6 +394,38 @@ function CandidatoPage({ onVolver }) {
 
     const candidatoActivo = sesionPostulante.candidato;
 
+    const misPostulaciones = useMemo(() => {
+        const rutActivo = (candidatoActivo?.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
+        const idActivo = candidatoActivo?.id;
+        const globales = cargarPostulacionesGlobales();
+
+        const lista = [...postulaciones];
+        for (const g of globales) {
+            const gRut = (g.rut || g.candidatoRut || "").replace(/[.-]/g, "").trim().toLowerCase();
+            const coincideRut = rutActivo && gRut === rutActivo;
+            const coincideId = idActivo && (Number(g.candidatoId) === Number(idActivo) || Number(g.id) === Number(idActivo));
+            if (coincideRut || coincideId) {
+                if (!lista.some((item) => item.id === g.id || (item.puestoTitulo === g.puestoTitulo && item.rut === g.rut))) {
+                    lista.push(g);
+                }
+            }
+        }
+        return lista;
+    }, [postulaciones, candidatoActivo]);
+
+    const handleGuardarPerfil = async (datosPersonales) => {
+        try {
+            const sesionUpd = await actualizarDatosPersonalesCandidato(candidatoActivo?.id, datosPersonales);
+            if (sesionUpd) {
+                setSesionPostulante(sesionUpd);
+            }
+            setAlertaExito("✓ Datos personales actualizados exitosamente.");
+            setEditandoPerfil(false);
+        } catch (err) {
+            setAlertaError(err.message || "Error al actualizar los datos personales.");
+        }
+    };
+
     return ( 
         <main
             style={{
@@ -406,13 +449,49 @@ function CandidatoPage({ onVolver }) {
                     flexWrap: "wrap",
                 }}
             >
-                <div>
-                    <h1 style={{ margin: 0, fontSize: "1.2rem" }}>AquaChile · Aqua-Contratos</h1>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                        Portal de Postulación · Postulante conectado:{" "}
-                        <strong>{candidatoActivo?.nombre || sesionPostulante.usuario?.nombre}</strong>
-                        {candidatoActivo?.rut ? ` (${candidatoActivo.rut})` : ""}
-                    </span>
+                {/* Parte superior izquierda: Monigote de persona + Nombre + Botón Editar perfil */}
+                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div
+                        style={{
+                            width: "50px",
+                            height: "50px",
+                            borderRadius: "50%",
+                            backgroundColor: "#fff4e6",
+                            color: "#e8590c",
+                            border: "2px solid #fdba74",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "1.7rem",
+                            flexShrink: 0,
+                        }}
+                        title="Foto de perfil"
+                    >
+                        👤
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{ fontSize: "1.15rem", fontWeight: "bold", color: "#111827", lineHeight: "1.2" }}>
+                            {candidatoActivo?.nombre || sesionPostulante.usuario?.nombre}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setEditandoPerfil(true)}
+                            style={{
+                                alignSelf: "flex-start",
+                                background: "#fff",
+                                border: "1px solid #ced4da",
+                                borderRadius: "5px",
+                                padding: "4px 12px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                color: "#e8590c",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                            }}
+                        >
+                            ✏️ Editar perfil
+                        </button>
+                    </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
@@ -438,189 +517,99 @@ function CandidatoPage({ onVolver }) {
                 </div>
             </header>
 
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "8px 14px",
-                    backgroundColor: backendConectado ? "#e8f5e9" : "#fff8e1",
-                    borderRadius: "6px",
-                    border: `1px solid ${backendConectado ? "#c8e6c9" : "#ffe082"}`,
-                    marginBottom: "20px",
-                    fontSize: "12px",
-                    color: backendConectado ? "#1b5e20" : "#795548",
-                    gap: "10px",
-                    flexWrap: "wrap",
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span
-                        style={{
-                            display: "inline-block",
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            backgroundColor: backendConectado ? "#2e7d32" : NARANJA,
-                        }}
-                    />
-                    <strong>
-                        {backendConectado
-                            ? "Ofertas sincronizadas con la API REST (Backend Express + MongoDB)"
-                            : "Modo Local (catálogo de ofertas de demostración)"}
-                    </strong>
-                </div>
-                <span style={{ fontSize: "11px", color: "#666" }}>
-                    Pantalla Dedicada · Postulante a Trabajo
-                </span>
-            </div>
-
             <AlertaAviso tipo="exito" mensaje={alertaExito} onCerrar={() => setAlertaExito("")} />
             <AlertaAviso tipo="error" mensaje={alertaError} onCerrar={() => setAlertaError("")} />
 
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "24px",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                }}
-            >
-                <div>
-                    <h2 style={{ margin: 0 }}>Postula a las Vacantes de AquaChile</h2>
-                    <span style={{ fontSize: "14px", color: "gray" }}>
-                        Completa el formulario, adjunta tu CV y recibe tu comprobante al instante
-                    </span>
-                </div>
-            </div>
-
-            <GrillaIndicadores indicadores={indicadores} />
-
-            <div style={{ marginBottom: "24px" }}>
-                <FormularioPostulacion
-                    key={`${versionFormulario}-${candidatoActivo?.id || "anon"}`}
-                    puesto={puestoSeleccionado}
-                    perfilPostulante={candidatoActivo}
-                    onCancelar={() => setPuestoSeleccionado(null)}
-                    onEnviar={handleEnviarPostulacion}
+            {/* Vista condicional: Pantalla de Edición de Perfil vs Vista Principal con Pestañas */}
+            {editandoPerfil ? (
+                <EditarPerfilPostulanteView
+                    candidato={candidatoActivo}
+                    onVolver={() => setEditandoPerfil(false)}
+                    onGuardar={handleGuardarPerfil}
                 />
-            </div>
-
-            <div
-                style={{
-                    backgroundColor: "white",
-                    borderRadius: "10px",
-                    border: "2px solid gray",
-                    overflow: "hidden",
-                }}
-            >
-                <div className="filtros-barra-contenedor">
-                    <div className="buscador-input-wrapper">
-                        <input
-                            type="text"
-                            className="buscador-input"
-                            placeholder="Buscar por cargo, descripción o requisitos..."
-                            value={busqueda}
-                            onChange={(e) => setBusqueda(e.target.value)}
-                            aria-label="Buscar ofertas laborales"
-                        />
-                    </div>
-
-                    <select
-                        className="filtro-select"
-                        value={filtroPlanta}
-                        onChange={(e) => setFiltroPlanta(e.target.value)}
-                        aria-label="Filtrar ofertas por planta"
-                    >
-                        <option value="todas">Todas las Plantas</option>
-                        {PLANTAS.map((planta) => (
-                            <option key={planta} value={planta}>
-                                {planta}
-                            </option>
-                        ))}
-                    </select>
-
-                    {(busqueda.trim() !== "" || filtroPlanta !== "todas") && (
+            ) : (
+                <>
+                    {/* Pestañas de Navegación del Postulante */}
+                    <nav className="nav-tabs-lista" style={{ marginBottom: "20px" }} aria-label="Navegación postulante">
                         <button
                             type="button"
-                            className="boton-limpiar-filtros"
-                            onClick={limpiarFiltros}
-                            title="Restablecer filtros"
+                            className={`nav-tab-boton ${tabActiva === "postulaciones_activas" ? "activo" : ""}`}
+                            onClick={() => setTabActiva("postulaciones_activas")}
                         >
-                            ✕ Limpiar filtros
+                            Postulaciones activas
                         </button>
+                        <button
+                            type="button"
+                            className={`nav-tab-boton ${tabActiva === "vacia" ? "activo" : ""}`}
+                            onClick={() => setTabActiva("vacia")}
+                        >
+                            Pestaña 2
+                        </button>
+                    </nav>
+
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 14px",
+                            backgroundColor: backendConectado ? "#e8f5e9" : "#fff8e1",
+                            borderRadius: "6px",
+                            border: `1px solid ${backendConectado ? "#c8e6c9" : "#ffe082"}`,
+                            marginBottom: "20px",
+                            fontSize: "12px",
+                            color: backendConectado ? "#1b5e20" : "#795548",
+                            gap: "10px",
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span
+                                style={{
+                                    display: "inline-block",
+                                    width: "8px",
+                                    height: "8px",
+                                    borderRadius: "50%",
+                                    backgroundColor: backendConectado ? "#2e7d32" : NARANJA,
+                                }}
+                            />
+                            <strong>
+                                {backendConectado
+                                    ? "Conexión en línea con la API REST (Backend Express + MongoDB)"
+                                    : "Modo Local (demostración)"}
+                            </strong>
+                        </div>
+                        <span style={{ fontSize: "11px", color: "#666" }}>
+                            Portal del Postulante · AquaChile
+                        </span>
+                    </div>
+
+                    {/* Pestaña 1: Postulaciones activas */}
+                    {tabActiva === "postulaciones_activas" && (
+                        <MisPostulacionesView postulaciones={misPostulaciones} />
                     )}
 
-                    <span style={{ fontSize: "12px", color: "#6c757d", marginLeft: "auto" }}>
-                        Mostrando <strong>{ofertasFiltradas.length}</strong> de {puestos.length} ofertas
-                    </span>
-                </div>
-
-                {ofertasFiltradas.length > 0 ? (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                            gap: "16px",
-                            padding: "16px",
-                        }}
-                    >
-                        {ofertasFiltradas.map((puesto) => (
-                            <TarjetaOferta
-                                key={puesto.id}
-                                puesto={puesto}
-                                seleccionada={puestoSeleccionado?.id === puesto.id}
-                                onPostular={handlePostular}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <EstadoVacio
-                        mensaje="No se encontraron ofertas que coincidan con los filtros aplicados."
-                        onRestablecer={limpiarFiltros}
-                    />
-                )}
-            </div>
-
-            <div style={{ marginTop: "24px" }}>
-                <div style={{ marginBottom: "16px" }}>
-                    <h2 style={{ margin: 0 }}>Comprobantes de Postulación</h2>
-                    <span style={{ fontSize: "14px", color: "gray" }}>
-                        Postulaciones enviadas desde este navegador
-                    </span>
-                </div>
-
-                {postulaciones.length > 0 ? (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                            gap: "16px",
-                        }}
-                    >
-                        {postulaciones.map((postulacion) => (
-                            <ComprobantePostulacion key={postulacion.id} postulacion={postulacion} />
-                        ))}
-                    </div>
-                ) : (
-                    <div
-                        style={{
-                            backgroundColor: "white",
-                            borderRadius: "10px",
-                            border: "2px solid gray",
-                            padding: "40px 20px",
-                            textAlign: "center",
-                            color: "#6c757d",
-                        }}
-                    >
-                        <p style={{ fontSize: "16px", margin: 0 }}>
-                            Todavía no has enviado ninguna postulación desde este navegador.
-                        </p>
-                    </div>
-                )}
-            </div>
+                    {/* Pestaña 2: Vacía */}
+                    {tabActiva === "vacia" && (
+                        <div
+                            style={{
+                                backgroundColor: "white",
+                                borderRadius: "10px",
+                                border: "1px dashed #ced4da",
+                                padding: "80px 20px",
+                                textAlign: "center",
+                                color: "#6c757d",
+                            }}
+                        >
+                            <div style={{ fontSize: "2.8rem", marginBottom: "14px" }}>📄</div>
+                            <h3 style={{ margin: "0 0 8px 0", color: "#495057", fontSize: "1.2rem" }}>Pestaña Vacía</h3>
+                            <p style={{ margin: 0, fontSize: "14px" }}>
+                                Espacio disponible listo para la siguiente función que definiremos.
+                            </p>
+                        </div>
+                    )}
+                </>
+            )}
         </main>
     );
 }
