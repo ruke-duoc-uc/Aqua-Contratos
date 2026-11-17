@@ -1,11 +1,15 @@
 /**
  * Punto de entrada del servidor Backend (Node.js + Express + MongoDB/Mongoose)
  */
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import app from "./app.js";
 import { db } from "./data/db.js";
 
-dotenv.config();
+// Cargar siempre backend/.env sin depender del directorio de trabajo.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const PORT = process.env.PORT || 4000;
 

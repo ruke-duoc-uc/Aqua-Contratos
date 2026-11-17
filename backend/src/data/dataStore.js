@@ -46,6 +46,15 @@ export const dataStore = {
         return db.eliminarCandidato(id);
     },
 
+    // ==================== ÁREAS DE TRABAJO ====================
+    async obtenerAreas(filtros) {
+        return db.obtenerAreas(filtros);
+    },
+
+    async obtenerAreaPorId(id) {
+        return db.obtenerAreaPorId(id);
+    },
+
     // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
     async obtenerPuestos(filtros) {
         return db.obtenerPuestos(filtros);

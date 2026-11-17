@@ -25,7 +25,7 @@ const candidatoSchema = new mongoose.Schema(
         email: { type: String, default: "", trim: true, lowercase: true },
         telefono: { type: String, default: "", trim: true },
         direccion: { type: String, default: "", trim: true },
-        comuna: { type: String, default: "Puerto Montt", trim: true },
+        comuna: { type: String, default: "", trim: true },
         fecha_nacimiento: { type: String, default: "" },
         cv_pdf: { type: String, default: "" },
         cvDataUrl: { type: String, default: "" },
@@ -54,6 +54,7 @@ const candidatoSchema = new mongoose.Schema(
 const puestoTrabajoSchema = new mongoose.Schema(
     {
         id: { type: Number, required: true, unique: true, index: true },
+        area_id: { type: Number, default: null, index: true }, // FK → areas_trabajo.id
         titulo: { type: String, required: true, trim: true },
         planta: { type: String, required: true, trim: true },
         familiaCargo: { type: String, required: true, trim: true },
@@ -120,15 +121,23 @@ const solicitudInformeSchema = new mongoose.Schema(
 );
 
 // 5. Esquema de Usuarios y Autenticación (B1 / B2)
+// El rol es un enum cerrado: un valor fuera de la lista es rechazado por Mongoose.
+export const ROLES_USUARIO = ["candidato", "evaluador", "analista", "jefatura"];
+
 const usuarioSchema = new mongoose.Schema(
     {
         id: { type: Number, required: true, unique: true, index: true },
         email: { type: String, required: true, unique: true, trim: true, lowercase: true },
         password: { type: String, required: true },
         nombre: { type: String, required: true, trim: true },
-        rol: { type: String, required: true, default: "candidato" },
-        candidatoId: { type: Number, default: null },
-        area: { type: String, default: null },
+        rol: {
+            type: String,
+            required: true,
+            enum: ROLES_USUARIO,
+            default: "candidato",
+        },
+        candidatoId: { type: Number, default: null },           // FK → candidatos.id (solo rol candidato)
+        area_id: { type: Number, default: null, index: true },  // FK → areas_trabajo.id (solo rol jefatura)
     },
     {
         collection: "usuarios",
@@ -137,6 +146,14 @@ const usuarioSchema = new mongoose.Schema(
     }
 );
 
+// 6. Esquema de Áreas de Trabajo (catálogo organizacional)
+const areasSchema = new mongoose.Schema(
+    {
+        id: { type: Number, required: true, unique: true, index: true },
+        tipo_area: { type: String, required: true, trim: true },
+    },
+    {
+        collection: "areas_trabajo",
 // 6. Esquema de Etiquetas / Cualidades Reutilizables
 const etiquetaSchema = new mongoose.Schema(
     {
@@ -160,5 +177,7 @@ export const SolicitudInformeModel =
     mongoose.models.SolicitudInforme || mongoose.model("SolicitudInforme", solicitudInformeSchema);
 export const UsuarioModel =
     mongoose.models.Usuario || mongoose.model("Usuario", usuarioSchema);
+export const AreaTrabajoModel =
+    mongoose.models.AreaTrabajo || mongoose.model("AreaTrabajo", areasSchema);
 export const EtiquetaModel =
     mongoose.models.Etiqueta || mongoose.model("Etiqueta", etiquetaSchema);

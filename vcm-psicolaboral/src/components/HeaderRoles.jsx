@@ -1,6 +1,11 @@
 /** Barra superior de navegación y pestañas
- * Muestra el cargo del empleado asignado y el botón para salir al portal.
+ * Muestra el nombre real del empleado logueado (y su área si es jefe de área)
+ * y el botón para salir al portal.
  **/
+import { useEffect, useState } from "react";
+import { obtenerSesionEmpleado } from "../services/empleadosStorage";
+import { api } from "../services/api";
+
 function HeaderRoles({
     rolActual,
     tabActiva,
@@ -15,6 +20,39 @@ function HeaderRoles({
     };
 
     const infoActual = rolesInfo[rolActual] || { nombre: "Empleado AquaChile", descripcion: "" };
+
+    // Datos reales del empleado logueado (se leen una vez al montar la barra;
+    // cada pantalla de rol monta su propio HeaderRoles).
+    const [usuarioSesion] = useState(
+        () => obtenerSesionEmpleado()?.usuario || null
+    );
+    const [nombreArea, setNombreArea] = useState("");
+    const areaId = usuarioSesion?.area_id || null;
+
+    // El jefe de área muestra el nombre de su área (usuario.area_id → areas_trabajo).
+    useEffect(() => {
+        let activo = true;
+
+        async function cargarArea() {
+            // Sin área asignada no hay nada que consultar.
+            if (!areaId) return;
+            try {
+                const area = await api.getAreaPorId(areaId);
+                if (activo) setNombreArea(area?.tipo_area || "");
+            } catch {
+                // Si la API no responde, se muestra solo el cargo.
+                if (activo) setNombreArea("");
+            }
+        }
+
+        cargarArea();
+        return () => {
+            activo = false;
+        };
+    }, [areaId]);
+
+    // Nombre a mostrar: el real del usuario logueado, o el del rol por defecto.
+    const nombreMostrado = usuarioSesion?.nombre || infoActual.nombre;
 
     const tabsPorDefecto = [
         { id: "dashboard", label: "Dashboard Operativo" },
@@ -35,7 +73,7 @@ function HeaderRoles({
                             AquaChile · Aqua-Contratos
                         </h1>
                         <span style={{ fontSize: "12px", color: "var(--color-texto-atenuado, #666)" }}>
-                            {infoActual.nombre} · Sistema Integrado de Evaluaciones
+                            {nombreMostrado} · Sistema Integrado de Evaluaciones
                         </span>
                     </div>
                 </div>
@@ -58,7 +96,8 @@ function HeaderRoles({
                             fontWeight: "bold",
                         }}
                     >
-                        {infoActual.nombre}
+                        {nombreMostrado}
+                        {nombreArea ? ` · ${nombreArea}` : ""}
                     </span>
 
                     {/* Botón Salir al Portal (idéntico al funcionamiento de Jefe de Área) */}

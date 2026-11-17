@@ -1,6 +1,7 @@
 [
   {
     "id": 1,
+    "area_id": 1,
     "titulo": "Desarrollador Full Stack",
     "planta": "Puerto Montt",
     "familiaCargo": "Sistemas y TI",
@@ -14,6 +15,7 @@
   },
   {
     "id": 2,
+    "area_id": 2,
     "titulo": "Prevencionista de Faena",
     "planta": "Osorno",
     "familiaCargo": "Calidad y Prevención de Riesgos",
@@ -27,6 +29,7 @@
   },
   {
     "id": 3,
+    "area_id": 3,
     "titulo": "Técnico de Mantenimiento",
     "planta": "Puerto Varas",
     "familiaCargo": "Mantenimiento Industrial",
@@ -40,6 +43,7 @@
   },
   {
     "id": 4,
+    "area_id": 4,
     "titulo": "Asistente Administrativo",
     "planta": "Puerto Montt",
     "familiaCargo": "Administración y Finanzas",
@@ -53,6 +57,7 @@
   },
   {
     "id": 5,
+    "area_id": 3,
     "titulo": "Eléctrico de Turno",
     "planta": "Castro",
     "familiaCargo": "Mantenimiento Industrial",
@@ -66,6 +71,7 @@
   },
   {
     "id": 6,
+    "area_id": 5,
     "titulo": "Coordinador de Despacho",
     "planta": "Calbuco",
     "familiaCargo": "Logística y Abastecimiento",

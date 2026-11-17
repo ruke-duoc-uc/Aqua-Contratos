@@ -4,8 +4,6 @@
  * Conecta con el Backend Node.js + MongoDB y mantiene respaldo en localStorage.
  */
 
-import { api } from "./api.js";
-
 export const STORAGE_KEY_CANDIDATOS = "aqua_contratos_datos_mvp_v1";
 export const STORAGE_KEY_USUARIOS_POSTULANTES = "aqua_contratos_usuarios_postulantes_v1";
 export const STORAGE_KEY_SESION_POSTULANTE = "aqua_contratos_sesion_postulante_v1";

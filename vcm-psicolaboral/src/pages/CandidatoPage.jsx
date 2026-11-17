@@ -282,19 +282,6 @@ function CandidatoPage({ onVolver }) {
     };
 
     const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv, cvDataUrl }) => {
-        const duplicada = postulaciones.some(
-            (postulacion) =>
-                (postulacion.rut && rut && postulacion.rut === rut) ||
-                (postulacion.cargo.toLowerCase() === cargo.toLowerCase() &&
-                postulacion.nombre.toLowerCase() === nombre.toLowerCase() &&
-                postulacion.apellido.toLowerCase() === apellido.toLowerCase())
-        );
-
-        if (duplicada) {
-            setAlertaError(`Ya existe una postulación registrada para ${nombre} ${apellido} en '${cargo}'.`);
-            return;
-        }
-
         const nuevoPostulanteId = Date.now();
         const cvNombre = archivoCv?.name || `cv_${nombre.toLowerCase().replace(/\s+/g, "_")}.pdf`;
 

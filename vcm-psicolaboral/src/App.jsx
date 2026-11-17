@@ -1,8 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import AnalistaPage from "./pages/AnalistaPage";
-import EvaluadorPage from "./pages/EvaluadorPage";
-import JefaturaPage from "./pages/JefaturaPage";
-import CandidatoPage from "./pages/CandidatoPage";
+import AnalistaPage from "./pages/AnalistaPage.jsx";
+import EvaluadorPage from "./pages/EvaluadorPage.jsx";
+import JefaturaPage from "./pages/JefaturaPage.jsx";
+import CandidatoPage from "./pages/CandidatoPage.jsx";
+// Portal de acceso para funcionarios internos (reemplaza al antiguo selector de cargo).
+import PortalLoginEmpleado from "./components/PortalLoginEmpleado.jsx";
+// Sesión de empleados y mapa rol → ruta (independiente del flujo de postulantes).
+import {
+    obtenerSesionEmpleado,
+    cerrarSesionEmpleado,
+    RUTA_POR_ROL,
+} from "./services/empleadosStorage.js";
 
 /**
  * 1. Portal Principal de Inicio (2 Accesos Principales: Empleados y Candidatos)
@@ -126,165 +134,71 @@ function PortalHome() {
 }
 
 /**
- * 2. Vista de Selección de Cargo dentro del Portal de Empleados
+ * 2. Portal de Empleados: login de funcionarios internos.
+ *
+ * Si ya existe una sesión de empleado válida se salta el formulario y se
+ * redirige a la pantalla del rol correspondiente. Tras autenticarse, se
+ * enruta según `usuario.rol` (analista / evaluador / jefatura).
  */
-function EmpleadosSeleccion() {
+function PortalEmpleadosRoute() {
     const navigate = useNavigate();
+    const sesion = obtenerSesionEmpleado();
 
-    const cargosEmpleados = [
-        {
-            id: "analista",
-            titulo: "Analista de Reclutamiento",
-            icono: "👤",
-            badge: "Reclutamiento y Selección",
-            ruta: "/analista",
-            descripcion:
-                "Creación y administración de candidatos, emisión de nuevas solicitudes de evaluación y seguimiento operativo de vacantes.",
-            colorBorde: "#0e97b3",
-            colorFondoBadge: "#e0f7fa",
-            colorTextoBadge: "#006064",
-            botonTexto: "Ingresar como Analista",
-        },
-        {
-            id: "evaluador",
-            titulo: "Profesional Evaluador",
-            icono: "📋",
-            badge: "Evaluación Psicolaboral",
-            ruta: "/evaluador",
-            descripcion:
-                "Revisión de postulantes asignados, actualización de estados del proceso y registro formal del dictamen psicolaboral.",
-            colorBorde: "#2e7d32",
-            colorFondoBadge: "#e8f5e9",
-            colorTextoBadge: "#1b5e20",
-            botonTexto: "Ingresar como Evaluador",
-        },
-        {
-            id: "jefatura",
-            titulo: "Jefe de Área",
-            icono: "📊",
-            badge: "Supervisión y KPIs",
-            ruta: "/jefatura",
-            descripcion:
-                "Supervisión consolidada de indicadores de gestión, métricas en tiempo real, solicitud de informes y consulta de resultados.",
-            colorBorde: "#e65100",
-            colorFondoBadge: "#fff3e0",
-            colorTextoBadge: "#e65100",
-            botonTexto: "Ingresar como Jefatura",
-        },
-    ];
+    // Sesión previa → directo a su pantalla (evita volver a pedir credenciales).
+    if (sesion?.usuario && RUTA_POR_ROL[sesion.usuario.rol]) {
+        return <Navigate to={RUTA_POR_ROL[sesion.usuario.rol]} replace />;
+    }
+
+    // Al iniciar sesión, `iniciarSesionEmpleado` ya guardó la sesión; aquí solo
+    // se decide el destino según el rol devuelto por la API.
+    const alAutenticar = (nuevaSesion) => {
+        const destino = RUTA_POR_ROL[nuevaSesion?.usuario?.rol] || "/empleados";
+        navigate(destino, { replace: true });
+    };
 
     return (
-        <main
-            className="container-fluid d-flex flex-column align-items-center justify-content-center py-5"
-            style={{
-                minHeight: "100vh",
-                backgroundColor: "#F0F8FF",
-                fontFamily: "Arial, Helvetica, sans-serif",
-            }}
-        >
-            <div className="text-center mb-4" style={{ maxWidth: "900px", width: "100%" }}>
-                <div className="d-flex justify-content-center align-items-center gap-2 mb-3 flex-wrap">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/")}
-                        className="btn btn-outline-secondary btn-sm bg-white shadow-sm px-3 py-1"
-                        style={{ borderRadius: "20px", fontWeight: "600", color: "#0d47a1" }}
-                    >
-                        ← Volver al Portal de Inicio
-                    </button>
-                    <span
-                        className="badge px-3 py-2"
-                        style={{
-                            backgroundColor: "#e0f7fa",
-                            color: "#006064",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: "bold",
-                        }}
-                    >
-                        Portal de Empleados AquaChile
-                    </span>
-                </div>
-
-                <h1 className="fw-bold mb-2 text-dark" style={{ fontSize: "2.1rem" }}>
-                    Selecciona tu Cargo Operativo
-                </h1>
-                <p className="text-muted fs-6 mb-0">
-                    Ingresa a la pantalla dedicada correspondiente a tu perfil en el área de contratación y evaluación:
-                </p>
-            </div>
-
-            <div className="row g-4 justify-content-center" style={{ maxWidth: "1050px", width: "100%" }}>
-                {cargosEmpleados.map((c) => (
-                    <div key={c.id} className="col-12 col-md-6 col-lg-4 d-flex">
-                        <article
-                            className="card w-100 shadow-sm border-0 d-flex flex-column justify-content-between p-4"
-                            style={{
-                                borderRadius: "14px",
-                                borderTop: `8px solid ${c.colorBorde} !important`,
-                                backgroundColor: "white",
-                            }}
-                        >
-                            <div>
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div style={{ fontSize: "2.4rem" }}>{c.icono}</div>
-                                    <span
-                                        className="badge"
-                                        style={{
-                                            fontSize: "12px",
-                                            fontWeight: "bold",
-                                            padding: "6px 10px",
-                                            borderRadius: "12px",
-                                            backgroundColor: c.colorFondoBadge,
-                                            color: c.colorTextoBadge,
-                                        }}
-                                    >
-                                        {c.badge}
-                                    </span>
-                                </div>
-                                <h2 className="fs-5 fw-bold text-dark mb-2">{c.titulo}</h2>
-                                <p className="text-secondary small mb-4" style={{ lineHeight: "1.55" }}>
-                                    {c.descripcion}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => navigate(c.ruta)}
-                                className="btn w-100 fw-bold py-2 text-white shadow-sm"
-                                style={{
-                                    backgroundColor: c.colorBorde,
-                                    borderColor: c.colorBorde,
-                                    borderRadius: "8px",
-                                    fontSize: "14px",
-                                }}
-                            >
-                                {c.botonTexto} →
-                            </button>
-                        </article>
-                    </div>
-                ))}
-            </div>
-        </main>
+        <PortalLoginEmpleado
+            onAutenticado={alAutenticar}
+            onVolver={() => navigate("/")}
+        />
     );
 }
 
 /**
- * 3. Envolturas de rutas para roles con navegación React Router
+ * 3. Envolturas de rutas para roles con navegación React Router.
+ *
+ * Cada ruta de empleado está PROTEGIDA: sin una sesión de empleado con el rol
+ * correcto se redirige al login (/empleados). El botón "Salir al Portal" de las
+ * pantallas cierra la sesión y devuelve al Portal de Inicio (/).
  */
-function AnalistaRoute() {
+function RutaEmpleadoProtegida({ rol, Componente }) {
     const navigate = useNavigate();
-    return <AnalistaPage onVolver={() => navigate("/empleados")} />;
+    const sesion = obtenerSesionEmpleado();
+
+    // Sin sesión, o sesión de otro rol → de vuelta al login de empleados.
+    if (!sesion?.usuario || sesion.usuario.rol !== rol) {
+        return <Navigate to="/empleados" replace />;
+    }
+
+    // "Salir al Portal": cerrar sesión y volver al inicio.
+    const salir = () => {
+        cerrarSesionEmpleado();
+        navigate("/");
+    };
+
+    return <Componente onVolver={salir} />;
+}
+
+function AnalistaRoute() {
+    return <RutaEmpleadoProtegida rol="analista" Componente={AnalistaPage} />;
 }
 
 function EvaluadorRoute() {
-    const navigate = useNavigate();
-    return <EvaluadorPage onVolver={() => navigate("/empleados")} />;
+    return <RutaEmpleadoProtegida rol="evaluador" Componente={EvaluadorPage} />;
 }
 
 function JefaturaRoute() {
-    const navigate = useNavigate();
-    return <JefaturaPage onVolver={() => navigate("/empleados")} />;
+    return <RutaEmpleadoProtegida rol="jefatura" Componente={JefaturaPage} />;
 }
 
 function CandidatoRoute() {
@@ -302,10 +216,10 @@ function App() {
                 {/* 1. Portal de Inicio */}
                 <Route path="/" element={<PortalHome />} />
 
-                {/* 2. Portal de Empleados (Selector de Cargo) */}
-                <Route path="/empleados" element={<EmpleadosSeleccion />} />
+                {/* 2. Portal de Empleados (Login de funcionarios internos) */}
+                <Route path="/empleados" element={<PortalEmpleadosRoute />} />
 
-                {/* 3. Pantallas Dedicadas por Cargo */}
+                {/* 3. Pantallas Dedicadas por Cargo (rutas protegidas por sesión) */}
                 <Route path="/analista" element={<AnalistaRoute />} />
                 <Route path="/evaluador" element={<EvaluadorRoute />} />
                 <Route path="/jefatura" element={<JefaturaRoute />} />

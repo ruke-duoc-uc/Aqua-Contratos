@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP del Frontend para la API REST de Aqua-Contratos
- * Conecta con el backend Express y la base de datos persistente SQLite.
+ * Conecta con el backend Express y la base de datos persistente MongoDB.
  */
 
 const API_BASE_URL = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "http://localhost:4000/api";
@@ -345,6 +345,21 @@ export const api = {
             method: "PATCH",
             body: JSON.stringify({ estado: nuevoEstado }),
         });
+        return res.datos;
+    },
+
+    // ==================== ÁREAS DE TRABAJO ====================
+    async getAreas({ busqueda } = {}) {
+        const params = new URLSearchParams();
+        if (busqueda) params.append("busqueda", busqueda);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/areas${query}`);
+        return res.datos;
+    },
+
+    async getAreaPorId(id) {
+        const res = await request(`/areas/${id}`);
         return res.datos;
     },
 };

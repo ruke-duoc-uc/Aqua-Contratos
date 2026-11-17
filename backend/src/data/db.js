@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import {
+    AreaTrabajoModel,
     CandidatoModel,
     PuestoTrabajoModel,
     PostulacionModel,
@@ -17,6 +18,7 @@ import {
     EtiquetaModel,
 } from "./models.js";
 import {
+    AREAS_SEED,
     CANDIDATOS_SEED,
     CATALOGOS_SEED,
     INFORMES_SEED,
@@ -38,6 +40,7 @@ const JSON_INFORMES_FILE = path.join(__dirname, "aqua_informes.json");
 const JSON_PUESTOS_FILE = path.join(__dirname, "aqua_puestos.json");
 const JSON_POSTULACIONES_FILE = path.join(__dirname, "aqua_postulaciones.json");
 const JSON_USUARIOS_FILE = path.join(__dirname, "aqua_usuarios.json");
+const JSON_AREAS_FILE = path.join(__dirname, "aqua_areas.json");
 const JSON_ETIQUETAS_FILE = path.join(__dirname, "aqua_etiquetas.json");
 
 let useMongo = false;
@@ -48,6 +51,7 @@ let memoryStoreInformes = [];
 let memoryStorePuestos = [];
 let memoryStorePostulaciones = [];
 let memoryStoreUsuarios = [];
+let memoryStoreAreas = [];
 let memoryStoreEtiquetas = [];
 
 const limpiarRut = (rut) => (rut || "").replace(/[.-]/g, "").trim().toLowerCase();
@@ -76,6 +80,7 @@ function inicializarFallbackJson() {
     memoryStorePostulaciones = cargarJSON(JSON_POSTULACIONES_FILE, POSTULACIONES_SEED);
     memoryStoreInformes = cargarJSON(JSON_INFORMES_FILE, INFORMES_SEED);
     memoryStoreUsuarios = cargarJSON(JSON_USUARIOS_FILE, USUARIOS_SEED);
+    memoryStoreAreas = cargarJSON(JSON_AREAS_FILE, AREAS_SEED);
     memoryStoreEtiquetas = cargarJSON(JSON_ETIQUETAS_FILE, ETIQUETAS_SEED);
 
     // Asegurar que todos los usuarios semilla existan en el fallback
@@ -94,6 +99,7 @@ function persistJson(tipo) {
         if (tipo === "postulaciones" || !tipo) fs.writeFileSync(JSON_POSTULACIONES_FILE, JSON.stringify(memoryStorePostulaciones, null, 2), "utf-8");
         if (tipo === "informes" || !tipo) fs.writeFileSync(JSON_INFORMES_FILE, JSON.stringify(memoryStoreInformes, null, 2), "utf-8");
         if (tipo === "usuarios" || !tipo) fs.writeFileSync(JSON_USUARIOS_FILE, JSON.stringify(memoryStoreUsuarios, null, 2), "utf-8");
+        if (tipo === "areas" || !tipo) fs.writeFileSync(JSON_AREAS_FILE, JSON.stringify(memoryStoreAreas, null, 2), "utf-8");
         if (tipo === "etiquetas" || !tipo) fs.writeFileSync(JSON_ETIQUETAS_FILE, JSON.stringify(memoryStoreEtiquetas, null, 2), "utf-8");
     } catch {
         // Ignorar
@@ -138,6 +144,11 @@ async function poblarSemillasMongo() {
             }
         }
     }
+
+    const countAreas = await AreaTrabajoModel.countDocuments();
+    if (countAreas === 0) {
+        await AreaTrabajoModel.insertMany(AREAS_SEED);
+    }
 }
 
 // Inicializar conexión a MongoDB (con fallback inmediato si mongod no responde)
@@ -167,10 +178,6 @@ async function siguienteIdMongo(Modelo, fallbackArray) {
 export const db = {
     isUsingMongo() {
         return useMongo && mongoose.connection.readyState === 1;
-    },
-
-    isUsingSQLite() {
-        return this.isUsingMongo();
     },
 
     getMongoUri() {
@@ -334,8 +341,33 @@ export const db = {
         return true;
     },
 
+    // ==================== ÁREAS DE TRABAJO ====================
+    async obtenerAreas({ busqueda } = {}) {
+        let lista = [];
+        if (this.isUsingMongo()) {
+            const docs = await AreaTrabajoModel.find().sort({ id: 1 });
+            lista = docs.map((d) => d.toJSON());
+        } else {
+            lista = [...(memoryStoreAreas || [])];
+        }
+
+        const termino = busqueda ? busqueda.toLowerCase().trim() : "";
+        if (!termino) return lista;
+
+        return lista.filter((a) => (a.tipo_area || "").toLowerCase().includes(termino));
+    },
+
+    async obtenerAreaPorId(id) {
+        const numId = Number(id);
+        if (this.isUsingMongo()) {
+            const doc = await AreaTrabajoModel.findOne({ id: numId });
+            return doc ? doc.toJSON() : null;
+        }
+        return (memoryStoreAreas || []).find((a) => Number(a.id) === numId) || null;
+    },
+
     // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
-    async obtenerPuestos({ busqueda, planta, familiaCargo, estado } = {}) {
+    async obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId } = {}) {
         let lista = [];
         if (this.isUsingMongo()) {
             const docs = await PuestoTrabajoModel.find().sort({ id: -1 });
@@ -367,7 +399,14 @@ export const db = {
                 estado === "todos" ||
                 p.estado.toLowerCase() === estado.toLowerCase();
 
-            return coincideTexto && coincidePlanta && coincideFamilia && coincideEstado;
+            const coincideArea =
+                areaId === undefined ||
+                areaId === null ||
+                areaId === "" ||
+                areaId === "todas" ||
+                Number(p.area_id) === Number(areaId);
+
+            return coincideTexto && coincidePlanta && coincideFamilia && coincideEstado && coincideArea;
         });
     },
 
@@ -385,6 +424,10 @@ export const db = {
         const vacantes = Number(datos.vacantes) || 1;
         const estado = datos.estado || "Abierto";
         const creadoPor = datos.creadoPor || "Jefe de Área";
+        const area_id =
+            datos.area_id === undefined || datos.area_id === null || datos.area_id === ""
+                ? null
+                : Number(datos.area_id);
         const nuevoId = await siguienteIdMongo(PuestoTrabajoModel, memoryStorePuestos);
 
         const etiquetas = Array.isArray(datos.etiquetas)
@@ -398,6 +441,7 @@ export const db = {
 
         const nuevoPuesto = {
             id: nuevoId,
+            area_id,
             titulo: datos.titulo.trim(),
             planta: datos.planta.trim(),
             familiaCargo: datos.familiaCargo.trim(),
@@ -423,6 +467,12 @@ export const db = {
 
     async actualizarPuesto(id, datos) {
         const numId = Number(id);
+        const camposPermitidos = ["area_id", "titulo", "planta", "familiaCargo", "descripcion", "requisitos", "vacantes", "estado"];
+        const payload = {};
+        for (const campo of camposPermitidos) {
+            if (datos[campo] !== undefined) {
+                payload[campo] =
+                    campo === "vacantes" || campo === "area_id" ? Number(datos[campo]) : datos[campo];
         const camposPermitidos = ["titulo", "planta", "familiaCargo", "descripcion", "requisitos", "etiquetas", "vacantes", "estado"];
         const payload = {};
         for (const campo of camposPermitidos) {
@@ -939,6 +989,7 @@ export const db = {
                 PostulacionModel.deleteMany({}),
                 SolicitudInformeModel.deleteMany({}),
                 UsuarioModel.deleteMany({}),
+                AreaTrabajoModel.deleteMany({}),
                 EtiquetaModel.deleteMany({}),
             ]);
 
@@ -948,6 +999,7 @@ export const db = {
                 PostulacionModel.insertMany(POSTULACIONES_SEED),
                 SolicitudInformeModel.insertMany(INFORMES_SEED),
                 UsuarioModel.insertMany(USUARIOS_SEED),
+                AreaTrabajoModel.insertMany(AREAS_SEED),
                 EtiquetaModel.insertMany(ETIQUETAS_SEED),
             ]);
 
@@ -957,6 +1009,7 @@ export const db = {
                 totalPostulaciones: POSTULACIONES_SEED.length,
                 totalInformes: INFORMES_SEED.length,
                 totalUsuarios: USUARIOS_SEED.length,
+                totalAreas: AREAS_SEED.length,
                 totalEtiquetas: ETIQUETAS_SEED.length,
             };
         }
@@ -966,6 +1019,7 @@ export const db = {
         memoryStorePostulaciones = JSON.parse(JSON.stringify(POSTULACIONES_SEED));
         memoryStoreInformes = JSON.parse(JSON.stringify(INFORMES_SEED));
         memoryStoreUsuarios = JSON.parse(JSON.stringify(USUARIOS_SEED));
+        memoryStoreAreas = JSON.parse(JSON.stringify(AREAS_SEED));
         memoryStoreEtiquetas = JSON.parse(JSON.stringify(ETIQUETAS_SEED));
         persistJson();
 
@@ -975,6 +1029,7 @@ export const db = {
             totalPostulaciones: memoryStorePostulaciones.length,
             totalInformes: memoryStoreInformes.length,
             totalUsuarios: memoryStoreUsuarios.length,
+            totalAreas: memoryStoreAreas.length,
             totalEtiquetas: memoryStoreEtiquetas.length,
         };
     },

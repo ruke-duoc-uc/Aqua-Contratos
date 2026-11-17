@@ -255,6 +255,7 @@ export const CANDIDATOS_SEED = [
 export const PUESTOS_SEED = [
     {
         id: 1,
+        area_id: 1, // Sistemas y TI
         titulo: "Desarrollador Full Stack",
         planta: "Puerto Montt",
         familiaCargo: "Sistemas y TI",
@@ -268,6 +269,7 @@ export const PUESTOS_SEED = [
     },
     {
         id: 2,
+        area_id: 2, // Calidad y Prevención de Riesgos
         titulo: "Prevencionista de Faena",
         planta: "Osorno",
         familiaCargo: "Calidad y Prevención de Riesgos",
@@ -281,6 +283,7 @@ export const PUESTOS_SEED = [
     },
     {
         id: 3,
+        area_id: 3, // Mantenimiento Industrial
         titulo: "Técnico de Mantenimiento",
         planta: "Puerto Varas",
         familiaCargo: "Mantenimiento Industrial",
@@ -294,6 +297,7 @@ export const PUESTOS_SEED = [
     },
     {
         id: 4,
+        area_id: 4, // Administración y Finanzas
         titulo: "Asistente Administrativo",
         planta: "Puerto Montt",
         familiaCargo: "Administración y Finanzas",
@@ -307,6 +311,7 @@ export const PUESTOS_SEED = [
     },
     {
         id: 5,
+        area_id: 3, // Mantenimiento Industrial
         titulo: "Eléctrico de Turno",
         planta: "Castro",
         familiaCargo: "Mantenimiento Industrial",
@@ -320,6 +325,7 @@ export const PUESTOS_SEED = [
     },
     {
         id: 6,
+        area_id: 5, // Logística y Abastecimiento
         titulo: "Coordinador de Despacho",
         planta: "Calbuco",
         familiaCargo: "Logística y Abastecimiento",
@@ -420,6 +426,7 @@ export const USUARIOS_SEED = [
         nombre: "Carlos Mendoza",
         rol: "jefatura",
         candidatoId: null,
+        area_id: 1, // Jefe del área Sistemas y TI
     },
     {
         id: 4,
@@ -628,6 +635,36 @@ export const INFORMES_SEED = [
     },
 ];
 
+/**
+ * Áreas de trabajo = departamentos de AquaChile.
+ * Los ids calzan 1:1 con CATALOGOS_SEED.familiasCargo para poder enlazar
+ * cada oferta (puestos_trabajo.familiaCargo) con su área.
+ */
+export const AREAS_SEED = [
+    {
+        id: 1,
+        tipo_area: "Sistemas y TI",
+    },
+    {
+        id: 2,
+        tipo_area: "Calidad y Prevención de Riesgos",
+    },
+    {
+        id: 3,
+        tipo_area: "Mantenimiento Industrial",
+    },
+    {
+        id: 4,
+        tipo_area: "Administración y Finanzas",
+    },
+    {
+        id: 5,
+        tipo_area: "Logística y Abastecimiento",
+    },
+    {
+        id: 6,
+        tipo_area: "Operaciones Productivas",
+    },
 export const ETIQUETAS_SEED = [
     { id: 1, nombre: "Trabajo en equipo" },
     { id: 2, nombre: "Liderazgo" },
