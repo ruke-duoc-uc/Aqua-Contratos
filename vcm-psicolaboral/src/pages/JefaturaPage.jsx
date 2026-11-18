@@ -20,6 +20,15 @@ import {
     guardarPostulacionesGlobales,
     EVENTO_ACTUALIZACION_POSTULACIONES,
 } from "../services/postulacionesStorage";
+import {
+    cargarPuestosGlobales,
+    registrarPuestoGlobal,
+    actualizarEstadoPuestoGlobal,
+    sincronizarPuestosConRemotos,
+    cargarEtiquetasGlobales,
+    guardarEtiquetasGlobales,
+    EVENTO_ACTUALIZACION_PUESTOS,
+} from "../services/puestosStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -27,7 +36,7 @@ import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
 import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
-import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES, ETIQUETAS_SUGERIDAS } from "../utils/constantes";
+import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
 import { calcularIndicadores, aplicarFiltros } from "../utils/solicitudesUtils";
 
 function JefaturaPage({ onVolver }) {
@@ -35,8 +44,8 @@ function JefaturaPage({ onVolver }) {
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
     const [informes, setInformes] = useState(cargarInformesIniciales);
-    const [puestos, setPuestos] = useState([]);
-    const [etiquetas, setEtiquetas] = useState(ETIQUETAS_SUGERIDAS);
+    const [puestos, setPuestos] = useState(cargarPuestosGlobales);
+    const [etiquetas, setEtiquetas] = useState(cargarEtiquetasGlobales);
     const [postulaciones, setPostulaciones] = useState(cargarPostulacionesGlobales);
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
@@ -56,13 +65,21 @@ function JefaturaPage({ onVolver }) {
             const actualizadas = cargarPostulacionesGlobales();
             setPostulaciones(actualizadas);
         };
+        const handleRecargarPuestos = () => {
+            setPuestos(cargarPuestosGlobales());
+            setEtiquetas(cargarEtiquetasGlobales());
+        };
         window.addEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
         window.addEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
+        window.addEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleRecargarPuestos);
         window.addEventListener("storage", handleRecargar);
+        window.addEventListener("storage", handleRecargarPuestos);
         return () => {
             window.removeEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
             window.removeEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
+            window.removeEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleRecargarPuestos);
             window.removeEventListener("storage", handleRecargar);
+            window.removeEventListener("storage", handleRecargarPuestos);
         };
     }, []);
 
@@ -100,14 +117,19 @@ function JefaturaPage({ onVolver }) {
                     guardarInformesLocal(informesRemotos);
                 }
 
-                if (isMounted && Array.isArray(puestosRemotos)) {
-                    setPuestos(puestosRemotos);
+                if (isMounted && Array.isArray(puestosRemotos) && puestosRemotos.length > 0) {
+                    const fusionados = sincronizarPuestosConRemotos(puestosRemotos);
+                    setPuestos(fusionados);
                 }
 
                 if (isMounted && Array.isArray(etiquetasRemotas) && etiquetasRemotas.length > 0) {
                     const nombres = etiquetasRemotas.map((e) => (typeof e === "string" ? e : e.nombre)).filter(Boolean);
                     if (nombres.length > 0) {
-                        setEtiquetas((prev) => Array.from(new Set([...prev, ...nombres])));
+                        setEtiquetas((prev) => {
+                            const nuevas = Array.from(new Set([...prev, ...nombres]));
+                            guardarEtiquetasGlobales(nuevas);
+                            return nuevas;
+                        });
                     }
                 }
 
@@ -237,7 +259,10 @@ function JefaturaPage({ onVolver }) {
         } catch {
             // Continuar con fallback local
         }
-        setEtiquetas((prev) => (prev.includes(limpio) ? prev : [...prev, limpio]));
+        const actuales = cargarEtiquetasGlobales();
+        const nuevas = actuales.includes(limpio) ? actuales : [...actuales, limpio];
+        guardarEtiquetasGlobales(nuevas);
+        setEtiquetas(nuevas);
     };
 
     const handleCrearPuesto = async (datosPuesto) => {
@@ -246,31 +271,34 @@ function JefaturaPage({ onVolver }) {
                 ...datosPuesto,
                 creadoPor: "Jefe de Área",
             });
-            setPuestos((prev) => [creado, ...prev]);
+            const actualizados = registrarPuestoGlobal(creado);
+            setPuestos(actualizados);
         } catch {
-            // Fallback local
-            setPuestos((prev) => {
-                const nuevoId = prev.length > 0 ? Math.max(...prev.map((p) => Number(p.id) || 0)) + 1 : 1;
-                return [{
-                    id: nuevoId,
-                    ...datosPuesto,
-                    estado: "Abierto",
-                    creadoPor: "Jefe de Área",
-                    fechaCreacion: new Date().toISOString(),
-                }, ...prev];
+            // Fallback local sin invocación dentro de updater de React
+            const actualizados = registrarPuestoGlobal({
+                ...datosPuesto,
+                estado: "Abierto",
+                creadoPor: "Jefe de Área",
+                fechaCreacion: new Date().toISOString(),
             });
+            setPuestos(actualizados);
         }
         if (Array.isArray(datosPuesto.etiquetas) && datosPuesto.etiquetas.length > 0) {
-            setEtiquetas((prev) => Array.from(new Set([...prev, ...datosPuesto.etiquetas])));
+            const actuales = cargarEtiquetasGlobales();
+            const nuevas = Array.from(new Set([...actuales, ...datosPuesto.etiquetas]));
+            guardarEtiquetasGlobales(nuevas);
+            setEtiquetas(nuevas);
         }
     };
 
     const handleCambiarEstadoPuesto = async (id, nuevoEstado) => {
         try {
             const actualizado = await api.cambiarEstadoPuesto(id, nuevoEstado);
-            setPuestos((prev) => prev.map((p) => (p.id === id ? actualizado : p)));
+            const actualizados = actualizarEstadoPuestoGlobal(id, actualizado?.estado || nuevoEstado);
+            setPuestos(actualizados);
         } catch {
-            setPuestos((prev) => prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p)));
+            const actualizados = actualizarEstadoPuestoGlobal(id, nuevoEstado);
+            setPuestos(actualizados);
         }
     };
 

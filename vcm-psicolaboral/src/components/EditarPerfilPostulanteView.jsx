@@ -12,16 +12,38 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
         direccion: candidato?.direccion || "",
         comuna: candidato?.comuna || "Puerto Montt",
         fecha_nacimiento: candidato?.fecha_nacimiento || "",
+        cv_pdf: candidato?.cv_pdf || candidato?.cvArchivo || "",
+        cvDataUrl: candidato?.cvDataUrl || "",
     });
 
     const [errores, setErrores] = useState({});
     const [guardando, setGuardando] = useState(false);
+    const LIMITE_CV_BYTES = 10 * 1024 * 1024;
 
     const handleChange = (campo, valor) => {
         setForm((prev) => ({ ...prev, [campo]: valor }));
         if (errores[campo]) {
             setErrores((prev) => ({ ...prev, [campo]: null }));
         }
+    };
+
+    const handleArchivoCv = (e) => {
+        const archivo = e.target.files?.[0];
+        if (!archivo) return;
+        if (archivo.size > LIMITE_CV_BYTES) {
+            setErrores((prev) => ({ ...prev, cv_pdf: "El archivo CV no puede superar los 10 MB." }));
+            return;
+        }
+        setErrores((prev) => ({ ...prev, cv_pdf: null }));
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setForm((prev) => ({
+                ...prev,
+                cv_pdf: archivo.name,
+                cvDataUrl: ev.target?.result || "",
+            }));
+        };
+        reader.readAsDataURL(archivo);
     };
 
     const validar = () => {
@@ -51,6 +73,9 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                 direccion: form.direccion.trim(),
                 comuna: form.comuna,
                 fecha_nacimiento: form.fecha_nacimiento,
+                cv_pdf: form.cv_pdf,
+                cvArchivo: form.cv_pdf,
+                cvDataUrl: form.cvDataUrl,
             });
         } finally {
             setGuardando(false);
@@ -249,6 +274,53 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    {/* Currículum Vitae (PDF) */}
+                    <div>
+                        <label style={estiloLabel}>Currículum Vitae (PDF o Word · máx. 10 MB)</label>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                flexWrap: "wrap",
+                                padding: "12px 14px",
+                                backgroundColor: "#f8fafc",
+                                border: "1px dashed #cbd5e1",
+                                borderRadius: "8px",
+                            }}
+                        >
+                            <label
+                                htmlFor="perfil-cv-input"
+                                style={{
+                                    display: "inline-block",
+                                    padding: "8px 14px",
+                                    borderRadius: "6px",
+                                    border: "1px solid #e8590c",
+                                    backgroundColor: "#fff4e6",
+                                    color: "#e8590c",
+                                    fontSize: "13px",
+                                    fontWeight: "700",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                📄 {form.cv_pdf ? "Cambiar CV" : "Subir CV"}
+                            </label>
+                            <input
+                                id="perfil-cv-input"
+                                type="file"
+                                accept=".pdf,.doc,.docx,application/pdf"
+                                onChange={handleArchivoCv}
+                                style={{ display: "none" }}
+                            />
+                            <span style={{ fontSize: "13px", color: form.cv_pdf ? "#166534" : "#6b7280", fontWeight: form.cv_pdf ? "600" : "400" }}>
+                                {form.cv_pdf
+                                    ? `✓ Archivo activo: ${form.cv_pdf}`
+                                    : "Sin CV adjunto (se usará al postular en 1 clic a las ofertas)"}
+                            </span>
+                        </div>
+                        {errores.cv_pdf && <span style={estiloError}>{errores.cv_pdf}</span>}
                     </div>
 
                     {/* Botones de Acción */}
