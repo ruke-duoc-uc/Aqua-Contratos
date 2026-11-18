@@ -6,12 +6,20 @@ import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import BotonOrange from "../components/BotonOrange";
 import GestionCandidatosView from "../components/GestionCandidatosView";
+import GestionPuestosView from "../components/GestionPuestosView";
+import ModalCrearPuesto from "../components/ModalCrearPuesto";
+import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
     cargarCandidatosGlobales,
     guardarCandidatosGlobales,
     EVENTO_ACTUALIZACION_CANDIDATOS,
 } from "../services/candidatosStorage";
+import {
+    cargarPostulacionesGlobales,
+    guardarPostulacionesGlobales,
+    EVENTO_ACTUALIZACION_POSTULACIONES,
+} from "../services/postulacionesStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -19,7 +27,7 @@ import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
 import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
-import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
+import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES, ETIQUETAS_SUGERIDAS } from "../utils/constantes";
 import { calcularIndicadores, aplicarFiltros } from "../utils/solicitudesUtils";
 
 function JefaturaPage({ onVolver }) {
@@ -27,11 +35,15 @@ function JefaturaPage({ onVolver }) {
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
     const [informes, setInformes] = useState(cargarInformesIniciales);
+    const [puestos, setPuestos] = useState([]);
+    const [etiquetas, setEtiquetas] = useState(ETIQUETAS_SUGERIDAS);
+    const [postulaciones, setPostulaciones] = useState(cargarPostulacionesGlobales);
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
 
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [modalCrearInformeAbierto, setModalCrearInformeAbierto] = useState(false);
+    const [modalCrearPuestoAbierto, setModalCrearPuestoAbierto] = useState(false);
     const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
     // Sincronización en tiempo real con postulantes inscritos desde la pantalla pública o cambios de rol
@@ -40,10 +52,16 @@ function JefaturaPage({ onVolver }) {
             const actualizados = cargarCandidatosGlobales();
             setCandidatos(actualizados);
         };
+        const handleRecargarPostulaciones = () => {
+            const actualizadas = cargarPostulacionesGlobales();
+            setPostulaciones(actualizadas);
+        };
         window.addEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+        window.addEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
         window.addEventListener("storage", handleRecargar);
         return () => {
             window.removeEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+            window.removeEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
             window.removeEventListener("storage", handleRecargar);
         };
     }, []);
@@ -59,9 +77,12 @@ function JefaturaPage({ onVolver }) {
         async function sincronizarConBackend() {
             setCargandoApi(true);
             try {
-                const [datosRemotos, informesRemotos] = await Promise.all([
+                const [datosRemotos, informesRemotos, puestosRemotos, postulacionesRemotas, etiquetasRemotas] = await Promise.all([
                     api.getSolicitudes(),
                     api.getSolicitudesInforme().catch(() => null),
+                    api.getPuestos().catch(() => []),
+                    api.getPostulaciones().catch(() => null),
+                    api.getEtiquetas().catch(() => []),
                 ]);
 
                 if (isMounted && Array.isArray(datosRemotos)) {
@@ -76,6 +97,23 @@ function JefaturaPage({ onVolver }) {
 
                 if (isMounted && Array.isArray(informesRemotos)) {
                     setInformes(informesRemotos);
+                    guardarInformesLocal(informesRemotos);
+                }
+
+                if (isMounted && Array.isArray(puestosRemotos)) {
+                    setPuestos(puestosRemotos);
+                }
+
+                if (isMounted && Array.isArray(etiquetasRemotas) && etiquetasRemotas.length > 0) {
+                    const nombres = etiquetasRemotas.map((e) => (typeof e === "string" ? e : e.nombre)).filter(Boolean);
+                    if (nombres.length > 0) {
+                        setEtiquetas((prev) => Array.from(new Set([...prev, ...nombres])));
+                    }
+                }
+
+                if (isMounted && Array.isArray(postulacionesRemotas)) {
+                    setPostulaciones(postulacionesRemotas);
+                    guardarPostulacionesGlobales(postulacionesRemotas);
                 }
             } catch (err) {
                 console.warn("Backend no disponible:", err.message);
@@ -93,7 +131,11 @@ function JefaturaPage({ onVolver }) {
     const handleCrearInforme = async (nuevoInformeDatos) => {
         try {
             const creado = await api.crearSolicitudInforme(nuevoInformeDatos);
-            setInformes((prev) => [creado, ...prev]);
+            setInformes((prev) => {
+                const actualizados = [creado, ...prev];
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
         } catch {
             setInformes((prev) => {
                 const nuevoId = prev.length > 0 ? Math.max(...prev.map((i) => Number(i.id) || 0)) + 1 : 1;
@@ -120,7 +162,11 @@ function JefaturaPage({ onVolver }) {
     const handleAgregarPreguntaInforme = async (id, datosPregunta) => {
         try {
             const actualizado = await api.agregarPreguntaInforme(id, datosPregunta);
-            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
             setInformeSeleccionado(actualizado);
         } catch {
             setInformes((prev) => {
@@ -148,10 +194,94 @@ function JefaturaPage({ onVolver }) {
         }
     };
 
+    const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
+        try {
+            const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
+                fechaEntrevista,
+                evaluadorAsignado,
+                observaciones,
+            });
+            setPuestos((prev) => prev); // mantener
+            setPostulaciones((prev) => {
+                const list = prev.map((p) => (p.id === postulacionId ? { ...p, ...actualizado } : p));
+                guardarPostulacionesGlobales(list);
+                return list;
+            });
+        } catch {
+            // Fallback local
+            setPostulaciones((prev) => {
+                const list = prev.map((p) => {
+                    if (p.id === postulacionId) {
+                        return {
+                            ...p,
+                            fechaEntrevista,
+                            evaluadorAsignado,
+                            observaciones,
+                            fase: "en entrevista",
+                            estado: "Entrevista agendada",
+                        };
+                    }
+                    return p;
+                });
+                guardarPostulacionesGlobales(list);
+                return list;
+            });
+        }
+    };
+
+    const handleCrearEtiqueta = async (nombre) => {
+        const limpio = (nombre || "").trim();
+        if (!limpio) return;
+        try {
+            await api.crearEtiqueta(limpio);
+        } catch {
+            // Continuar con fallback local
+        }
+        setEtiquetas((prev) => (prev.includes(limpio) ? prev : [...prev, limpio]));
+    };
+
+    const handleCrearPuesto = async (datosPuesto) => {
+        try {
+            const creado = await api.crearPuesto({
+                ...datosPuesto,
+                creadoPor: "Jefe de Área",
+            });
+            setPuestos((prev) => [creado, ...prev]);
+        } catch {
+            // Fallback local
+            setPuestos((prev) => {
+                const nuevoId = prev.length > 0 ? Math.max(...prev.map((p) => Number(p.id) || 0)) + 1 : 1;
+                return [{
+                    id: nuevoId,
+                    ...datosPuesto,
+                    estado: "Abierto",
+                    creadoPor: "Jefe de Área",
+                    fechaCreacion: new Date().toISOString(),
+                }, ...prev];
+            });
+        }
+        if (Array.isArray(datosPuesto.etiquetas) && datosPuesto.etiquetas.length > 0) {
+            setEtiquetas((prev) => Array.from(new Set([...prev, ...datosPuesto.etiquetas])));
+        }
+    };
+
+    const handleCambiarEstadoPuesto = async (id, nuevoEstado) => {
+        try {
+            const actualizado = await api.cambiarEstadoPuesto(id, nuevoEstado);
+            setPuestos((prev) => prev.map((p) => (p.id === id ? actualizado : p)));
+        } catch {
+            setPuestos((prev) => prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p)));
+        }
+    };
+
     const handleCambiarEstadoInforme = async (id, nuevoEstado) => {
         try {
             const actualizado = await api.cambiarEstadoSolicitudInforme(id, nuevoEstado);
-            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
             setInformeSeleccionado(actualizado);
         } catch {
             setInformes((prev) => {
@@ -171,8 +301,13 @@ function JefaturaPage({ onVolver }) {
 
     const indicadores = useMemo(() => {
         const base = calcularIndicadores(candidatos);
-        return [...base, { id: 5, titulo: "Informes Solicitados", valor: informes.length }];
-    }, [candidatos, informes.length]);
+        const puestosAbiertos = puestos.filter((p) => p.estado === "Abierto").length;
+        return [
+            ...base,
+            { id: 5, titulo: "Puestos Abiertos", valor: puestosAbiertos },
+            { id: 6, titulo: "Informes Solicitados", valor: informes.length },
+        ];
+    }, [candidatos, puestos, informes.length]);
 
     const solicitudesFiltradas = useMemo(() => {
         return aplicarFiltros(candidatos, {
@@ -213,6 +348,14 @@ function JefaturaPage({ onVolver }) {
                 tabActiva={tabActiva}
                 onCambiarTab={setTabActiva}
                 onVolver={onVolver}
+                tabs={[
+                    { id: "dashboard", label: "Dashboard Operativo" },
+                    { id: "entrevistas", label: "Agenda de Entrevistas" },
+                    { id: "puestos", label: "Puestos de Trabajo" },
+                    { id: "candidatos", label: "Gestión de Candidatos" },
+                    { id: "solicitudes", label: "Solicitudes de Evaluación" },
+                    { id: "informes", label: "Informes de Candidatos" },
+                ]}
             />
 
             <BannerEstadoBackend
@@ -254,6 +397,23 @@ function JefaturaPage({ onVolver }) {
                         onDetalle={setSolicitudSeleccionada}
                     />
                 </>
+            )}
+
+            {tabActiva === "entrevistas" && (
+                <AgendaEntrevistasView
+                    postulaciones={postulaciones}
+                    onAgendarEntrevista={handleAgendarEntrevista}
+                />
+            )}
+
+            {tabActiva === "puestos" && (
+                <GestionPuestosView
+                    puestos={puestos}
+                    etiquetas={etiquetas}
+                    onCrearEtiqueta={handleCrearEtiqueta}
+                    onAbrirCrear={() => setModalCrearPuestoAbierto(true)}
+                    onCambiarEstado={handleCambiarEstadoPuesto}
+                />
             )}
 
             {tabActiva === "candidatos" && (
@@ -309,6 +469,14 @@ function JefaturaPage({ onVolver }) {
                 onCerrar={() => setInformeSeleccionado(null)}
                 onAgregarPregunta={handleAgregarPreguntaInforme}
                 onCambiarEstado={handleCambiarEstadoInforme}
+            />
+
+            <ModalCrearPuesto
+                isOpen={modalCrearPuestoAbierto}
+                etiquetasDisponibles={etiquetas}
+                onCrearEtiqueta={handleCrearEtiqueta}
+                onCerrar={() => setModalCrearPuestoAbierto(false)}
+                onCrear={handleCrearPuesto}
             />
         </main>
     );

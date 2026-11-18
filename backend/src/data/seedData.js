@@ -255,11 +255,13 @@ export const CANDIDATOS_SEED = [
 export const PUESTOS_SEED = [
     {
         id: 1,
+        area_id: 1, // Sistemas y TI
         titulo: "Desarrollador Full Stack",
         planta: "Puerto Montt",
         familiaCargo: "Sistemas y TI",
         descripcion: "Mantención y evolución de plataformas web corporativas y digitalización de procesos de planta.",
         requisitos: "Experiencia en React, Node.js y bases de datos relacionales. Deseable trabajo en equipo ágil.",
+        etiquetas: ["React", "Node.js", "Trabajo en equipo", "Resolución de problemas"],
         vacantes: 2,
         estado: "Abierto",
         creadoPor: "Carlos Mendoza (Jefe TI)",
@@ -267,11 +269,13 @@ export const PUESTOS_SEED = [
     },
     {
         id: 2,
+        area_id: 2, // Calidad y Prevención de Riesgos
         titulo: "Prevencionista de Faena",
         planta: "Osorno",
         familiaCargo: "Calidad y Prevención de Riesgos",
         descripcion: "Supervisar el cumplimiento de normativas de seguridad, protocolos sanitarios y evaluación de riesgos en faena.",
         requisitos: "Título de Ingeniero o Técnico en Prevención de Riesgos con registro SNS vigente. Experiencia en plantas de salmónidos.",
+        etiquetas: ["Prevención de riesgos", "Liderazgo", "Comunicación efectiva", "Resolución de problemas"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Mariana Almonacid (Jefa Prevención)",
@@ -279,11 +283,13 @@ export const PUESTOS_SEED = [
     },
     {
         id: 3,
+        area_id: 3, // Mantenimiento Industrial
         titulo: "Técnico de Mantenimiento",
         planta: "Puerto Varas",
         familiaCargo: "Mantenimiento Industrial",
         descripcion: "Ejecución del plan de mantenimiento preventivo y correctivo en líneas de proceso y sistemas hidráulicos.",
         requisitos: "Técnico nivel superior en Mecánica Industrial o Electromecánica. Manejo de bombas y refrigeración.",
+        etiquetas: ["Mecánica industrial", "Puntualidad", "Resolución de problemas", "Trabajo en equipo"],
         vacantes: 3,
         estado: "Abierto",
         creadoPor: "Hernán Soto (Jefe Mantenimiento)",
@@ -291,11 +297,13 @@ export const PUESTOS_SEED = [
     },
     {
         id: 4,
+        area_id: 4, // Administración y Finanzas
         titulo: "Asistente Administrativo",
         planta: "Puerto Montt",
         familiaCargo: "Administración y Finanzas",
         descripcion: "Soporte administrativo en recepción documental, gestión de contratos y coordinación de proveedores.",
         requisitos: "Técnico en Administración de Empresas o carrera afín. Manejo de herramientas ofimáticas y ERP.",
+        etiquetas: ["Organización", "Comunicación efectiva", "Puntualidad", "Adaptabilidad"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Lorena Silva (Jefa Administración)",
@@ -303,11 +311,13 @@ export const PUESTOS_SEED = [
     },
     {
         id: 5,
+        area_id: 3, // Mantenimiento Industrial
         titulo: "Eléctrico de Turno",
         planta: "Castro",
         familiaCargo: "Mantenimiento Industrial",
         descripcion: "Atención de contingencias operativas en sistemas eléctricos de fuerza y control en planta de procesos.",
         requisitos: "Certificación SEC clase B o superior. Disponibilidad para turnos rotativos en faena.",
+        etiquetas: ["Mecánica industrial", "Resolución de problemas", "Trabajo en equipo", "Puntualidad"],
         vacantes: 2,
         estado: "Abierto",
         creadoPor: "Hernán Soto (Jefe Mantenimiento)",
@@ -315,11 +325,13 @@ export const PUESTOS_SEED = [
     },
     {
         id: 6,
+        area_id: 5, // Logística y Abastecimiento
         titulo: "Coordinador de Despacho",
         planta: "Calbuco",
         familiaCargo: "Logística y Abastecimiento",
         descripcion: "Coordinar despachos de producto terminado, control de cámaras de frío y trazabilidad logística marítima/terrestre.",
         requisitos: "Técnico o Ingeniero en Logística. Experiencia mínima de 2 años en logística de productos perecibles.",
+        etiquetas: ["Logística", "Liderazgo", "Organización", "Comunicación efectiva"],
         vacantes: 1,
         estado: "Abierto",
         creadoPor: "Rodrigo Morales (Jefe Logística)",
@@ -414,6 +426,7 @@ export const USUARIOS_SEED = [
         nombre: "Carlos Mendoza",
         rol: "jefatura",
         candidatoId: null,
+        area_id: 1, // Jefe del área Sistemas y TI
     },
     {
         id: 4,
@@ -620,4 +633,51 @@ export const INFORMES_SEED = [
             },
         ],
     },
+];
+
+/**
+ * Áreas de trabajo = departamentos de AquaChile.
+ * Los ids calzan 1:1 con CATALOGOS_SEED.familiasCargo para poder enlazar
+ * cada oferta (puestos_trabajo.familiaCargo) con su área.
+ */
+export const AREAS_SEED = [
+    {
+        id: 1,
+        tipo_area: "Sistemas y TI",
+    },
+    {
+        id: 2,
+        tipo_area: "Calidad y Prevención de Riesgos",
+    },
+    {
+        id: 3,
+        tipo_area: "Mantenimiento Industrial",
+    },
+    {
+        id: 4,
+        tipo_area: "Administración y Finanzas",
+    },
+    {
+        id: 5,
+        tipo_area: "Logística y Abastecimiento",
+    },
+    {
+        id: 6,
+        tipo_area: "Operaciones Productivas",
+    },
+];
+
+export const ETIQUETAS_SEED = [
+    { id: 1, nombre: "Trabajo en equipo" },
+    { id: 2, nombre: "Liderazgo" },
+    { id: 3, nombre: "Resolución de problemas" },
+    { id: 4, nombre: "Comunicación efectiva" },
+    { id: 5, nombre: "Puntualidad" },
+    { id: 6, nombre: "Organización" },
+    { id: 7, nombre: "React" },
+    { id: 8, nombre: "Node.js" },
+    { id: 9, nombre: "Prevención de riesgos" },
+    { id: 10, nombre: "Mecánica industrial" },
+    { id: 11, nombre: "Logística" },
+    { id: 12, nombre: "Adaptabilidad" },
 ];

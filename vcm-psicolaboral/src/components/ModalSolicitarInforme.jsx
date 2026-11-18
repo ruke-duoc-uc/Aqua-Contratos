@@ -323,7 +323,7 @@ export default function ModalSolicitarInforme({
                     <div className="modal-footer" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", borderTop: "1px solid #dee2e6", padding: "12px 20px" }}>
                         <button
                             type="button"
-                            className="boton-orange-secundario"
+                            className="boton-secundario"
                             onClick={onCerrar}
                             disabled={guardando}
                         >

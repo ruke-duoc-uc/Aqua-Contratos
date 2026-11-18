@@ -31,8 +31,9 @@ backend/
     │   ├── solicitudesRoutes.js
     │   ├── informesRoutes.js
     │   └── dashboardRoutes.js
-    ├── data/                 # Capa de datos y persistencia (SQLite nativo)
-    │   ├── db.js             # Motor SQLite, esquema de tablas y consultas
+    ├── data/                 # Capa de datos y persistencia (MongoDB con Mongoose)
+    │   ├── db.js             # Conexión MongoDB, CRUD y respaldo en archivos JSON
+    │   ├── models.js         # Esquemas y modelos de Mongoose
     │   ├── seedData.js       # Datos de prueba alineados con el caso AquaChile
     │   └── dataStore.js      # Operaciones CRUD y reglas de negocio
     └── middlewares/          # Manejo de errores y rutas 404
@@ -54,7 +55,10 @@ Crea un archivo `.env` basado en `.env.example`:
 ```env
 PORT=4000
 FRONTEND_URL=http://localhost:5173
+MONGODB_URI=mongodb://127.0.0.1:27017/aqua_contratos
 ```
+
+> Si no defines `MONGODB_URI`, el backend usa por defecto `mongodb://127.0.0.1:27017/aqua_contratos`. Cuando MongoDB no está disponible, opera con un respaldo local en archivos JSON dentro de `src/data/`.
 
 ### 3. Ejecutar en modo desarrollo
 ```bash
@@ -139,4 +143,4 @@ npm start
 | :--- | :--- | :--- |
 | `GET` | `/api/dashboard/kpis` | Métricas generales (candidatos, puestos abiertos, postulaciones, contratados). |
 | `GET` | `/api/dashboard/catalogos` | Listas maestras de Plantas, Familias de Cargo y Evaluadores. |
-| `POST` | `/api/dashboard/reset-demo` | Restablece todos los datos iniciales de prueba en SQLite y JSON. |
+| `POST` | `/api/dashboard/reset-demo` | Restablece todos los datos iniciales de prueba en MongoDB o en el respaldo JSON. |

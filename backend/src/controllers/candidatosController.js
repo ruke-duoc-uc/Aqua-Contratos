@@ -3,6 +3,17 @@
  * Reglas de negocio y manejo de peticiones HTTP asíncronas sobre MongoDB.
  */
 import { dataStore } from "../data/dataStore.js";
+import { enviarCorreosPostulacion } from "../services/emailService.js";
+
+/**
+ * Dispara las notificaciones por correo sin bloquear la respuesta HTTP.
+ * Si Resend falla, la postulación ya quedó guardada y solo se registra el aviso.
+ */
+function notificarPostulacion({ nombre, email, rut, cargo }) {
+    enviarCorreosPostulacion({ nombre, email, rut, cargo }).catch((error) => {
+        console.error("[correo] Error inesperado al enviar notificaciones:", error);
+    });
+}
 
 export const candidatosController = {
     /**
@@ -84,6 +95,9 @@ export const candidatosController = {
                 infoMedica,
                 experienciaLaboral,
                 evaluador,
+                fecha,
+                estado,
+                resultadoPsicologico,
             } = req.body;
 
             const nombreFinal = (nombre || `${nombres || ""} ${apellidos || ""}`).trim();
@@ -97,9 +111,37 @@ export const candidatosController = {
 
             const candidatoExistente = await dataStore.buscarCandidatoPorRut(rut);
             if (candidatoExistente) {
-                return res.status(409).json({
-                    ok: false,
-                    mensaje: `Ya existe un candidato registrado con el RUT ${rut} (${candidatoExistente.nombre}).`,
+                const candidatoActualizado = await dataStore.actualizarCandidato(candidatoExistente.id, {
+                    nombre: nombreFinal,
+                    nombres,
+                    apellidos,
+                    rut,
+                    email,
+                    telefono,
+                    direccion,
+                    comuna,
+                    fecha_nacimiento,
+                    cv_pdf,
+                    cvDataUrl,
+                    especialidad: especialidad || cargo || candidatoExistente.especialidad,
+                    planta,
+                    cargo,
+                    familiaCargo,
+                    antecedentes,
+                    infoMedica,
+                    experienciaLaboral,
+                    evaluador,
+                    estado,
+                    resultadoPsicologico,
+                    fecha: fecha || new Date().toISOString(),
+                });
+
+                notificarPostulacion({ nombre: nombreFinal, email, rut, cargo });
+
+                return res.status(200).json({
+                    ok: true,
+                    mensaje: `Se actualizó el candidato con RUT ${rut}: sus datos y CV anteriores fueron reemplazados por los nuevos.`,
+                    datos: candidatoActualizado,
                 });
             }
 
@@ -123,7 +165,12 @@ export const candidatosController = {
                 infoMedica,
                 experienciaLaboral,
                 evaluador,
+                fecha,
+                estado,
+                resultadoPsicologico,
             });
+
+            notificarPostulacion({ nombre: nombreFinal, email, rut, cargo });
 
             return res.status(201).json({
                 ok: true,

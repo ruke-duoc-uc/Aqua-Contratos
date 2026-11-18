@@ -127,15 +127,15 @@ function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar 
         }
     };
 
-    const manejarEnvio = (evento) => {
+    const manejarEnvio = async (evento) => {
         evento.preventDefault();
-
-        if (!datos.nombre.trim() || !datos.apellido.trim() || !cargo.trim()) {
-            setError("El nombre, el apellido y el cargo al que postulas son obligatorios.");
+        setError("");
+        if (!datos.email.trim()) {
+            setError("El e-mail es obligatorio.");
             return;
         }
-        if (!calcularRut(datos.rut, datos.dv)) {
-            setError("El RUT ingresado no es válido. Revisa el número y el dígito verificador.");
+        if (!cvDataUrl) {
+            setError("El CV todavía se está cargando, intenta de nuevo.");
             return;
         }
         if (!archivoCv && !perfilPostulante?.cv_pdf) {
@@ -143,18 +143,20 @@ function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar 
             return;
         }
 
-        onEnviar({
+        const postulacion = {
             nombre: datos.nombre.trim(),
             apellido: datos.apellido.trim(),
             rut: `${datos.rut}-${datos.dv}`,
             fecha: datos.fecha,
             comuna: datos.comuna,
-            direccion: datos.direccion?.trim() || "",
-            email: datos.email?.trim() || "",
+            direccion: datos.direccion.trim(),
+            email: datos.email.trim(),
             cargo: cargo.trim(),
             archivoCv: archivoCv || (perfilPostulante?.cv_pdf ? { name: perfilPostulante.cv_pdf } : null),
             cvDataUrl: cvDataUrl || perfilPostulante?.cvDataUrl || "",
-        });
+        };
+
+        onEnviar(postulacion);
     };
 
     const rutCompleto = Boolean(datos.rut && datos.dv);

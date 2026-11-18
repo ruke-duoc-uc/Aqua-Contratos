@@ -9,8 +9,8 @@ export const puestosController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, planta, familiaCargo, estado } = req.query;
-            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado });
+            const { busqueda, planta, familiaCargo, estado, areaId } = req.query;
+            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId });
 
             return res.status(200).json({
                 ok: true,
@@ -66,7 +66,7 @@ export const puestosController = {
      */
     async crear(req, res) {
         try {
-            const { titulo, planta, familiaCargo, descripcion, requisitos, vacantes, creadoPor } = req.body;
+            const { area_id, titulo, planta, familiaCargo, descripcion, requisitos, etiquetas, vacantes, creadoPor } = req.body;
 
             if (!titulo || !titulo.trim()) {
                 return res.status(400).json({
@@ -90,11 +90,13 @@ export const puestosController = {
             }
 
             const nuevo = await dataStore.crearPuesto({
+                area_id,
                 titulo,
                 planta,
                 familiaCargo,
                 descripcion,
                 requisitos,
+                etiquetas,
                 vacantes: Number(vacantes) || 1,
                 creadoPor: creadoPor || "Jefe de Área",
             });

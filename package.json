@@ -17,7 +17,7 @@
     "aquachile",
     "react",
     "express",
-    "sqlite",
+    "mongodb",
     "fullstack"
   ],
   "author": "Smiling Friends"

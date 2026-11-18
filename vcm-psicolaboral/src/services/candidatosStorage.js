@@ -4,8 +4,6 @@
  * Conecta con el Backend Node.js + MongoDB y mantiene respaldo en localStorage.
  */
 
-import { api } from "./api.js";
-
 export const STORAGE_KEY_CANDIDATOS = "aqua_contratos_datos_mvp_v1";
 export const STORAGE_KEY_USUARIOS_POSTULANTES = "aqua_contratos_usuarios_postulantes_v1";
 export const STORAGE_KEY_SESION_POSTULANTE = "aqua_contratos_sesion_postulante_v1";
@@ -370,6 +368,58 @@ export function notificarCambioGlobal() {
     if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent(EVENTO_ACTUALIZACION_CANDIDATOS));
     }
+}
+
+export async function actualizarDatosPersonalesCandidato(id, datosPersonales) {
+    const numId = Number(id);
+    const actuales = cargarCandidatosGlobales();
+    const listaActualizada = actuales.map((c) => {
+        if (Number(c.id) === numId || limpiarRut(c.rut) === limpiarRut(datosPersonales.rut)) {
+            return {
+                ...c,
+                ...datosPersonales,
+                id: c.id,
+            };
+        }
+        return c;
+    });
+
+    guardarCandidatosGlobales(listaActualizada);
+
+    // Intentar actualizar en el backend
+    try {
+        if (numId) {
+            await api.actualizarCandidato(numId, datosPersonales);
+        }
+    } catch (err) {
+        console.warn("Backend no disponible al actualizar perfil:", err.message);
+    }
+
+    // Actualizar sesión si es el usuario activo
+    const sesionActual = obtenerSesionPostulante();
+    if (
+        sesionActual &&
+        (Number(sesionActual.candidato?.id) === numId ||
+            limpiarRut(sesionActual.candidato?.rut) === limpiarRut(datosPersonales.rut))
+    ) {
+        const sesionUpd = {
+            ...sesionActual,
+            candidato: {
+                ...sesionActual.candidato,
+                ...datosPersonales,
+            },
+            usuario: {
+                ...sesionActual.usuario,
+                nombre: datosPersonales.nombre || sesionActual.usuario?.nombre,
+                email: datosPersonales.email || sesionActual.usuario?.email,
+                rut: datosPersonales.rut || sesionActual.usuario?.rut,
+            },
+        };
+        guardarSesionPostulante(sesionUpd);
+        return sesionUpd;
+    }
+
+    return null;
 }
 
 /* ==================== CUENTAS Y SESIÓN DE POSTULANTES (B1 / B2) ==================== */

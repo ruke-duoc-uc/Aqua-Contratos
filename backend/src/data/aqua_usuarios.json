@@ -21,7 +21,8 @@
     "password": "password123",
     "nombre": "Carlos Mendoza",
     "rol": "jefatura",
-    "candidatoId": null
+    "candidatoId": null,
+    "area_id": 1
   },
   {
     "id": 4,

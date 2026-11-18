@@ -4,12 +4,18 @@ import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import GestionCandidatosView from "../components/GestionCandidatosView";
+import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
     cargarCandidatosGlobales,
     guardarCandidatosGlobales,
     EVENTO_ACTUALIZACION_CANDIDATOS,
 } from "../services/candidatosStorage";
+import {
+    cargarPostulacionesGlobales,
+    guardarPostulacionesGlobales,
+    EVENTO_ACTUALIZACION_POSTULACIONES,
+} from "../services/postulacionesStorage";
 import { cargarInformesIniciales, guardarInformesLocal } from "../services/informesStorage";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import BannerEstadoBackend from "../components/BannerEstadoBackend";
@@ -25,6 +31,7 @@ function EvaluadorPage({ onVolver }) {
     const rolActual = "evaluador";
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
+    const [postulaciones, setPostulaciones] = useState(cargarPostulacionesGlobales);
     const [backendConectado, setBackendConectado] = useState(false);
     const [cargandoApi, setCargandoApi] = useState(false);
 
@@ -39,10 +46,16 @@ function EvaluadorPage({ onVolver }) {
             const actualizados = cargarCandidatosGlobales();
             setCandidatos(actualizados);
         };
+        const handleRecargarPostulaciones = () => {
+            const actualizadas = cargarPostulacionesGlobales();
+            setPostulaciones(actualizadas);
+        };
         window.addEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+        window.addEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
         window.addEventListener("storage", handleRecargar);
         return () => {
             window.removeEventListener(EVENTO_ACTUALIZACION_CANDIDATOS, handleRecargar);
+            window.removeEventListener(EVENTO_ACTUALIZACION_POSTULACIONES, handleRecargarPostulaciones);
             window.removeEventListener("storage", handleRecargar);
         };
     }, []);
@@ -58,9 +71,10 @@ function EvaluadorPage({ onVolver }) {
         async function sincronizarConBackend() {
             setCargandoApi(true);
             try {
-                const [datosRemotos, informesRemotos] = await Promise.all([
+                const [datosRemotos, informesRemotos, postulacionesRemotas] = await Promise.all([
                     api.getSolicitudes(),
                     api.getSolicitudesInforme().catch(() => null),
+                    api.getPostulaciones().catch(() => null),
                 ]);
 
                 if (isMounted && Array.isArray(datosRemotos)) {
@@ -77,6 +91,11 @@ function EvaluadorPage({ onVolver }) {
                     setInformes(informesRemotos);
                     guardarInformesLocal(informesRemotos);
                 }
+
+                if (isMounted && Array.isArray(postulacionesRemotas)) {
+                    setPostulaciones(postulacionesRemotas);
+                    guardarPostulacionesGlobales(postulacionesRemotas);
+                }
             } catch (err) {
                 console.warn("Backend no disponible:", err.message);
                 if (isMounted) setBackendConectado(false);
@@ -89,6 +108,42 @@ function EvaluadorPage({ onVolver }) {
             isMounted = false;
         };
     }, []);
+
+    const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
+        try {
+            const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
+                fechaEntrevista,
+                evaluadorAsignado,
+                observaciones,
+            });
+            setPostulaciones((prev) => {
+                const list = prev.map((p) => (p.id === postulacionId ? { ...p, ...actualizado } : p));
+                guardarPostulacionesGlobales(list);
+                return list;
+            });
+            setAlertaExito("Entrevista laboral agendada exitosamente.");
+        } catch {
+            // Fallback local
+            setPostulaciones((prev) => {
+                const list = prev.map((p) => {
+                    if (p.id === postulacionId) {
+                        return {
+                            ...p,
+                            fechaEntrevista,
+                            evaluadorAsignado,
+                            observaciones,
+                            fase: "en entrevista",
+                            estado: "Entrevista agendada",
+                        };
+                    }
+                    return p;
+                });
+                guardarPostulacionesGlobales(list);
+                return list;
+            });
+            setAlertaExito("Entrevista laboral agendada exitosamente.");
+        }
+    };
 
     const handleAgregarRespuestaInforme = async (id, preguntaId, datosRespuesta) => {
         try {
@@ -248,6 +303,13 @@ function EvaluadorPage({ onVolver }) {
                         onDetalle={setSolicitudSeleccionada}
                     />
                 </>
+            )}
+
+            {tabActiva === "entrevistas" && (
+                <AgendaEntrevistasView
+                    postulaciones={postulaciones}
+                    onAgendarEntrevista={handleAgendarEntrevista}
+                />
             )}
 
             {tabActiva === "candidatos" && (

@@ -104,7 +104,7 @@ Cuando el docente te pida mostrar el código, ve directo a estos ejemplos exacto
    * Muestra que los KPIs reflejan inmediatamente la evaluación finalizada y que desde la vista de Jefatura el modal de detalle es de **solo lectura** (`puedeEvaluar = rolActual === "evaluador"` en `ModalDetalleSolicitud.jsx` línea 41), respetando los permisos del rol.
 
 ### Cómo explicar la diferencia entre Simulación y Operación Real (pregunta segura del docente):
-> *"Tal como pide la rúbrica de la EP2, el frontend es 100% funcional de manera autónoma usando datos simulados iniciales (`CANDIDATOS_BASE` en `candidatosStorage.js`) y persistencia reactiva en el navegador (`localStorage` + eventos `CustomEvent`), comunicando claramente en el banner superior (`BannerEstadoBackend.jsx`) cuando está `'Operando en Modo Local (localStorage)'`. Adicionalmente, dejamos preparada la capa `src/services/api.js` y la carpeta `backend/` (Express + SQLite) para la entrega final Full Stack."*
+> *"Tal como pide la rúbrica de la EP2, el frontend es 100% funcional de manera autónoma usando datos simulados iniciales (`CANDIDATOS_BASE` en `candidatosStorage.js`) y persistencia reactiva en el navegador (`localStorage` + eventos `CustomEvent`), comunicando claramente en el banner superior (`BannerEstadoBackend.jsx`) cuando está `'Operando en Modo Local (localStorage)'`. Adicionalmente, dejamos preparada la capa `src/services/api.js` y la carpeta `backend/` (Express + MongoDB) para la entrega final Full Stack."*
 
 ---
 

@@ -9,19 +9,23 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import {
+    AreaTrabajoModel,
     CandidatoModel,
     PuestoTrabajoModel,
     PostulacionModel,
     SolicitudInformeModel,
     UsuarioModel,
+    EtiquetaModel,
 } from "./models.js";
 import {
+    AREAS_SEED,
     CANDIDATOS_SEED,
     CATALOGOS_SEED,
     INFORMES_SEED,
     PUESTOS_SEED,
     POSTULACIONES_SEED,
     USUARIOS_SEED,
+    ETIQUETAS_SEED,
 } from "./seedData.js";
 
 dotenv.config();
@@ -36,6 +40,8 @@ const JSON_INFORMES_FILE = path.join(__dirname, "aqua_informes.json");
 const JSON_PUESTOS_FILE = path.join(__dirname, "aqua_puestos.json");
 const JSON_POSTULACIONES_FILE = path.join(__dirname, "aqua_postulaciones.json");
 const JSON_USUARIOS_FILE = path.join(__dirname, "aqua_usuarios.json");
+const JSON_AREAS_FILE = path.join(__dirname, "aqua_areas.json");
+const JSON_ETIQUETAS_FILE = path.join(__dirname, "aqua_etiquetas.json");
 
 let useMongo = false;
 
@@ -45,6 +51,8 @@ let memoryStoreInformes = [];
 let memoryStorePuestos = [];
 let memoryStorePostulaciones = [];
 let memoryStoreUsuarios = [];
+let memoryStoreAreas = [];
+let memoryStoreEtiquetas = [];
 
 const limpiarRut = (rut) => (rut || "").replace(/[.-]/g, "").trim().toLowerCase();
 
@@ -72,6 +80,8 @@ function inicializarFallbackJson() {
     memoryStorePostulaciones = cargarJSON(JSON_POSTULACIONES_FILE, POSTULACIONES_SEED);
     memoryStoreInformes = cargarJSON(JSON_INFORMES_FILE, INFORMES_SEED);
     memoryStoreUsuarios = cargarJSON(JSON_USUARIOS_FILE, USUARIOS_SEED);
+    memoryStoreAreas = cargarJSON(JSON_AREAS_FILE, AREAS_SEED);
+    memoryStoreEtiquetas = cargarJSON(JSON_ETIQUETAS_FILE, ETIQUETAS_SEED);
 
     // Asegurar que todos los usuarios semilla existan en el fallback
     for (const uSeed of USUARIOS_SEED) {
@@ -89,6 +99,8 @@ function persistJson(tipo) {
         if (tipo === "postulaciones" || !tipo) fs.writeFileSync(JSON_POSTULACIONES_FILE, JSON.stringify(memoryStorePostulaciones, null, 2), "utf-8");
         if (tipo === "informes" || !tipo) fs.writeFileSync(JSON_INFORMES_FILE, JSON.stringify(memoryStoreInformes, null, 2), "utf-8");
         if (tipo === "usuarios" || !tipo) fs.writeFileSync(JSON_USUARIOS_FILE, JSON.stringify(memoryStoreUsuarios, null, 2), "utf-8");
+        if (tipo === "areas" || !tipo) fs.writeFileSync(JSON_AREAS_FILE, JSON.stringify(memoryStoreAreas, null, 2), "utf-8");
+        if (tipo === "etiquetas" || !tipo) fs.writeFileSync(JSON_ETIQUETAS_FILE, JSON.stringify(memoryStoreEtiquetas, null, 2), "utf-8");
     } catch {
         // Ignorar
     }
@@ -115,6 +127,11 @@ async function poblarSemillasMongo() {
         await SolicitudInformeModel.insertMany(INFORMES_SEED);
     }
 
+    const countEtiquetas = await EtiquetaModel.countDocuments();
+    if (countEtiquetas === 0) {
+        await EtiquetaModel.insertMany(ETIQUETAS_SEED);
+    }
+
     const countUsuarios = await UsuarioModel.countDocuments();
     if (countUsuarios === 0) {
         await UsuarioModel.insertMany(USUARIOS_SEED);
@@ -126,6 +143,11 @@ async function poblarSemillasMongo() {
                 await UsuarioModel.create(uSeed);
             }
         }
+    }
+
+    const countAreas = await AreaTrabajoModel.countDocuments();
+    if (countAreas === 0) {
+        await AreaTrabajoModel.insertMany(AREAS_SEED);
     }
 }
 
@@ -156,10 +178,6 @@ async function siguienteIdMongo(Modelo, fallbackArray) {
 export const db = {
     isUsingMongo() {
         return useMongo && mongoose.connection.readyState === 1;
-    },
-
-    isUsingSQLite() {
-        return this.isUsingMongo();
     },
 
     getMongoUri() {
@@ -323,8 +341,33 @@ export const db = {
         return true;
     },
 
+    // ==================== ÁREAS DE TRABAJO ====================
+    async obtenerAreas({ busqueda } = {}) {
+        let lista = [];
+        if (this.isUsingMongo()) {
+            const docs = await AreaTrabajoModel.find().sort({ id: 1 });
+            lista = docs.map((d) => d.toJSON());
+        } else {
+            lista = [...(memoryStoreAreas || [])];
+        }
+
+        const termino = busqueda ? busqueda.toLowerCase().trim() : "";
+        if (!termino) return lista;
+
+        return lista.filter((a) => (a.tipo_area || "").toLowerCase().includes(termino));
+    },
+
+    async obtenerAreaPorId(id) {
+        const numId = Number(id);
+        if (this.isUsingMongo()) {
+            const doc = await AreaTrabajoModel.findOne({ id: numId });
+            return doc ? doc.toJSON() : null;
+        }
+        return (memoryStoreAreas || []).find((a) => Number(a.id) === numId) || null;
+    },
+
     // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
-    async obtenerPuestos({ busqueda, planta, familiaCargo, estado } = {}) {
+    async obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId } = {}) {
         let lista = [];
         if (this.isUsingMongo()) {
             const docs = await PuestoTrabajoModel.find().sort({ id: -1 });
@@ -356,7 +399,14 @@ export const db = {
                 estado === "todos" ||
                 p.estado.toLowerCase() === estado.toLowerCase();
 
-            return coincideTexto && coincidePlanta && coincideFamilia && coincideEstado;
+            const coincideArea =
+                areaId === undefined ||
+                areaId === null ||
+                areaId === "" ||
+                areaId === "todas" ||
+                Number(p.area_id) === Number(areaId);
+
+            return coincideTexto && coincidePlanta && coincideFamilia && coincideEstado && coincideArea;
         });
     },
 
@@ -374,15 +424,30 @@ export const db = {
         const vacantes = Number(datos.vacantes) || 1;
         const estado = datos.estado || "Abierto";
         const creadoPor = datos.creadoPor || "Jefe de Área";
+        const area_id =
+            datos.area_id === undefined || datos.area_id === null || datos.area_id === ""
+                ? null
+                : Number(datos.area_id);
         const nuevoId = await siguienteIdMongo(PuestoTrabajoModel, memoryStorePuestos);
+
+        const etiquetas = Array.isArray(datos.etiquetas)
+            ? datos.etiquetas.map((t) => String(t).trim()).filter(Boolean)
+            : [];
+
+        // Asegurar que las etiquetas queden guardadas en el catálogo global
+        for (const tag of etiquetas) {
+            await this.insertarEtiqueta(tag);
+        }
 
         const nuevoPuesto = {
             id: nuevoId,
+            area_id,
             titulo: datos.titulo.trim(),
             planta: datos.planta.trim(),
             familiaCargo: datos.familiaCargo.trim(),
             descripcion: datos.descripcion?.trim() || "",
             requisitos: datos.requisitos?.trim() || "",
+            etiquetas,
             vacantes,
             estado,
             creadoPor,
@@ -402,11 +467,37 @@ export const db = {
 
     async actualizarPuesto(id, datos) {
         const numId = Number(id);
-        const camposPermitidos = ["titulo", "planta", "familiaCargo", "descripcion", "requisitos", "vacantes", "estado"];
+        const camposPermitidos = [
+            "area_id",
+            "titulo",
+            "planta",
+            "familiaCargo",
+            "descripcion",
+            "requisitos",
+            "etiquetas",
+            "vacantes",
+            "estado",
+        ];
         const payload = {};
         for (const campo of camposPermitidos) {
             if (datos[campo] !== undefined) {
-                payload[campo] = campo === "vacantes" ? Number(datos[campo]) : datos[campo];
+                if (campo === "vacantes") {
+                    payload[campo] = Number(datos[campo]);
+                } else if (campo === "area_id") {
+                    payload[campo] =
+                        datos[campo] === null || datos[campo] === ""
+                            ? null
+                            : Number(datos[campo]);
+                } else if (campo === "etiquetas") {
+                    payload[campo] = Array.isArray(datos[campo])
+                        ? datos[campo].map((t) => String(t).trim()).filter(Boolean)
+                        : [];
+                    for (const tag of payload[campo]) {
+                        await this.insertarEtiqueta(tag);
+                    }
+                } else {
+                    payload[campo] = datos[campo];
+                }
             }
         }
 
@@ -637,7 +728,11 @@ export const db = {
         const nombre = datos.nombre.trim();
         const rol = datos.rol || "candidato";
         const candidatoId = datos.candidatoId ? Number(datos.candidatoId) : null;
-        const area = datos.area || null;
+        const rawAreaId = datos.area_id !== undefined ? datos.area_id : datos.area;
+        const area_id =
+            rawAreaId === undefined || rawAreaId === null || rawAreaId === ""
+                ? null
+                : Number(rawAreaId);
         const nuevoId = await siguienteIdMongo(UsuarioModel, memoryStoreUsuarios);
 
         const nuevoUsuario = {
@@ -647,7 +742,7 @@ export const db = {
             nombre,
             rol,
             candidatoId,
-            area,
+            area_id,
         };
 
         if (this.isUsingMongo()) {
@@ -907,6 +1002,8 @@ export const db = {
                 PostulacionModel.deleteMany({}),
                 SolicitudInformeModel.deleteMany({}),
                 UsuarioModel.deleteMany({}),
+                AreaTrabajoModel.deleteMany({}),
+                EtiquetaModel.deleteMany({}),
             ]);
 
             await Promise.all([
@@ -915,6 +1012,8 @@ export const db = {
                 PostulacionModel.insertMany(POSTULACIONES_SEED),
                 SolicitudInformeModel.insertMany(INFORMES_SEED),
                 UsuarioModel.insertMany(USUARIOS_SEED),
+                AreaTrabajoModel.insertMany(AREAS_SEED),
+                EtiquetaModel.insertMany(ETIQUETAS_SEED),
             ]);
 
             return {
@@ -923,6 +1022,8 @@ export const db = {
                 totalPostulaciones: POSTULACIONES_SEED.length,
                 totalInformes: INFORMES_SEED.length,
                 totalUsuarios: USUARIOS_SEED.length,
+                totalAreas: AREAS_SEED.length,
+                totalEtiquetas: ETIQUETAS_SEED.length,
             };
         }
 
@@ -931,6 +1032,8 @@ export const db = {
         memoryStorePostulaciones = JSON.parse(JSON.stringify(POSTULACIONES_SEED));
         memoryStoreInformes = JSON.parse(JSON.stringify(INFORMES_SEED));
         memoryStoreUsuarios = JSON.parse(JSON.stringify(USUARIOS_SEED));
+        memoryStoreAreas = JSON.parse(JSON.stringify(AREAS_SEED));
+        memoryStoreEtiquetas = JSON.parse(JSON.stringify(ETIQUETAS_SEED));
         persistJson();
 
         return {
@@ -939,7 +1042,49 @@ export const db = {
             totalPostulaciones: memoryStorePostulaciones.length,
             totalInformes: memoryStoreInformes.length,
             totalUsuarios: memoryStoreUsuarios.length,
+            totalAreas: memoryStoreAreas.length,
+            totalEtiquetas: memoryStoreEtiquetas.length,
         };
+    },
+
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async obtenerEtiquetas() {
+        if (this.isUsingMongo()) {
+            const docs = await EtiquetaModel.find().sort({ nombre: 1 });
+            return docs.map((d) => d.toJSON());
+        }
+        return [...(memoryStoreEtiquetas || [])].sort((a, b) => a.nombre.localeCompare(b.nombre));
+    },
+
+    async insertarEtiqueta(nombre) {
+        const nombreLimpio = String(nombre || "").trim();
+        if (!nombreLimpio) return null;
+
+        if (this.isUsingMongo()) {
+            const nombreEscapado = nombreLimpio.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const existe = await EtiquetaModel.findOne({
+                nombre: { $regex: new RegExp(`^${nombreEscapado}$`, "i") },
+            });
+            if (existe) return existe.toJSON();
+
+            const nuevoId = await siguienteIdMongo(EtiquetaModel, memoryStoreEtiquetas);
+            const doc = await EtiquetaModel.create({ id: nuevoId, nombre: nombreLimpio });
+            return doc.toJSON();
+        }
+
+        if (!memoryStoreEtiquetas) memoryStoreEtiquetas = [];
+        const existe = memoryStoreEtiquetas.find(
+            (e) => e.nombre.toLowerCase() === nombreLimpio.toLowerCase()
+        );
+        if (existe) return existe;
+
+        const nuevoId = memoryStoreEtiquetas.length > 0
+            ? Math.max(...memoryStoreEtiquetas.map((e) => Number(e.id) || 0)) + 1
+            : 1;
+        const nueva = { id: nuevoId, nombre: nombreLimpio };
+        memoryStoreEtiquetas.push(nueva);
+        persistJson("etiquetas");
+        return nueva;
     },
 
     obtenerCatalogos() {

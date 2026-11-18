@@ -46,6 +46,15 @@ export const dataStore = {
         return db.eliminarCandidato(id);
     },
 
+    // ==================== ÁREAS DE TRABAJO ====================
+    async obtenerAreas(filtros) {
+        return db.obtenerAreas(filtros);
+    },
+
+    async obtenerAreaPorId(id) {
+        return db.obtenerAreaPorId(id);
+    },
+
     // ==================== PUESTOS DE TRABAJO (Ofertas Laborales) ====================
     async obtenerPuestos(filtros) {
         return db.obtenerPuestos(filtros);
@@ -257,6 +266,15 @@ export const dataStore = {
 
     async actualizarEstadoSolicitudInforme(id, estado) {
         return db.actualizarEstadoSolicitudInforme(id, estado);
+    },
+
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async obtenerEtiquetas() {
+        return db.obtenerEtiquetas();
+    },
+
+    async crearEtiqueta(nombre) {
+        return db.insertarEtiqueta(nombre);
     },
 
     // ==================== REINICIO PARA DEMOSTRACIÓN (Admin Académico) ====================
