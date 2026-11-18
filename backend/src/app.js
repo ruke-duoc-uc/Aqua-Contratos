@@ -8,8 +8,10 @@ import solicitudesRoutes from "./routes/solicitudesRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import informesRoutes from "./routes/informesRoutes.js";
 import puestosRoutes from "./routes/puestosRoutes.js";
+import areasRoutes from "./routes/areasRoutes.js";
 import postulacionesRoutes from "./routes/postulacionesRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import etiquetasRoutes from "./routes/etiquetasRoutes.js";
 import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
@@ -20,7 +22,7 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
 
 // Endpoint de bienvenida y catálogo de rutas
 app.get("/api", (req, res) => {
@@ -31,24 +33,28 @@ app.get("/api", (req, res) => {
         descripcion: "Sistema integral de evaluación psicolaboral y reclutamiento · AquaChile",
         rutas: {
             auth: "/api/auth",
+            areas: "/api/areas",
             puestos: "/api/puestos",
             postulaciones: "/api/postulaciones",
             candidatos: "/api/candidatos",
             solicitudes: "/api/solicitudes",
             dashboard: "/api/dashboard",
             solicitudesInforme: "/api/solicitudes-informe",
+            etiquetas: "/api/etiquetas",
         },
     });
 });
 
 // Rutas de entidades del sistema
 app.use("/api/auth", authRoutes);
+app.use("/api/areas", areasRoutes);
 app.use("/api/puestos", puestosRoutes);
 app.use("/api/postulaciones", postulacionesRoutes);
 app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/solicitudes-informe", informesRoutes);
+app.use("/api/etiquetas", etiquetasRoutes);
 
 // Manejo de errores y 404
 app.use(notFoundHandler);

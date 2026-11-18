@@ -218,8 +218,13 @@ export function crearPostulacionGlobal(datos) {
         fechaPostulacion: new Date().toISOString(),
     });
 
-    // Evitar duplicados por id
-    const filtradas = actuales.filter((p) => p.id !== nueva.id);
+    // Evitar duplicados: si el mismo RUT vuelve a postular al mismo puesto,
+    // se reemplaza la postulación anterior por la nueva.
+    const filtradas = actuales.filter(
+        (p) =>
+            p.id !== nueva.id &&
+            !(nueva.rut && p.rut === nueva.rut && p.puestoId === nueva.puestoId)
+    );
     const listaActualizada = [nueva, ...filtradas];
     guardarPostulacionesGlobales(listaActualizada);
     return nueva;

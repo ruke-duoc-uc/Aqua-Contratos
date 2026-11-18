@@ -26,7 +26,7 @@ function BannerEstadoBackend({ backendConectado, cargandoApi, etiquetaPantalla }
                 />
                 <strong>
                     {backendConectado
-                        ? "Conectado a la API REST (Backend Express + SQLite)"
+                        ? "Conectado a la API REST (Backend Express + MongoDB)"
                         : "Operando en Modo Local (localStorage)"}
                 </strong>
                 {cargandoApi && <span style={{ color: "#0d6efd" }}>(Sincronizando datos...)</span>}
