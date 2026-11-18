@@ -251,3 +251,5 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
 }
 
 export default ModalEditarCandidato;
+
+/**/

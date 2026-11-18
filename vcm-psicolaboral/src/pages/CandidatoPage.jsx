@@ -1,21 +1,14 @@
 /**
  * Pantalla Dedicada · Postulante a Trabajo (cuarto rol del MVP de Aqua-Contratos)
  *
- * Portal PÚBLICO del candidato: no requiere login ni credenciales. El postulante
- * explora las ofertas abiertas, completa el formulario de postulación (nombre,
- * apellido, cargo y CV) y obtiene un comprobante de su postulación.
- *
- * NOTA DE ALCANCE
- * Las ofertas se leen desde la API REST cuando el backend está disponible y, si no,
- * desde el catálogo local de demostración. Las postulaciones se registran en el
- * navegador (localStorage), porque la API exige un candidato previamente registrado.
+ * Portal del candidato autenticado: permite revisar sus postulaciones activas y
+ * citas de entrevista, editar su perfil/CV y postular en 1 clic a las ofertas
+ * laborales abiertas publicadas por Jefatura de Área.
  *
  * @Autor Luxo
-**/
+ **/
 
 import TarjetaOferta from "../components/tarjetaOferta";
-import FormularioPostulacion from "../components/FormularioPostulacion";
-import ComprobantePostulacion from "../components/ComprobantePostulacion";
 import MisPostulacionesView from "../components/MisPostulacionesView";
 import EditarPerfilPostulanteView from "../components/EditarPerfilPostulanteView";
 import AlertaAviso from "../components/AlertaAviso";
@@ -29,7 +22,6 @@ import {
     registrarPostulanteGlobal,
     actualizarDatosPersonalesCandidato,
     obtenerSesionPostulante,
-    guardarSesionPostulante,
     cerrarSesionPostulante,
 } from "../services/candidatosStorage";
 import {
@@ -37,99 +29,16 @@ import {
     cargarPostulacionesGlobales,
     EVENTO_ACTUALIZACION_POSTULACIONES,
 } from "../services/postulacionesStorage";
+import {
+    cargarPuestosGlobales,
+    sincronizarPuestosConRemotos,
+    EVENTO_ACTUALIZACION_PUESTOS,
+} from "../services/puestosStorage";
+import { PLANTAS_DISPONIBLES as PLANTAS } from "../utils/constantes";
 
 /* ============================== CONSTANTES ============================== */
 
 const STORAGE_KEY_POSTULACIONES = "aqua_contratos_postulaciones_candidato_v1";
-
-import { PLANTAS_DISPONIBLES as PLANTAS } from "../utils/constantes";
-
-const PUESTOS_INICIALES = [
-    {
-        id: 1,
-        titulo: "Desarrollador Full Stack",
-        planta: "Puerto Montt",
-        familiaCargo: "Sistemas y TI",
-        descripcion:
-            "Mantención y evolución de plataformas web corporativas y digitalización de procesos de planta.",
-        requisitos:
-            "Experiencia en React, Node.js y bases de datos relacionales. Deseable trabajo en equipo ágil.",
-        etiquetas: ["React", "Node.js", "Trabajo en equipo", "Resolución de problemas"],
-        vacantes: 2,
-        estado: "Abierto",
-        creadoPor: "Carlos Mendoza (Jefe TI)",
-    },
-    {
-        id: 2,
-        titulo: "Prevencionista de Faena",
-        planta: "Osorno",
-        familiaCargo: "Calidad y Prevención de Riesgos",
-        descripcion:
-            "Supervisar el cumplimiento de normativas de seguridad, protocolos sanitarios y evaluación de riesgos en faena.",
-        requisitos:
-            "Título de Ingeniero o Técnico en Prevención de Riesgos con registro SNS vigente. Experiencia en plantas de salmónidos.",
-        etiquetas: ["Prevención de riesgos", "Liderazgo", "Comunicación efectiva", "Resolución de problemas"],
-        vacantes: 1,
-        estado: "Abierto",
-        creadoPor: "Mariana Almonacid (Jefa Prevención)",
-    },
-    {
-        id: 3,
-        titulo: "Técnico de Mantenimiento",
-        planta: "Puerto Varas",
-        familiaCargo: "Mantenimiento Industrial",
-        descripcion:
-            "Ejecución del plan de mantenimiento preventivo y correctivo en líneas de proceso y sistemas hidráulicos.",
-        requisitos:
-            "Técnico nivel superior en Mecánica Industrial o Electromecánica. Manejo de bombas y refrigeración.",
-        etiquetas: ["Mecánica industrial", "Puntualidad", "Resolución de problemas", "Trabajo en equipo"],
-        vacantes: 3,
-        estado: "Abierto",
-        creadoPor: "Hernán Soto (Jefe Mantenimiento)",
-    },
-    {
-        id: 4,
-        titulo: "Asistente Administrativo",
-        planta: "Puerto Montt",
-        familiaCargo: "Administración y Finanzas",
-        descripcion:
-            "Apoyo en control de gestión, compras de insumos menores y respaldo en tareas de recursos humanos.",
-        requisitos:
-            "Formación técnica en administración o contabilidad. Manejo de planillas de Excel y archivo documental.",
-        etiquetas: ["Organización", "Comunicación efectiva", "Puntualidad", "Adaptabilidad"],
-        vacantes: 1,
-        estado: "Abierto",
-        creadoPor: "Lorena Silva (Jefa Administración)",
-    },
-    {
-        id: 5,
-        titulo: "Eléctrico de Turno",
-        planta: "Castro",
-        familiaCargo: "Mantenimiento Industrial",
-        descripcion:
-            "Operación y mantención de instalaciones eléctricas en turno, con apoyo en Barrow y Chilquinta.",
-        requisitos:
-            "Certificación SEC vigente clase B. Experiencia comprobada en turnos de planta industrial.",
-        etiquetas: ["Mecánica industrial", "Resolución de problemas", "Trabajo en equipo", "Puntualidad"],
-        vacantes: 2,
-        estado: "Abierto",
-        creadoPor: "Rodrigo Palma (Jefe Electrical)",
-    },
-    {
-        id: 6,
-        titulo: "Enfermera Ocupacional",
-        planta: "Osorno",
-        familiaCargo: "Calidad y Prevención de Riesgos",
-        descripcion:
-            "Atención primaria de Accidentados y enfermedad profesional, controles de salud ocupacional y protocolos sanitarios.",
-        requisitos:
-            "Registro profesional vigente y experiencia en salas de primeros auxilios en plantas industriales.",
-        etiquetas: ["Salud ocupacional", "Primeros auxilios", "Atención al detalle", "Comunicación efectiva"],
-        vacantes: 1,
-        estado: "Abierto",
-        creadoPor: "Mariana Almonacid (Jefa Prevención)",
-    },
-];
 
 /* ===================== CAPA DE DATOS LOCAL (MODO DEMO) ==================== */
 
@@ -157,15 +66,14 @@ function CandidatoPage({ onVolver }) {
     const [tabActiva, setTabActiva] = useState("postulaciones_activas");
     const [editandoPerfil, setEditandoPerfil] = useState(false);
     const [sesionPostulante, setSesionPostulante] = useState(obtenerSesionPostulante);
-    const [puestos, setPuestos] = useState(PUESTOS_INICIALES);
+    const [puestos, setPuestos] = useState(cargarPuestosGlobales);
     const [postulaciones, setPostulaciones] = useState(cargarPostulacionesLocales);
-    const [puestoSeleccionado, setPuestoSeleccionado] = useState(null);
+    const [puestoPostulandoId, setPuestoPostulandoId] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
     const [backendConectado, setBackendConectado] = useState(false);
     const [alertaExito, setAlertaExito] = useState("");
     const [alertaError, setAlertaError] = useState("");
-    const [versionFormulario, setVersionFormulario] = useState(0);
 
     const handleCerrarSesion = () => {
         cerrarSesionPostulante();
@@ -174,25 +82,42 @@ function CandidatoPage({ onVolver }) {
         setAlertaError("");
     };
 
-    /* Carga las ofertas desde la API y, si no responde, mantiene el catálogo local. */
+    /* Carga las ofertas desde la API y las fusiona con las creadas localmente por Jefatura */
     useEffect(() => {
         let isMounted = true;
 
         async function cargarOfertas() {
             try {
-                const remotos = await api.getPuestos({ estado: "Abierto" });
+                const remotos = await api.getPuestos();
                 if (isMounted && Array.isArray(remotos) && remotos.length > 0) {
-                    setPuestos(remotos);
+                    const fusionados = sincronizarPuestosConRemotos(remotos);
+                    setPuestos(fusionados);
                     setBackendConectado(true);
                 }
             } catch {
-                if (isMounted) setBackendConectado(false);
+                if (isMounted) {
+                    setPuestos(cargarPuestosGlobales());
+                    setBackendConectado(false);
+                }
             }
         }
 
         cargarOfertas();
         return () => {
             isMounted = false;
+        };
+    }, []);
+
+    /* Sincronización reactiva cuando el Jefe de Área crea o cambia el estado de un puesto */
+    useEffect(() => {
+        const handleSyncPuestos = () => {
+            setPuestos(cargarPuestosGlobales());
+        };
+        window.addEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleSyncPuestos);
+        window.addEventListener("storage", handleSyncPuestos);
+        return () => {
+            window.removeEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleSyncPuestos);
+            window.removeEventListener("storage", handleSyncPuestos);
         };
     }, []);
 
@@ -217,8 +142,11 @@ function CandidatoPage({ onVolver }) {
                             ...loc,
                             fase: match.fase,
                             entrevista: match.entrevista,
+                            fechaEntrevista: match.fechaEntrevista,
                             encargado: match.encargado,
+                            evaluadorAsignado: match.evaluadorAsignado,
                             dictamenPsicologico: match.dictamenPsicologico,
+                            observaciones: match.observaciones,
                         };
                     }
                     return loc;
@@ -247,139 +175,6 @@ function CandidatoPage({ onVolver }) {
         return () => clearTimeout(temporizador);
     }, [alertaError]);
 
-    const ofertasFiltradas = useMemo(() => {
-        const termino = busqueda.toLowerCase().trim();
-        return puestos.filter((puesto) => {
-            const coincideTexto =
-                !termino ||
-                puesto.titulo.toLowerCase().includes(termino) ||
-                (puesto.descripcion || "").toLowerCase().includes(termino) ||
-                (puesto.requisitos || "").toLowerCase().includes(termino);
-            const coincidePlanta = filtroPlanta === "todas" || puesto.planta === filtroPlanta;
-            return coincideTexto && coincidePlanta;
-        });
-    }, [puestos, busqueda, filtroPlanta]);
-
-    const indicadores = [
-        { id: 1, titulo: "Ofertas Abiertas", valor: ofertasFiltradas.length },
-        {
-            id: 2,
-            titulo: "Vacantes Totales",
-            valor: ofertasFiltradas.reduce((total, puesto) => total + (Number(puesto.vacantes) || 0), 0),
-        },
-        { id: 3, titulo: "Postulaciones Enviadas", valor: postulaciones.length },
-    ];
-
-    const limpiarFiltros = () => {
-        setBusqueda("");
-        setFiltroPlanta("todas");
-    };
-
-    const handlePostular = (puesto) => {
-        setAlertaError("");
-        setAlertaExito("");
-        setPuestoSeleccionado(puesto);
-    };
-
-    const handleEnviarPostulacion = ({ nombre, apellido, rut, fecha, comuna, direccion, cargo, archivoCv, cvDataUrl }) => {
-        const nuevoPostulanteId = Date.now();
-        const cvNombre = archivoCv?.name || `cv_${nombre.toLowerCase().replace(/\s+/g, "_")}.pdf`;
-
-        // Determinar vacante y planta correspondiente
-        const puestoCoincidente = puestoSeleccionado || puestos.find((p) => p.titulo.toLowerCase().trim() === cargo.toLowerCase().trim());
-        const puestoIdFinal = puestoCoincidente?.id || 1;
-        const puestoTituloFinal = puestoCoincidente?.titulo || cargo;
-        const plantaFinal = puestoCoincidente?.planta || comuna || "Puerto Montt";
-
-        // 1. Registrar en el catálogo GLOBAL de candidatos visible para los empleados
-        registrarPostulanteGlobal({
-            id: nuevoPostulanteId,
-            rut: rut || "",
-            nombres: nombre,
-            apellidos: apellido,
-            nombre: `${nombre} ${apellido}`,
-            direccion: direccion || "No informada",
-            comuna: comuna || plantaFinal,
-            planta: plantaFinal,
-            fecha_nacimiento: fecha || "",
-            cv_pdf: cvNombre,
-            cvArchivo: cvNombre,
-            cvDataUrl: cvDataUrl || "",
-            cargo: puestoTituloFinal,
-            especialidad: puestoTituloFinal,
-            familiaCargo: puestoCoincidente?.familiaCargo || "Operaciones Productivas",
-            evaluador: "Amaro Villalobos Caseres",
-            estado: "Pendiente",
-            antecedentes: `Postulación pública al cargo '${puestoTituloFinal}'. Comuna: ${comuna || "No informada"}. Dirección: ${direccion || "No informada"}.`,
-            resultadoPsicologico: "Pendiente",
-        });
-
-        // 2. Registrar en la lista GLOBAL de postulaciones por cargo activo
-        crearPostulacionGlobal({
-            id: nuevoPostulanteId,
-            puestoId: puestoIdFinal,
-            puestoTitulo: puestoTituloFinal,
-            planta: plantaFinal,
-            candidatoId: nuevoPostulanteId,
-            nombre: `${nombre} ${apellido}`,
-            rut: rut || "",
-            fase: "esperando respuesta",
-            entrevista: "Por agendar",
-            encargado: "Amaro Villalobos Caseres",
-            cv_pdf: cvNombre,
-        });
-
-        // 3. Conservar comprobante local en el portal del postulante
-        const nueva = {
-            id: nuevoPostulanteId,
-            rut: rut || "",
-            nombres: nombre,
-            apellidos: apellido,
-            nombre: `${nombre} ${apellido}`,
-            direccion: direccion || "",
-            comuna: comuna || plantaFinal,
-            fecha_nacimiento: fecha || "",
-            cargo: puestoTituloFinal,
-            puestoTrabajoId: puestoIdFinal,
-            planta: plantaFinal,
-            cv_pdf: cvNombre,
-            cvArchivo: cvNombre,
-            cvDataUrl: cvDataUrl || "",
-            cvTipo: archivoCv?.type || "application/pdf",
-            cvPeso: archivoCv?.size || 0,
-            fechaPostulacion: new Date().toISOString(),
-            estado: "Recibida",
-            fase: "esperando respuesta",
-            entrevista: "Por agendar",
-            encargado: "Amaro Villalobos Caseres",
-        };
-
-        setPostulaciones((prev) => [nueva, ...prev.filter((p) => p.id !== nueva.id)]);
-        if (sesionPostulante) {
-            const sesionActualizada = {
-                ...sesionPostulante,
-                candidato: {
-                    ...sesionPostulante.candidato,
-                    nombres: nombre,
-                    apellidos: apellido,
-                    nombre: `${nombre} ${apellido}`,
-                    rut: rut || sesionPostulante.candidato?.rut || "",
-                    direccion: direccion || sesionPostulante.candidato?.direccion || "",
-                    comuna: comuna || sesionPostulante.candidato?.comuna || "",
-                    fecha_nacimiento: fecha || sesionPostulante.candidato?.fecha_nacimiento || "",
-                    cv_pdf: cvNombre,
-                    cvArchivo: cvNombre,
-                    cvDataUrl: cvDataUrl || sesionPostulante.candidato?.cvDataUrl || "",
-                },
-            };
-            setSesionPostulante(sesionActualizada);
-            guardarSesionPostulante(sesionActualizada);
-        }
-        setPuestoSeleccionado(null);
-        setVersionFormulario((v) => v + 1); 
-        setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
-    };
-
     const candidatoActivo = sesionPostulante?.candidato;
 
     const misPostulaciones = useMemo(() => {
@@ -388,13 +183,24 @@ function CandidatoPage({ onVolver }) {
         const idActivo = candidatoActivo?.id;
         const globales = cargarPostulacionesGlobales();
 
-        const lista = [...postulaciones];
+        const lista = postulaciones.filter((loc) => {
+            const locRut = (loc.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
+            return (rutActivo && locRut === rutActivo) || (idActivo && Number(loc.candidatoId) === Number(idActivo));
+        });
+
         for (const g of globales) {
             const gRut = (g.rut || g.candidatoRut || "").replace(/[.-]/g, "").trim().toLowerCase();
             const coincideRut = rutActivo && gRut === rutActivo;
             const coincideId = idActivo && (Number(g.candidatoId) === Number(idActivo) || Number(g.id) === Number(idActivo));
             if (coincideRut || coincideId) {
-                if (!lista.some((item) => item.id === g.id || (item.puestoTitulo === g.puestoTitulo && item.rut === g.rut))) {
+                if (
+                    !lista.some(
+                        (item) =>
+                            item.id === g.id ||
+                            Number(item.puestoTrabajoId || item.puestoId) === Number(g.puestoId || g.puestoTrabajoId) ||
+                            ((item.puestoTitulo || item.cargo) === (g.puestoTitulo || g.cargo))
+                    )
+                ) {
                     lista.push(g);
                 }
             }
@@ -402,12 +208,182 @@ function CandidatoPage({ onVolver }) {
         return lista;
     }, [postulaciones, candidatoActivo]);
 
+    const puestosAbiertos = useMemo(() => {
+        return puestos.filter((p) => !p.estado || p.estado === "Abierto");
+    }, [puestos]);
+
+    const ofertasFiltradas = useMemo(() => {
+        const termino = busqueda.toLowerCase().trim();
+        return puestosAbiertos.filter((puesto) => {
+            const coincideTexto =
+                !termino ||
+                (puesto.titulo || "").toLowerCase().includes(termino) ||
+                (puesto.descripcion || "").toLowerCase().includes(termino) ||
+                (puesto.requisitos || "").toLowerCase().includes(termino) ||
+                (puesto.familiaCargo || "").toLowerCase().includes(termino) ||
+                (Array.isArray(puesto.etiquetas) && puesto.etiquetas.some((t) => t.toLowerCase().includes(termino)));
+            const coincidePlanta = filtroPlanta === "todas" || puesto.planta === filtroPlanta;
+            return coincideTexto && coincidePlanta;
+        });
+    }, [puestosAbiertos, busqueda, filtroPlanta]);
+
+    const indicadores = [
+        { id: 1, titulo: "Ofertas Abiertas", valor: ofertasFiltradas.length },
+        {
+            id: 2,
+            titulo: "Vacantes Totales",
+            valor: ofertasFiltradas.reduce((total, puesto) => total + (Number(puesto.vacantes) || 0), 0),
+        },
+        { id: 3, titulo: "Mis Postulaciones", valor: misPostulaciones.length },
+    ];
+
+    const limpiarFiltros = () => {
+        setBusqueda("");
+        setFiltroPlanta("todas");
+    };
+
+    const verificarYaPostulado = (puesto) => {
+        if (!puesto) return false;
+        const tituloObjetivo = (puesto.titulo || "").toLowerCase().trim();
+        return misPostulaciones.some(
+            (p) =>
+                Number(p.puestoId || p.puestoTrabajoId) === Number(puesto.id) ||
+                ((p.puestoTitulo || p.cargo || "").toLowerCase().trim() === tituloObjetivo &&
+                    (p.planta || "") === (puesto.planta || ""))
+        );
+    };
+
+    /**
+     * Postulación directa en 1 clic usando el perfil autenticado del postulante (sin formulario).
+     */
+    const handlePostular = async (puesto) => {
+        setAlertaError("");
+        setAlertaExito("");
+
+        if (!candidatoActivo) {
+            setAlertaError("Debes iniciar sesión para postular a una vacante.");
+            return;
+        }
+
+        if (verificarYaPostulado(puesto)) {
+            setAlertaError(`Ya te encuentras postulado al cargo '${puesto.titulo}' en ${puesto.planta}.`);
+            return;
+        }
+
+        setPuestoPostulandoId(puesto.id);
+
+        try {
+            const nombreCompleto =
+                candidatoActivo.nombre ||
+                `${candidatoActivo.nombres || ""} ${candidatoActivo.apellidos || ""}`.trim() ||
+                sesionPostulante?.usuario?.nombre ||
+                "Postulante";
+            const partesNombre = nombreCompleto.split(" ");
+            const nombres = candidatoActivo.nombres || partesNombre.slice(0, -1).join(" ") || partesNombre[0] || "";
+            const apellidos = candidatoActivo.apellidos || partesNombre.slice(-1).join(" ") || "";
+            const rut = candidatoActivo.rut || sesionPostulante?.usuario?.rut || "";
+            const email = candidatoActivo.email || sesionPostulante?.usuario?.email || "";
+            const comuna = candidatoActivo.comuna || puesto.planta || "Puerto Montt";
+            const direccion = candidatoActivo.direccion || "Dirección registrada en perfil";
+            const cvNombre =
+                candidatoActivo.cv_pdf ||
+                candidatoActivo.cvArchivo ||
+                `cv_${nombreCompleto.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`;
+
+            const candidatoIdFinal = candidatoActivo.id || Date.now();
+            const nuevaPostulacionId = Date.now();
+
+            // 1. Actualizar/registrar ficha del candidato en el catálogo global visible para empleados
+            await registrarPostulanteGlobal({
+                id: candidatoIdFinal,
+                rut,
+                nombres,
+                apellidos,
+                nombre: nombreCompleto,
+                email,
+                telefono: candidatoActivo.telefono || "",
+                direccion,
+                comuna,
+                planta: puesto.planta,
+                fecha_nacimiento: candidatoActivo.fecha_nacimiento || "",
+                cv_pdf: cvNombre,
+                cvArchivo: cvNombre,
+                cvDataUrl: candidatoActivo.cvDataUrl || "",
+                cargo: puesto.titulo,
+                especialidad: puesto.titulo,
+                familiaCargo: puesto.familiaCargo || "Operaciones Productivas",
+                evaluador: "Amaro Villalobos Caseres",
+                estado: "Pendiente",
+                antecedentes: `Postulación directa desde perfil al cargo '${puesto.titulo}' (${puesto.planta}).`,
+                resultadoPsicologico: "Pendiente",
+            });
+
+            // 2. Intentar registrar el vínculo en la API REST si el backend está conectado
+            try {
+                await api.crearPostulacion({
+                    candidatoId: candidatoIdFinal,
+                    puestoTrabajoId: puesto.id,
+                    evaluadorAsignado: "Amaro Villalobos Caseres",
+                });
+            } catch {
+                // Si el backend no está activo o el candidato aún es solo local, continúa con el registro global local
+            }
+
+            // 3. Registrar en la lista GLOBAL de postulaciones (sincronizada con Analista, Evaluador y Jefatura)
+            crearPostulacionGlobal({
+                id: nuevaPostulacionId,
+                puestoId: puesto.id,
+                puestoTitulo: puesto.titulo,
+                planta: puesto.planta,
+                candidatoId: candidatoIdFinal,
+                nombre: nombreCompleto,
+                rut,
+                fase: "esperando respuesta",
+                entrevista: "Por agendar",
+                encargado: "Amaro Villalobos Caseres",
+                cv_pdf: cvNombre,
+            });
+
+            // 4. Registrar en el estado local del candidato
+            const nuevaLocal = {
+                id: nuevaPostulacionId,
+                candidatoId: candidatoIdFinal,
+                rut,
+                nombres,
+                apellidos,
+                nombre: nombreCompleto,
+                direccion,
+                comuna,
+                fecha_nacimiento: candidatoActivo.fecha_nacimiento || "",
+                cargo: puesto.titulo,
+                puestoTitulo: puesto.titulo,
+                puestoId: puesto.id,
+                puestoTrabajoId: puesto.id,
+                planta: puesto.planta,
+                cv_pdf: cvNombre,
+                cvArchivo: cvNombre,
+                cvDataUrl: candidatoActivo.cvDataUrl || "",
+                fechaPostulacion: new Date().toISOString(),
+                estado: "Recibida",
+                fase: "esperando respuesta",
+                entrevista: "Por agendar",
+                encargado: "Amaro Villalobos Caseres",
+            };
+
+            setPostulaciones((prev) => [nuevaLocal, ...prev]);
+            setAlertaExito(
+                `✓ Has postulado exitosamente al cargo '${puesto.titulo}' en ${puesto.planta} usando los datos de tu perfil.`
+            );
+        } finally {
+            setPuestoPostulandoId(null);
+        }
+    };
+
     if (!sesionPostulante) {
         return (
             <PortalAuthPostulante
                 onAutenticado={(nuevaSesion) => {
                     setSesionPostulante(nuevaSesion);
-                    setVersionFormulario((v) => v + 1);
                 }}
                 onVolver={onVolver}
             />
@@ -420,14 +396,14 @@ function CandidatoPage({ onVolver }) {
             if (sesionUpd) {
                 setSesionPostulante(sesionUpd);
             }
-            setAlertaExito("✓ Datos personales actualizados exitosamente.");
+            setAlertaExito("✓ Datos personales y CV actualizados exitosamente en tu perfil.");
             setEditandoPerfil(false);
         } catch (err) {
             setAlertaError(err.message || "Error al actualizar los datos personales.");
         }
     };
 
-    return ( 
+    return (
         <main
             style={{
                 backgroundColor: "#F0F8FF",
@@ -537,14 +513,14 @@ function CandidatoPage({ onVolver }) {
                             className={`nav-tab-boton ${tabActiva === "postulaciones_activas" ? "activo" : ""}`}
                             onClick={() => setTabActiva("postulaciones_activas")}
                         >
-                            Postulaciones activas
+                            Postulaciones activas ({misPostulaciones.length})
                         </button>
                         <button
                             type="button"
-                            className={`nav-tab-boton ${tabActiva === "vacia" ? "activo" : ""}`}
-                            onClick={() => setTabActiva("vacia")}
+                            className={`nav-tab-boton ${tabActiva === "ofertas_laborales" ? "activo" : ""}`}
+                            onClick={() => setTabActiva("ofertas_laborales")}
                         >
-                            Pestaña 2
+                            Ofertas Laborales ({puestosAbiertos.length})
                         </button>
                     </nav>
 
@@ -577,7 +553,7 @@ function CandidatoPage({ onVolver }) {
                             <strong>
                                 {backendConectado
                                     ? "Conexión en línea con la API REST (Backend Express + MongoDB)"
-                                    : "Modo Local (demostración)"}
+                                    : "Modo Local Sincronizado (demostración)"}
                             </strong>
                         </div>
                         <span style={{ fontSize: "11px", color: "#666" }}>
@@ -590,23 +566,145 @@ function CandidatoPage({ onVolver }) {
                         <MisPostulacionesView postulaciones={misPostulaciones} />
                     )}
 
-                    {/* Pestaña 2: Vacía */}
-                    {tabActiva === "vacia" && (
-                        <div
-                            style={{
-                                backgroundColor: "white",
-                                borderRadius: "10px",
-                                border: "1px dashed #ced4da",
-                                padding: "80px 20px",
-                                textAlign: "center",
-                                color: "#6c757d",
-                            }}
-                        >
-                            <div style={{ fontSize: "2.8rem", marginBottom: "14px" }}>📄</div>
-                            <h3 style={{ margin: "0 0 8px 0", color: "#495057", fontSize: "1.2rem" }}>Pestaña Vacía</h3>
-                            <p style={{ margin: 0, fontSize: "14px" }}>
-                                Espacio disponible listo para la siguiente función que definiremos.
-                            </p>
+                    {/* Pestaña 2: Catálogo de Ofertas Laborales con Postulación en 1 Clic */}
+                    {tabActiva === "ofertas_laborales" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {/* Encabezado y resumen de postulación rápida */}
+                            <div
+                                style={{
+                                    backgroundColor: "white",
+                                    borderRadius: "10px",
+                                    border: "1px solid #dee2e6",
+                                    padding: "18px 24px",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    gap: "14px",
+                                }}
+                            >
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1a1a1a" }}>
+                                        💼 Vacantes Disponibles en AquaChile
+                                    </h2>
+                                    <span style={{ fontSize: "13px", color: "gray" }}>
+                                        Postula en 1 clic directamente con los datos y el CV registrados en tu perfil ({candidatoActivo?.rut || "Sin RUT"})
+                                    </span>
+                                </div>
+
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                                    <span
+                                        style={{
+                                            fontSize: "12px",
+                                            padding: "6px 12px",
+                                            borderRadius: "6px",
+                                            backgroundColor: candidatoActivo?.cv_pdf ? "#f0fdf4" : "#fff7ed",
+                                            color: candidatoActivo?.cv_pdf ? "#166534" : "#9a3412",
+                                            border: `1px solid ${candidatoActivo?.cv_pdf ? "#bbf7d0" : "#fed7aa"}`,
+                                            fontWeight: "600",
+                                        }}
+                                    >
+                                        📄 {candidatoActivo?.cv_pdf ? `CV en perfil: ${candidatoActivo.cv_pdf}` : "CV pendiente de subir en tu perfil"}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditandoPerfil(true)}
+                                        style={{
+                                            padding: "6px 12px",
+                                            fontSize: "12px",
+                                            fontWeight: "600",
+                                            borderRadius: "6px",
+                                            border: "1px solid #ced4da",
+                                            backgroundColor: "white",
+                                            color: "#e8590c",
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        ✏️ Actualizar Perfil / CV
+                                    </button>
+                                </div>
+                            </div>
+
+                            <GrillaIndicadores indicadores={indicadores} />
+
+                            {/* Buscador y Grilla de Tarjetas de Oferta */}
+                            <div
+                                style={{
+                                    backgroundColor: "white",
+                                    borderRadius: "10px",
+                                    border: "1px solid #dee2e6",
+                                    overflow: "hidden",
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+                                }}
+                            >
+                                <div className="filtros-barra-contenedor">
+                                    <div className="buscador-input-wrapper">
+                                        <input
+                                            type="text"
+                                            className="buscador-input"
+                                            placeholder="Buscar por cargo, cualidades, descripción o requisitos..."
+                                            value={busqueda}
+                                            onChange={(e) => setBusqueda(e.target.value)}
+                                            aria-label="Buscar ofertas laborales"
+                                        />
+                                    </div>
+
+                                    <select
+                                        className="filtro-select"
+                                        value={filtroPlanta}
+                                        onChange={(e) => setFiltroPlanta(e.target.value)}
+                                        aria-label="Filtrar ofertas por planta"
+                                    >
+                                        <option value="todas">Todas las Plantas</option>
+                                        {PLANTAS.map((planta) => (
+                                            <option key={planta} value={planta}>
+                                                {planta}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {(busqueda.trim() !== "" || filtroPlanta !== "todas") && (
+                                        <button
+                                            type="button"
+                                            className="boton-limpiar-filtros"
+                                            onClick={limpiarFiltros}
+                                            title="Restablecer filtros"
+                                        >
+                                            ✕ Limpiar filtros
+                                        </button>
+                                    )}
+
+                                    <span style={{ fontSize: "12px", color: "#6c757d", marginLeft: "auto" }}>
+                                        Mostrando <strong>{ofertasFiltradas.length}</strong> de {puestosAbiertos.length} ofertas abiertas
+                                    </span>
+                                </div>
+
+                                {ofertasFiltradas.length > 0 ? (
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                                            gap: "16px",
+                                            padding: "16px",
+                                        }}
+                                    >
+                                        {ofertasFiltradas.map((puesto) => (
+                                            <TarjetaOferta
+                                                key={puesto.id}
+                                                puesto={puesto}
+                                                seleccionada={puestoPostulandoId === puesto.id}
+                                                yaPostulado={verificarYaPostulado(puesto)}
+                                                onPostular={handlePostular}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EstadoVacio
+                                        mensaje="No se encontraron ofertas abiertas que coincidan con los filtros aplicados."
+                                        onRestablecer={limpiarFiltros}
+                                    />
+                                )}
+                            </div>
                         </div>
                     )}
                 </>

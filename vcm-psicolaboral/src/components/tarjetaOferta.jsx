@@ -5,17 +5,18 @@
  **/
 import { NARANJA, NARANJA_OSCURO, ESTILO_ETIQUETA, ESTILO_VALOR } from "./Estilos.jsx"
 import BotonOrange from "./BotonOrange.jsx";
-function TarjetaOferta({ puesto, seleccionada, onPostular }) {
+function TarjetaOferta({ puesto, seleccionada, yaPostulado = false, onPostular }) {
     return (
         <article
             style={{
                 backgroundColor: "white",
                 borderRadius: "10px",
-                border: `2px solid ${seleccionada ? NARANJA : "gray"}`,
+                border: `2px solid ${yaPostulado ? "#22c55e" : seleccionada ? NARANJA : "#dee2e6"}`,
                 padding: "18px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "10px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.04)",
             }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
@@ -98,10 +99,32 @@ function TarjetaOferta({ puesto, seleccionada, onPostular }) {
             </div>
 
             <div style={{ marginTop: "auto", paddingTop: "6px" }}>
-                <BotonOrange
-                    texto={seleccionada ? "Postulando" : "Postular"}
-                    onClick={() => onPostular(puesto)}
-                />
+                {yaPostulado ? (
+                    <span
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            padding: "9px 16px",
+                            borderRadius: "6px",
+                            backgroundColor: "#dcfce7",
+                            color: "#166534",
+                            border: "1px solid #86efac",
+                            fontSize: "13px",
+                            fontWeight: "700",
+                            width: "100%",
+                            boxSizing: "border-box",
+                        }}
+                    >
+                        ✓ Ya postulaste a este cargo
+                    </span>
+                ) : (
+                    <BotonOrange
+                        texto={seleccionada ? "Postulando..." : "Postular con mi perfil"}
+                        onClick={() => onPostular(puesto)}
+                    />
+                )}
             </div>
         </article>
     );
