@@ -81,10 +81,11 @@ function PortalHome() {
                 {portales.map((p) => (
                     <div key={p.id} className="col-12 col-md-6 d-flex">
                         <article
-                            className="card w-100 shadow-sm border-0 d-flex flex-column justify-content-between p-4"
+                            className="card w-100 shadow-sm d-flex flex-column justify-content-between p-4"
                             style={{
                                 borderRadius: "14px",
-                                borderTop: `8px solid ${p.colorBorde} !important`,
+                                border: "none",
+                                borderTop: `8px solid ${p.colorBorde}`,
                                 backgroundColor: "white",
                             }}
                         >

@@ -3,11 +3,9 @@ import BotonOrange from "./BotonOrange.jsx";
 import { EVALUADORES_DISPONIBLES } from "../utils/constantes";
 
 function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
-    if (!isOpen || !postulante) return null;
-
     // Obtener fecha por defecto (mañana a las 10:00) o existente
     const obtenerFechaDefecto = () => {
-        if (postulante.fechaEntrevista && !isNaN(new Date(postulante.fechaEntrevista).getTime())) {
+        if (postulante?.fechaEntrevista && !isNaN(new Date(postulante.fechaEntrevista).getTime())) {
             const d = new Date(postulante.fechaEntrevista);
             return d.toISOString().slice(0, 16);
         }
@@ -24,11 +22,13 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
 
     const [fechaHora, setFechaHora] = useState(obtenerFechaDefecto);
     const [evaluador, setEvaluador] = useState(
-        postulante.evaluadorAsignado || postulante.encargado || EVALUADORES_DISPONIBLES[0] || "Amaro Villalobos Caseres"
+        postulante?.evaluadorAsignado || postulante?.encargado || EVALUADORES_DISPONIBLES[0] || "Amaro Villalobos Caseres"
     );
-    const [observaciones, setObservaciones] = useState(postulante.observaciones || "");
+    const [observaciones, setObservaciones] = useState(postulante?.observaciones || "");
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState("");
+
+    if (!isOpen || !postulante) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();

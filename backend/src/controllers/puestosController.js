@@ -66,7 +66,7 @@ export const puestosController = {
      */
     async crear(req, res) {
         try {
-            const { titulo, planta, familiaCargo, descripcion, requisitos, etiquetas, vacantes, creadoPor } = req.body;
+            const { area_id, titulo, planta, familiaCargo, descripcion, requisitos, etiquetas, vacantes, creadoPor } = req.body;
 
             if (!titulo || !titulo.trim()) {
                 return res.status(400).json({
@@ -90,6 +90,7 @@ export const puestosController = {
             }
 
             const nuevo = await dataStore.crearPuesto({
+                area_id,
                 titulo,
                 planta,
                 familiaCargo,

@@ -97,6 +97,7 @@ function JefaturaPage({ onVolver }) {
 
                 if (isMounted && Array.isArray(informesRemotos)) {
                     setInformes(informesRemotos);
+                    guardarInformesLocal(informesRemotos);
                 }
 
                 if (isMounted && Array.isArray(puestosRemotos)) {
@@ -130,7 +131,11 @@ function JefaturaPage({ onVolver }) {
     const handleCrearInforme = async (nuevoInformeDatos) => {
         try {
             const creado = await api.crearSolicitudInforme(nuevoInformeDatos);
-            setInformes((prev) => [creado, ...prev]);
+            setInformes((prev) => {
+                const actualizados = [creado, ...prev];
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
         } catch {
             setInformes((prev) => {
                 const nuevoId = prev.length > 0 ? Math.max(...prev.map((i) => Number(i.id) || 0)) + 1 : 1;
@@ -157,7 +162,11 @@ function JefaturaPage({ onVolver }) {
     const handleAgregarPreguntaInforme = async (id, datosPregunta) => {
         try {
             const actualizado = await api.agregarPreguntaInforme(id, datosPregunta);
-            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
             setInformeSeleccionado(actualizado);
         } catch {
             setInformes((prev) => {
@@ -268,7 +277,11 @@ function JefaturaPage({ onVolver }) {
     const handleCambiarEstadoInforme = async (id, nuevoEstado) => {
         try {
             const actualizado = await api.cambiarEstadoSolicitudInforme(id, nuevoEstado);
-            setInformes((prev) => prev.map((inf) => (inf.id === id ? actualizado : inf)));
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
             setInformeSeleccionado(actualizado);
         } catch {
             setInformes((prev) => {

@@ -442,6 +442,7 @@ function AgendaEntrevistasView({ postulaciones = [], onAgendarEntrevista }) {
 
             {/* Modal para Citar / Reagendar */}
             <ModalAgendarEntrevista
+                key={postulanteAEditar?.id || "modal-agendar"}
                 isOpen={Boolean(postulanteAEditar)}
                 postulante={postulanteAEditar}
                 onCerrar={() => setPostulanteAEditar(null)}

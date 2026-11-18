@@ -154,7 +154,12 @@ const areasSchema = new mongoose.Schema(
     },
     {
         collection: "areas_trabajo",
-// 6. Esquema de Etiquetas / Cualidades Reutilizables
+        toJSON: toCleanObject,
+        toObject: toCleanObject,
+    }
+);
+
+// 7. Esquema de Etiquetas / Cualidades Reutilizables
 const etiquetaSchema = new mongoose.Schema(
     {
         id: { type: Number, required: true, unique: true, index: true },

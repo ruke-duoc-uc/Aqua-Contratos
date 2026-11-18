@@ -467,18 +467,27 @@ export const db = {
 
     async actualizarPuesto(id, datos) {
         const numId = Number(id);
-        const camposPermitidos = ["area_id", "titulo", "planta", "familiaCargo", "descripcion", "requisitos", "vacantes", "estado"];
-        const payload = {};
-        for (const campo of camposPermitidos) {
-            if (datos[campo] !== undefined) {
-                payload[campo] =
-                    campo === "vacantes" || campo === "area_id" ? Number(datos[campo]) : datos[campo];
-        const camposPermitidos = ["titulo", "planta", "familiaCargo", "descripcion", "requisitos", "etiquetas", "vacantes", "estado"];
+        const camposPermitidos = [
+            "area_id",
+            "titulo",
+            "planta",
+            "familiaCargo",
+            "descripcion",
+            "requisitos",
+            "etiquetas",
+            "vacantes",
+            "estado",
+        ];
         const payload = {};
         for (const campo of camposPermitidos) {
             if (datos[campo] !== undefined) {
                 if (campo === "vacantes") {
                     payload[campo] = Number(datos[campo]);
+                } else if (campo === "area_id") {
+                    payload[campo] =
+                        datos[campo] === null || datos[campo] === ""
+                            ? null
+                            : Number(datos[campo]);
                 } else if (campo === "etiquetas") {
                     payload[campo] = Array.isArray(datos[campo])
                         ? datos[campo].map((t) => String(t).trim()).filter(Boolean)
@@ -719,7 +728,11 @@ export const db = {
         const nombre = datos.nombre.trim();
         const rol = datos.rol || "candidato";
         const candidatoId = datos.candidatoId ? Number(datos.candidatoId) : null;
-        const area = datos.area || null;
+        const rawAreaId = datos.area_id !== undefined ? datos.area_id : datos.area;
+        const area_id =
+            rawAreaId === undefined || rawAreaId === null || rawAreaId === ""
+                ? null
+                : Number(rawAreaId);
         const nuevoId = await siguienteIdMongo(UsuarioModel, memoryStoreUsuarios);
 
         const nuevoUsuario = {
@@ -729,7 +742,7 @@ export const db = {
             nombre,
             rol,
             candidatoId,
-            area,
+            area_id,
         };
 
         if (this.isUsingMongo()) {
@@ -1048,8 +1061,9 @@ export const db = {
         if (!nombreLimpio) return null;
 
         if (this.isUsingMongo()) {
+            const nombreEscapado = nombreLimpio.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             const existe = await EtiquetaModel.findOne({
-                nombre: { $regex: new RegExp(`^${nombreLimpio}$`, "i") },
+                nombre: { $regex: new RegExp(`^${nombreEscapado}$`, "i") },
             });
             if (existe) return existe.toJSON();
 

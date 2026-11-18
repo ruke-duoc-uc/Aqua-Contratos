@@ -32,6 +32,38 @@ export const RUTA_POR_ROL = {
 };
 
 /**
+ * Cuentas base de empleados para fallback local cuando el backend no está activo.
+ * Coinciden con `USUARIOS_SEED` del backend.
+ */
+export const USUARIOS_EMPLEADOS_BASE = [
+    {
+        id: 1,
+        email: "analista@aquachile.cl",
+        password: "password123",
+        nombre: "Amaro Villalobos",
+        rol: "analista",
+        candidatoId: null,
+    },
+    {
+        id: 2,
+        email: "evaluador@aquachile.cl",
+        password: "password123",
+        nombre: "Carolina Díaz",
+        rol: "evaluador",
+        candidatoId: null,
+    },
+    {
+        id: 3,
+        email: "jefe@aquachile.cl",
+        password: "password123",
+        nombre: "Carlos Mendoza",
+        rol: "jefatura",
+        candidatoId: null,
+        area_id: 1,
+    },
+];
+
+/**
  * Devuelve la sesión de empleado guardada, o `null` si no existe / está corrupta.
  */
 export function obtenerSesionEmpleado() {
@@ -89,36 +121,65 @@ export async function iniciarSesionEmpleado({ email, password }) {
         throw new Error("Debes ingresar tu correo corporativo y tu contraseña.");
     }
 
-    // `api.login` devuelve { usuario, perfilCandidato }.
-    const respuesta = await api.login({
-        identificador: emailLimpio,
-        email: emailLimpio,
-        password,
-    });
+    try {
+        // `api.login` devuelve { usuario, perfilCandidato }.
+        const respuesta = await api.login({
+            identificador: emailLimpio,
+            email: emailLimpio,
+            password,
+        });
 
-    const usuario = respuesta?.usuario;
+        const usuario = respuesta?.usuario;
 
-    if (!usuario) {
-        throw new Error("No fue posible validar las credenciales ingresadas.");
-    }
+        if (!usuario) {
+            throw new Error("No fue posible validar las credenciales ingresadas.");
+        }
 
-    // Un postulante no puede entrar por el Portal de Empleados.
-    if (usuario.rol === "candidato") {
-        throw new Error(
-            "Esta cuenta pertenece al Portal de Postulantes. Ingresa con tu cuenta de postulante."
+        // Un postulante no puede entrar por el Portal de Empleados.
+        if (usuario.rol === "candidato") {
+            throw new Error(
+                "Esta cuenta pertenece al Portal de Postulantes. Ingresa con tu cuenta de postulante."
+            );
+        }
+
+        // Solo los roles internos tienen acceso al Portal de Empleados.
+        if (!ROLES_EMPLEADO.includes(usuario.rol)) {
+            throw new Error("Tu cuenta no tiene permisos para acceder al Portal de Empleados.");
+        }
+
+        const sesion = {
+            usuario,
+            desdeBackend: true,
+        };
+
+        guardarSesionEmpleado(sesion);
+        return sesion;
+    } catch (error) {
+        if (
+            error.status === 401 ||
+            error.status === 400 ||
+            error.message?.includes("Portal de Postulantes") ||
+            error.message?.includes("permisos para acceder")
+        ) {
+            throw error;
+        }
+
+        // Fallback local cuando el backend no está en línea
+        const empleadoLocal = USUARIOS_EMPLEADOS_BASE.find(
+            (u) => u.email.toLowerCase() === emailLimpio
         );
+
+        if (!empleadoLocal || empleadoLocal.password !== password) {
+            throw new Error("Credenciales inválidas. Compruebe su correo y contraseña.");
+        }
+
+        const { password: _, ...usuarioSinPass } = empleadoLocal;
+        const sesion = {
+            usuario: usuarioSinPass,
+            desdeBackend: false,
+        };
+
+        guardarSesionEmpleado(sesion);
+        return sesion;
     }
-
-    // Solo los roles internos tienen acceso al Portal de Empleados.
-    if (!ROLES_EMPLEADO.includes(usuario.rol)) {
-        throw new Error("Tu cuenta no tiene permisos para acceder al Portal de Empleados.");
-    }
-
-    const sesion = {
-        usuario,
-        desdeBackend: true,
-    };
-
-    guardarSesionEmpleado(sesion);
-    return sesion;
 }

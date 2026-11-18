@@ -665,6 +665,8 @@ export const AREAS_SEED = [
         id: 6,
         tipo_area: "Operaciones Productivas",
     },
+];
+
 export const ETIQUETAS_SEED = [
     { id: 1, nombre: "Trabajo en equipo" },
     { id: 2, nombre: "Liderazgo" },

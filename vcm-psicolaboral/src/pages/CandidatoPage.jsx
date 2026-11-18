@@ -380,21 +380,10 @@ function CandidatoPage({ onVolver }) {
         setAlertaExito(`✓ Postulación enviada y registrada globalmente en el sistema para el cargo '${nueva.cargo}'. Visible en las pantallas de reclutadores y jefaturas.`);
     };
 
-    if (!sesionPostulante) {
-        return (
-            <PortalAuthPostulante
-                onAutenticado={(nuevaSesion) => {
-                    setSesionPostulante(nuevaSesion);
-                    setVersionFormulario((v) => v + 1);
-                }}
-                onVolver={onVolver}
-            />
-        );
-    }
-
-    const candidatoActivo = sesionPostulante.candidato;
+    const candidatoActivo = sesionPostulante?.candidato;
 
     const misPostulaciones = useMemo(() => {
+        if (!candidatoActivo) return [];
         const rutActivo = (candidatoActivo?.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
         const idActivo = candidatoActivo?.id;
         const globales = cargarPostulacionesGlobales();
@@ -412,6 +401,18 @@ function CandidatoPage({ onVolver }) {
         }
         return lista;
     }, [postulaciones, candidatoActivo]);
+
+    if (!sesionPostulante) {
+        return (
+            <PortalAuthPostulante
+                onAutenticado={(nuevaSesion) => {
+                    setSesionPostulante(nuevaSesion);
+                    setVersionFormulario((v) => v + 1);
+                }}
+                onVolver={onVolver}
+            />
+        );
+    }
 
     const handleGuardarPerfil = async (datosPersonales) => {
         try {

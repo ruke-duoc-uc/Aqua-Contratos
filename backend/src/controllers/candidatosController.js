@@ -111,8 +111,8 @@ export const candidatosController = {
 
             const candidatoExistente = await dataStore.buscarCandidatoPorRut(rut);
             if (candidatoExistente) {
-                const candidatoActualizado = dataStore.actualizarCandidato(candidatoExistente.id, {
-                    nombre,
+                const candidatoActualizado = await dataStore.actualizarCandidato(candidatoExistente.id, {
+                    nombre: nombreFinal,
                     nombres,
                     apellidos,
                     rut,
@@ -122,6 +122,7 @@ export const candidatosController = {
                     comuna,
                     fecha_nacimiento,
                     cv_pdf,
+                    cvDataUrl,
                     especialidad: especialidad || cargo || candidatoExistente.especialidad,
                     planta,
                     cargo,
@@ -135,7 +136,7 @@ export const candidatosController = {
                     fecha: fecha || new Date().toISOString(),
                 });
 
-                notificarPostulacion({ nombre, email, rut, cargo });
+                notificarPostulacion({ nombre: nombreFinal, email, rut, cargo });
 
                 return res.status(200).json({
                     ok: true,
@@ -169,7 +170,7 @@ export const candidatosController = {
                 resultadoPsicologico,
             });
 
-            notificarPostulacion({ nombre, email, rut, cargo });
+            notificarPostulacion({ nombre: nombreFinal, email, rut, cargo });
 
             return res.status(201).json({
                 ok: true,
