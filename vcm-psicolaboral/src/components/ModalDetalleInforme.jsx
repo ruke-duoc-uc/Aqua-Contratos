@@ -431,7 +431,7 @@ export default function ModalDetalleInforme({
 
                 {/* Footer */}
                 <div className="modal-footer" style={{ borderTop: "1px solid #dee2e6", padding: "10px 20px", display: "flex", justifyContent: "flex-end" }}>
-                    <button type="button" className="boton-orange-secundario" onClick={onCerrar}>
+                    <button type="button" className="boton-secundario" onClick={onCerrar}>
                         Cerrar Ventana
                     </button>
                 </div>

@@ -1,6 +1,6 @@
 /**
  * Cliente HTTP del Frontend para la API REST de Aqua-Contratos
- * Conecta con el backend Express y la base de datos persistente SQLite.
+ * Conecta con el backend Express y la base de datos persistente MongoDB.
  */
 
 const API_BASE_URL = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "http://localhost:4000/api";
@@ -49,10 +49,15 @@ export const api = {
         return res.datos;
     },
 
-    async login({ email, password }) {
+    async login({ identificador, email, rut, password }) {
         const res = await request("/auth/login", {
             method: "POST",
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({
+                identificador: identificador || email || rut,
+                email: email || identificador,
+                rut,
+                password,
+            }),
         });
         return res.datos;
     },
@@ -111,6 +116,20 @@ export const api = {
         return request(`/puestos/${id}`, {
             method: "DELETE",
         });
+    },
+
+    // ==================== ETIQUETAS (Cualidades Reutilizables) ====================
+    async getEtiquetas() {
+        const res = await request("/etiquetas");
+        return res.datos;
+    },
+
+    async crearEtiqueta(nombre) {
+        const res = await request("/etiquetas", {
+            method: "POST",
+            body: JSON.stringify({ nombre }),
+        });
+        return res.datos;
     },
 
     // ==================== POSTULACIONES ====================
@@ -326,6 +345,21 @@ export const api = {
             method: "PATCH",
             body: JSON.stringify({ estado: nuevoEstado }),
         });
+        return res.datos;
+    },
+
+    // ==================== ÁREAS DE TRABAJO ====================
+    async getAreas({ busqueda } = {}) {
+        const params = new URLSearchParams();
+        if (busqueda) params.append("busqueda", busqueda);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
+        const res = await request(`/areas${query}`);
+        return res.datos;
+    },
+
+    async getAreaPorId(id) {
+        const res = await request(`/areas/${id}`);
         return res.datos;
     },
 };

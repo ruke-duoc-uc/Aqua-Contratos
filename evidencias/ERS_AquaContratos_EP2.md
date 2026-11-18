@@ -60,7 +60,7 @@ A continuación se detalla la matriz de requisitos funcionales implementados y v
 2. **Navegación SPA (React Router 7):** Rutas declarativas con sincronización en la barra de direcciones del navegador, botones atrás/adelante funcionales y redirección de rutas inexistentes (`*` a `/`).
 3. **Diseño Visual y Responsividad (Bootstrap 5):** Integración de estilos y clases responsive (`container-fluid`, `row`, `col-*`, `card`, `table-responsive`, `badge`, `form-control`, `form-select`).
 4. **Calidad de Software y Testing Automatizado (Vitest):** Suite de **25 pruebas automatizadas** en 5 archivos cubriendo validaciones de RUT chileno (Módulo 11), cálculo de edad, filtrado multicriterio, cálculo de KPIs, validación de formularios y enrutamiento React Router.
-5. **Persistencia Simulada y Conectividad Híbrida:** Operación autónoma mediante `localStorage` con sincronización reactiva entre todas las rutas del frontend, más compatibilidad con la API REST desarrollada en Express + SQLite.
+5. **Persistencia Simulada y Conectividad Híbrida:** Operación autónoma mediante `localStorage` con sincronización reactiva entre todas las rutas del frontend, más compatibilidad con la API REST desarrollada en Express + MongoDB.
 
 ---
 
@@ -68,6 +68,6 @@ A continuación se detalla la matriz de requisitos funcionales implementados y v
 
 Las siguientes capacidades corresponden al alcance de la evaluación final y no forman parte de las exigencias mínimas de la EP2:
 1. **Autenticación Formal y Sesiones:** Integración de JWT (JSON Web Tokens) y contraseñas cifradas en backend para reemplazar los selectores de roles simulados.
-2. **Persistencia Exclusiva en Base de Datos de Producción:** Desactivación de capas locales (`localStorage`) y consumo exclusivo de base de datos relacional centralizada.
+2. **Persistencia Exclusiva en Base de Datos de Producción:** Desactivación de capas locales (`localStorage`) y consumo exclusivo de base de datos centralizada (MongoDB).
 3. **Generación y Descarga de Certificados PDF en Servidor:** Generación en backend del informe psicolaboral oficial firmado digitalmente.
 4. **Módulo de Auditoría y Logs:** Registro transaccional en base de datos de cada cambio de estado realizado por analistas o evaluadores.

@@ -1,17 +1,15 @@
 /**
  * Controlador de Dashboard y Catálogos
- * Entrega métricas consolidadas (RF10), catálogos base y utilidades para demostración.
  */
 import { dataStore } from "../data/dataStore.js";
 
 export const dashboardController = {
     /**
      * GET /api/dashboard/kpis
-     * Entrega los 4 indicadores operativos en tiempo real (RF10).
      */
-    kpis(req, res) {
+    async kpis(req, res) {
         try {
-            const kpis = dataStore.obtenerKPIs();
+            const kpis = await dataStore.obtenerKPIs();
             return res.status(200).json({
                 ok: true,
                 datos: kpis,
@@ -27,7 +25,6 @@ export const dashboardController = {
 
     /**
      * GET /api/dashboard/catalogos
-     * Retorna los catálogos de Plantas, Familias de Cargo y Evaluadores disponibles.
      */
     catalogos(req, res) {
         try {
@@ -47,11 +44,10 @@ export const dashboardController = {
 
     /**
      * POST /api/dashboard/reset-demo
-     * Restablece los datos a su estado semilla inicial (Rol Administrador Académico).
      */
-    resetDemo(req, res) {
+    async resetDemo(req, res) {
         try {
-            const resultado = dataStore.restablecerDatosDemo();
+            const resultado = await dataStore.restablecerDatosDemo();
             return res.status(200).json({
                 ok: true,
                 ...resultado,

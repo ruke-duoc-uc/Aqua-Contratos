@@ -13,14 +13,12 @@
  * - cv_pdf
  **/
 import { useState, useMemo } from "react";
-import BotonOrange from "./BotonOrange";
 import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
 
 function GestionCandidatosView({
     candidatos = [],
     rolActual,
-    onAbrirNuevoCandidato,
     onEditarCandidato,
     onVerDetalle,
 }) {
@@ -103,13 +101,6 @@ function GestionCandidatosView({
                         Registro maestro con RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento, edad y CV
                     </span>
                 </div>
-
-                {esAnalista && (
-                    <BotonOrange
-                        texto="+ Registrar Postulante"
-                        onClick={onAbrirNuevoCandidato}
-                    />
-                )}
             </div>
 
             {/* Barra de Filtros y Búsqueda */}

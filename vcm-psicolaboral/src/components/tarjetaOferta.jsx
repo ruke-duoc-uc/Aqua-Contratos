@@ -48,6 +48,44 @@ function TarjetaOferta({ puesto, seleccionada, onPostular }) {
                 </p>
             </details>
 
+            {/* Apartado de Cualidades / Etiquetas */}
+            {Array.isArray(puesto.etiquetas) && puesto.etiquetas.length > 0 && (
+                <div
+                    style={{
+                        padding: "8px 12px",
+                        backgroundColor: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                    }}
+                >
+                    <span style={{ ...ESTILO_ETIQUETA, fontSize: "11px", color: "#64748b" }}>
+                        Cualidades solicitadas
+                    </span>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        {puesto.etiquetas.map((tag, idx) => (
+                            <span
+                                key={idx}
+                                style={{
+                                    display: "inline-block",
+                                    padding: "3px 10px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    color: "#1e293b",
+                                    backgroundColor: "#e2e8f0",
+                                    borderRadius: "14px",
+                                    border: "1px solid #cbd5e1",
+                                }}
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
                 <div>
                     <span style={ESTILO_ETIQUETA}>Vacantes</span>

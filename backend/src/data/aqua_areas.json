@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "tipo_area": "Sistemas y TI"
+  },
+  {
+    "id": 2,
+    "tipo_area": "Calidad y Prevención de Riesgos"
+  },
+  {
+    "id": 3,
+    "tipo_area": "Mantenimiento Industrial"
+  },
+  {
+    "id": 4,
+    "tipo_area": "Administración y Finanzas"
+  },
+  {
+    "id": 5,
+    "tipo_area": "Logística y Abastecimiento"
+  },
+  {
+    "id": 6,
+    "tipo_area": "Operaciones Productivas"
+  }
+]

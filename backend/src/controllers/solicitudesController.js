@@ -10,13 +10,11 @@ const RESULTADOS_VALIDOS = ["Pendiente", "Recomendado", "Recomendado con observa
 export const solicitudesController = {
     /**
      * GET /api/solicitudes
-     * Lista solicitudes con soporte de filtros en tiempo real (RF07):
-     * estado, planta, evaluador y término de búsqueda.
      */
-    listar(req, res) {
+    async listar(req, res) {
         try {
             const { busqueda, estado, planta, evaluador } = req.query;
-            const solicitudes = dataStore.obtenerSolicitudes({
+            const solicitudes = await dataStore.obtenerSolicitudes({
                 busqueda,
                 estado,
                 planta,
@@ -39,12 +37,11 @@ export const solicitudesController = {
 
     /**
      * GET /api/solicitudes/:id
-     * Obtiene el detalle completo de una solicitud (RF06).
      */
-    obtenerPorId(req, res) {
+    async obtenerPorId(req, res) {
         try {
             const { id } = req.params;
-            const solicitud = dataStore.obtenerSolicitudPorId(id);
+            const solicitud = await dataStore.obtenerSolicitudPorId(id);
 
             if (!solicitud) {
                 return res.status(404).json({
@@ -68,19 +65,21 @@ export const solicitudesController = {
 
     /**
      * POST /api/solicitudes
-     * Emite una nueva solicitud de evaluación asociada a un candidato (RF04, RF05).
      */
-    crear(req, res) {
+    async crear(req, res) {
         try {
             const {
                 nombre,
                 nombres,
                 apellidos,
                 rut,
+                email,
+                telefono,
                 direccion,
                 comuna,
                 fecha_nacimiento,
                 cv_pdf,
+                cvDataUrl,
                 especialidad,
                 planta,
                 cargo,
@@ -99,15 +98,18 @@ export const solicitudesController = {
                 });
             }
 
-            const nuevaSolicitud = dataStore.crearCandidato({
+            const nuevaSolicitud = await dataStore.crearCandidato({
                 nombre: nombreFinal,
                 nombres: nombres || (nombreFinal.split(" ").slice(0, -2).join(" ") || nombreFinal.split(" ")[0]),
                 apellidos: apellidos || (nombreFinal.split(" ").slice(-2).join(" ")),
                 rut,
+                email,
+                telefono,
                 direccion: direccion || "",
                 comuna: comuna || plantaFinal,
                 fecha_nacimiento: fecha_nacimiento || "",
                 cv_pdf: cv_pdf || `cv_${nombreFinal.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`,
+                cvDataUrl: cvDataUrl || "",
                 especialidad: especialidad || cargo || "No especificada",
                 planta: plantaFinal,
                 cargo,
@@ -135,10 +137,8 @@ export const solicitudesController = {
 
     /**
      * PATCH /api/solicitudes/:id/estado
-     * Actualiza el estado del flujo de la solicitud (RF08).
-     * Valores admitidos: Pendiente, En revisión, En proceso, Finalizado.
      */
-    cambiarEstado(req, res) {
+    async cambiarEstado(req, res) {
         try {
             const { id } = req.params;
             const { estado } = req.body;
@@ -161,7 +161,7 @@ export const solicitudesController = {
                 });
             }
 
-            const solicitudActualizada = dataStore.actualizarEstadoSolicitud(id, estadoNormalizado);
+            const solicitudActualizada = await dataStore.actualizarEstadoSolicitud(id, estadoNormalizado);
 
             if (!solicitudActualizada) {
                 return res.status(404).json({
@@ -186,9 +186,8 @@ export const solicitudesController = {
 
     /**
      * PATCH /api/solicitudes/:id/evaluacion
-     * Registra el dictamen psicolaboral, fecha de evaluación y conclusiones (RF09).
      */
-    registrarEvaluacion(req, res) {
+    async registrarEvaluacion(req, res) {
         try {
             const { id } = req.params;
             const { resultadoPsicologico, fechaEvaluacion, conclusiones, estado } = req.body;
@@ -211,7 +210,7 @@ export const solicitudesController = {
                 });
             }
 
-            const solicitudActualizada = dataStore.actualizarEvaluacionSolicitud(id, {
+            const solicitudActualizada = await dataStore.actualizarEvaluacionSolicitud(id, {
                 resultadoPsicologico: dictamenNormalizado,
                 fechaEvaluacion: fechaEvaluacion || new Date().toISOString().split("T")[0],
                 conclusiones: conclusiones || "",
