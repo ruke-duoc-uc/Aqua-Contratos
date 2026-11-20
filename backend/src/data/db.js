@@ -853,6 +853,17 @@ export const db = {
             fechaEvaluacion: datos.fechaEvaluacion || null,
             dictamen: datos.dictamen || "Pendiente",
             conclusiones: datos.conclusiones || null,
+            fortalezas: Array.isArray(datos.fortalezas) ? datos.fortalezas : [],
+            debilidades: Array.isArray(datos.debilidades) ? datos.debilidades : [],
+            historial: Array.isArray(datos.historial) ? datos.historial : [
+                {
+                    fecha: fechaCreacion,
+                    accion: "Informe creado",
+                    autor: "Sistema",
+                    rol: "sistema",
+                    detalle: "Generación automática del informe psicolaboral.",
+                },
+            ],
             // Metadatos
             estado: datos.estado || "Pendiente",
             fechaCreacion,
@@ -908,13 +919,26 @@ export const db = {
         return null;
     },
 
-    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones }) {
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }) {
         const numId = Number(id);
+        const informePrevio = await this.obtenerSolicitudInformePorId(numId);
         const payload = {};
         if (evaluador !== undefined) payload.evaluador = evaluador;
         if (fechaEvaluacion !== undefined) payload.fechaEvaluacion = fechaEvaluacion;
         if (dictamen !== undefined) payload.dictamen = dictamen;
         if (conclusiones !== undefined) payload.conclusiones = conclusiones;
+        if (fortalezas !== undefined) payload.fortalezas = fortalezas;
+        if (debilidades !== undefined) payload.debilidades = debilidades;
+
+        // Historial acumulativo
+        const historialPrevio = Array.isArray(informePrevio?.historial) ? informePrevio.historial : [];
+        if (historialItem) {
+            payload.historial = [...historialPrevio, {
+                fecha: new Date().toISOString(),
+                ...historialItem,
+            }];
+        }
+
         // Al registrar un dictamen distinto de Pendiente, el informe pasa a "En evaluación" o "Emitido"
         if (dictamen && dictamen !== "Pendiente") payload.estado = "Emitido";
 

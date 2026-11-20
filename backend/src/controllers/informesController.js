@@ -84,7 +84,7 @@ export const informesController = {
     async actualizarDictamen(req, res) {
         try {
             const { id } = req.params;
-            const { evaluador, fechaEvaluacion, dictamen, conclusiones } = req.body;
+            const { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem } = req.body;
 
             const dictamenesValidos = ["Pendiente", "Recomendable", "Con reservas", "No recomendable"];
             if (dictamen && !dictamenesValidos.includes(dictamen)) {
@@ -99,6 +99,9 @@ export const informesController = {
                 fechaEvaluacion,
                 dictamen,
                 conclusiones,
+                fortalezas,
+                debilidades,
+                historialItem,
             });
 
             if (!informe) {

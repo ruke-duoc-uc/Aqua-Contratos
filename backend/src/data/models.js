@@ -112,6 +112,9 @@ const solicitudInformeSchema = new mongoose.Schema(
         fechaEvaluacion: { type: String, default: null },
         dictamen: { type: String, default: "Pendiente" }, // "Pendiente" | "Recomendable" | "Con reservas" | "No recomendable"
         conclusiones: { type: String, default: null },
+        fortalezas: { type: [String], default: [] },
+        debilidades: { type: [String], default: [] },
+        historial: { type: Array, default: [] },
         // Metadatos del informe
         estado: { type: String, required: true, default: "Pendiente" }, // "Pendiente" | "En evaluación" | "Emitido" | "Cerrado"
         fechaCreacion: { type: String, required: true },

@@ -8,6 +8,8 @@
  */
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange";
+import SelectorTagsPsicolaborales from "./SelectorTagsPsicolaborales";
+import { TAGS_FORTALEZAS_SUGERIDOS, TAGS_DEBILIDADES_SUGERIDAS } from "../utils/constantes";
 
 export default function ModalDetalleInforme({
     isOpen,
@@ -18,11 +20,19 @@ export default function ModalDetalleInforme({
     onAgregarPregunta,
     onAgregarRespuesta,
     onCambiarEstado,
+    onActualizarInforme,
 }) {
     const [nuevaPreguntaTexto, setNuevaPreguntaTexto] = useState("");
     const [respuestasInputs, setRespuestasInputs] = useState({});
     const [enviando, setEnviando] = useState(false);
     const [mensajeExito, setMensajeExito] = useState("");
+
+    // Estados editables para el Profesional Evaluador
+    const [fortalezas, setFortalezas] = useState(() => informe?.fortalezas || []);
+    const [debilidades, setDebilidades] = useState(() => informe?.debilidades || []);
+    const [conclusionesEvaluador, setConclusionesEvaluador] = useState(() => informe?.conclusiones || "");
+    const [dictamenEvaluador, setDictamenEvaluador] = useState(() => informe?.dictamen || "Pendiente");
+    const [guardandoEvaluacion, setGuardandoEvaluacion] = useState(false);
 
     const candidato = useMemo(() => {
         if (!informe) return null;
@@ -41,9 +51,40 @@ export default function ModalDetalleInforme({
     const fueraDePlazo = fechaLimiteObj ? new Date() > fechaLimiteObj : false;
 
     const esJefe = rolActual === "jefatura";
+    const esEvaluador = rolActual === "evaluador";
     const puedeRepreguntar = esJefe && informe.estado === "Abierta";
     const esDestinatario = Array.isArray(informe.destinatarios) && informe.destinatarios.includes(rolActual);
     const puedeResponder = !esJefe && informe.estado === "Abierta" && esDestinatario;
+
+    const historial = useMemo(() => {
+        return Array.isArray(informe?.historial) ? informe.historial : [];
+    }, [informe]);
+
+    const handleGuardarEvaluacionCompleta = async () => {
+        setGuardandoEvaluacion(true);
+        try {
+            if (onActualizarInforme) {
+                await onActualizarInforme(informe.id, {
+                    evaluador: "Carolina Díaz (Evaluador)",
+                    fechaEvaluacion: new Date().toISOString().split("T")[0],
+                    dictamen: dictamenEvaluador,
+                    conclusiones: conclusionesEvaluador,
+                    fortalezas,
+                    debilidades,
+                    historialItem: {
+                        accion: "Actualización de evaluación técnica",
+                        autor: "Carolina Díaz",
+                        rol: "evaluador",
+                        detalle: `Dictamen: ${dictamenEvaluador}. Fortalezas: ${fortalezas.length}, Debilidades: ${debilidades.length}.`,
+                    },
+                });
+            }
+            setMensajeExito("Informe psicolaboral actualizado exitosamente.");
+            setTimeout(() => setMensajeExito(""), 3000);
+        } finally {
+            setGuardandoEvaluacion(false);
+        }
+    };
 
     const handleCambiarInputRespuesta = (preguntaId, valor) => {
         setRespuestasInputs({
@@ -217,24 +258,140 @@ export default function ModalDetalleInforme({
                                         </span>
                                     </div>
 
-                                    {/* Conclusiones y dictamen de la evaluación técnica */}
-                                    <div style={{ marginTop: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #b8daff" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                                            <strong style={{ fontSize: "12.5px", color: "#004085" }}>📋 Informe Psicolaboral Emitido:</strong>
-                                            <span style={{ fontSize: "11px", color: "#6c757d" }}>{informe.fechaEvaluacion || informe.fechaCreacion ? new Date(informe.fechaEvaluacion || informe.fechaCreacion).toLocaleDateString("es-CL") : ""}</span>
-                                        </div>
-                                        <div style={{ fontSize: "12px", color: "#333", marginTop: "4px" }}>
-                                            <strong>Evaluador:</strong> {informe.evaluador || candidato.evaluador || "Carolina Díaz"}
-                                        </div>
-                                        <div style={{ fontSize: "12px", color: "#333", marginTop: "2px" }}>
-                                            <strong>Dictamen:</strong>{" "}
-                                            <span style={{ fontWeight: "bold", color: (informe.dictamen || candidato.resultadoPsicologico)?.includes("Recomendable") ? "#0f5132" : "#856404" }}>
-                                                {informe.dictamen || candidato.resultadoPsicologico || "Pendiente"}
+                                    {/* SECCIÓN DEL INFORME PSICOLABORAL (Evaluador edita, otros roles leen) */}
+                                    <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #b8daff" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                            <strong style={{ fontSize: "13px", color: "#004085" }}>📋 Informe Psicolaboral Oficial</strong>
+                                            <span style={{ fontSize: "11px", color: "#6c757d" }}>
+                                                {informe.fechaEvaluacion || informe.fechaCreacion ? new Date(informe.fechaEvaluacion || informe.fechaCreacion).toLocaleDateString("es-CL") : ""}
                                             </span>
                                         </div>
-                                        {(informe.conclusiones || candidato.conclusiones) && (
-                                            <div style={{ marginTop: "6px", fontSize: "12px", color: "#495057", backgroundColor: "#f8f9fa", padding: "6px 8px", borderRadius: "4px" }}>
-                                                <strong>Conclusiones:</strong> {informe.conclusiones || candidato.conclusiones}
+
+                                        {esEvaluador ? (
+                                            /* Formulario exclusivo para el Evaluador */
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                                <div>
+                                                    <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "3px" }}>
+                                                        Dictamen Psicolaboral:
+                                                    </label>
+                                                    <select
+                                                        value={dictamenEvaluador}
+                                                        onChange={(e) => setDictamenEvaluador(e.target.value)}
+                                                        style={{ width: "100%", padding: "5px 8px", borderRadius: "4px", border: "1px solid #ced4da", fontSize: "12px" }}
+                                                    >
+                                                        <option value="Pendiente">Pendiente</option>
+                                                        <option value="Recomendable">Recomendable</option>
+                                                        <option value="Con reservas">Con reservas</option>
+                                                        <option value="No recomendable">No recomendable</option>
+                                                    </select>
+                                                </div>
+
+                                                <SelectorTagsPsicolaborales
+                                                    titulo="Fortalezas del Candidato"
+                                                    tipo="fortaleza"
+                                                    tagsActuales={fortalezas}
+                                                    sugerencias={TAGS_FORTALEZAS_SUGERIDOS}
+                                                    esEditable={true}
+                                                    onAgregarTag={(tag) => setFortalezas([...fortalezas, tag])}
+                                                    onRemoverTag={(tag) => setFortalezas(fortalezas.filter((t) => t !== tag))}
+                                                />
+
+                                                <SelectorTagsPsicolaborales
+                                                    titulo="Debilidades / Áreas de Mejora"
+                                                    tipo="debilidad"
+                                                    tagsActuales={debilidades}
+                                                    sugerencias={TAGS_DEBILIDADES_SUGERIDAS}
+                                                    esEditable={true}
+                                                    onAgregarTag={(tag) => setDebilidades([...debilidades, tag])}
+                                                    onRemoverTag={(tag) => setDebilidades(debilidades.filter((t) => t !== tag))}
+                                                />
+
+                                                <div>
+                                                    <label style={{ fontSize: "12px", fontWeight: "bold", display: "block", marginBottom: "3px" }}>
+                                                        Conclusiones de la Evaluación:
+                                                    </label>
+                                                    <textarea
+                                                        rows={3}
+                                                        value={conclusionesEvaluador}
+                                                        onChange={(e) => setConclusionesEvaluador(e.target.value)}
+                                                        placeholder="Detalle las conclusiones del informe psicolaboral..."
+                                                        style={{ width: "100%", padding: "6px 8px", borderRadius: "4px", border: "1px solid #ced4da", fontSize: "12px" }}
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleGuardarEvaluacionCompleta}
+                                                    disabled={guardandoEvaluacion}
+                                                    style={{
+                                                        backgroundColor: "#0d6efd",
+                                                        color: "#fff",
+                                                        border: "none",
+                                                        borderRadius: "4px",
+                                                        padding: "7px 12px",
+                                                        fontSize: "12px",
+                                                        cursor: "pointer",
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    {guardandoEvaluacion ? "Guardando..." : "💾 Guardar Informe Psicolaboral"}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            /* Modo lectura para Jefatura y Analista */
+                                            <div>
+                                                <div style={{ fontSize: "12px", color: "#333", marginBottom: "4px" }}>
+                                                    <strong>Evaluador:</strong> {informe.evaluador || candidato.evaluador || "Carolina Díaz"}
+                                                </div>
+                                                <div style={{ fontSize: "12px", color: "#333", marginBottom: "8px" }}>
+                                                    <strong>Dictamen:</strong>{" "}
+                                                    <span style={{ fontWeight: "bold", color: (informe.dictamen || candidato.resultadoPsicologico)?.includes("Recomendable") ? "#0f5132" : "#856404" }}>
+                                                        {informe.dictamen || candidato.resultadoPsicologico || "Pendiente"}
+                                                    </span>
+                                                </div>
+
+                                                <SelectorTagsPsicolaborales
+                                                    titulo="Fortalezas"
+                                                    tipo="fortaleza"
+                                                    tagsActuales={informe.fortalezas || fortalezas}
+                                                    esEditable={false}
+                                                />
+
+                                                <SelectorTagsPsicolaborales
+                                                    titulo="Debilidades"
+                                                    tipo="debilidad"
+                                                    tagsActuales={informe.debilidades || debilidades}
+                                                    esEditable={false}
+                                                />
+
+                                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#495057", backgroundColor: "#f8f9fa", padding: "6px 8px", borderRadius: "4px" }}>
+                                                    <strong>Conclusiones:</strong> {informe.conclusiones || conclusionesEvaluador || candidato.conclusiones || "Sin conclusiones redactadas aún."}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* HISTORIAL DEL INFORME (Timeline de trazabilidad) */}
+                                    <div style={{ marginTop: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
+                                        <strong style={{ fontSize: "12.5px", color: "#495057", display: "block", marginBottom: "6px" }}>
+                                            📜 Historial de Eventos ({historial.length})
+                                        </strong>
+                                        {historial.length === 0 ? (
+                                            <span style={{ fontSize: "11.5px", color: "#888", fontStyle: "italic" }}>
+                                                Sin registros en el historial.
+                                            </span>
+                                        ) : (
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "140px", overflowY: "auto" }}>
+                                                {historial.map((h, hIdx) => (
+                                                    <div key={hIdx} style={{ fontSize: "11.5px", padding: "4px 6px", backgroundColor: "#f8f9fa", borderRadius: "4px", borderLeft: "2px solid #0d6efd" }}>
+                                                        <div style={{ display: "flex", justifyContent: "space-between", color: "#666" }}>
+                                                            <strong>{h.accion || "Evento"}</strong>
+                                                            <span>{h.fecha ? new Date(h.fecha).toLocaleString("es-CL") : ""}</span>
+                                                        </div>
+                                                        <div style={{ color: "#333" }}>{h.detalle}</div>
+                                                        <div style={{ fontSize: "10px", color: "#888" }}>Por: {h.autor || h.rol}</div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>

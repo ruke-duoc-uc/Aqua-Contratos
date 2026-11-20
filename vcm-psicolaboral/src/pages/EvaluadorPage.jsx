@@ -109,6 +109,50 @@ function EvaluadorPage({ onVolver }) {
         };
     }, []);
 
+    const handleActualizarInformeEvaluador = async (id, datosActualizados) => {
+        try {
+            const actualizado = await api.actualizarDictamenInforme(id, datosActualizados);
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? { ...inf, ...actualizado } : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+            setInformeSeleccionado((prev) => (prev?.id === id ? { ...prev, ...actualizado } : prev));
+        } catch {
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => {
+                    if (inf.id === id) {
+                        const nuevoHistorial = [
+                            ...(inf.historial || []),
+                            ...(datosActualizados.historialItem ? [{ fecha: new Date().toISOString(), ...datosActualizados.historialItem }] : []),
+                        ];
+                        return {
+                            ...inf,
+                            ...datosActualizados,
+                            historial: nuevoHistorial,
+                        };
+                    }
+                    return inf;
+                });
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+            setInformeSeleccionado((prev) => {
+                if (prev?.id === id) {
+                    return {
+                        ...prev,
+                        ...datosActualizados,
+                        historial: [
+                            ...(prev.historial || []),
+                            ...(datosActualizados.historialItem ? [{ fecha: new Date().toISOString(), ...datosActualizados.historialItem }] : []),
+                        ],
+                    };
+                }
+                return prev;
+            });
+        }
+    };
+
     const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
         try {
             const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
@@ -349,6 +393,7 @@ function EvaluadorPage({ onVolver }) {
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
                 onAgregarRespuesta={handleAgregarRespuestaInforme}
+                onActualizarInforme={handleActualizarInformeEvaluador}
             />
         </main>
     );

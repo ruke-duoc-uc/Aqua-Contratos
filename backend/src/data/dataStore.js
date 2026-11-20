@@ -261,8 +261,8 @@ export const dataStore = {
         return db.insertarSolicitudInforme(datos);
     },
 
-    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones }) {
-        return db.actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones });
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }) {
+        return db.actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem });
     },
 
     async agregarPreguntaInforme(id, datosPregunta) {
