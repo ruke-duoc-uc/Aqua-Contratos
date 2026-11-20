@@ -12,6 +12,9 @@ const router = Router();
 // GET /api/informes-psicolaborales (soporta ?busqueda= &estado= &candidatoId= &puestoTrabajoId= &postulacionId=)
 router.get("/", informesController.listar);
 
+// POST /api/informes-psicolaborales (y /api/solicitudes-informe)
+router.post("/", informesController.crear);
+
 // GET /api/informes-psicolaborales/:id (devuelve informe completo: evaluación + preguntasJefatura)
 router.get("/:id", informesController.obtenerPorId);
 

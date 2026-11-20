@@ -449,6 +449,8 @@ function JefaturaPage({ onVolver }) {
             {tabActiva === "postulantesPorPuesto" && (
                 <PostulantesPorPuestoView
                     postulaciones={postulaciones}
+                    candidatos={candidatos}
+                    puestos={puestos}
                     onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}

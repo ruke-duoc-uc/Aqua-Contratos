@@ -4,41 +4,164 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../services/api";
-import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
+import {
+    cargarPuestosGlobales,
+    sincronizarPuestosConRemotos,
+    EVENTO_ACTUALIZACION_PUESTOS,
+} from "../services/puestosStorage";
+import { cargarCandidatosGlobales } from "../services/candidatosStorage";
 
-function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
-    const [puestos, setPuestos] = useState([]);
+function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos: puestosProp, onVerDetalle }) {
+    const [puestos, setPuestos] = useState(() =>
+        Array.isArray(puestosProp) && puestosProp.length > 0 ? puestosProp : cargarPuestosGlobales()
+    );
     const [puestoSeleccionado, setPuestoSeleccionado] = useState("");
-    const [cargando, setCargando] = useState(true);
+    const [cargando, setCargando] = useState(false);
 
-    // Cargar puestos al montar
+    // Sincronizar si el padre pasa puestos actualizados
+    useEffect(() => {
+        if (Array.isArray(puestosProp) && puestosProp.length > 0) {
+            setPuestos(puestosProp);
+        }
+    }, [puestosProp]);
+
+    // Cargar puestos desde el backend con respaldo en el storage global
     useEffect(() => {
         let activo = true;
         async function cargar() {
             setCargando(true);
             try {
                 const datos = await api.getPuestos();
-                if (activo && Array.isArray(datos)) setPuestos(datos);
+                if (activo && Array.isArray(datos) && datos.length > 0) {
+                    const fusionados = sincronizarPuestosConRemotos(datos);
+                    setPuestos(fusionados);
+                }
             } catch {
-                if (activo) setPuestos([]);
+                if (activo) {
+                    setPuestos(cargarPuestosGlobales());
+                }
             } finally {
                 if (activo) setCargando(false);
             }
         }
         cargar();
-        return () => { activo = false; };
+
+        const handleRecargarPuestos = () => {
+            if (activo) setPuestos(cargarPuestosGlobales());
+        };
+        window.addEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleRecargarPuestos);
+        return () => {
+            activo = false;
+            window.removeEventListener(EVENTO_ACTUALIZACION_PUESTOS, handleRecargarPuestos);
+        };
     }, []);
+
+    const listaCandidatos = useMemo(() => {
+        return Array.isArray(candidatos) && candidatos.length > 0
+            ? candidatos
+            : cargarCandidatosGlobales();
+    }, [candidatos]);
+
+    const puestoActual = useMemo(
+        () => puestos.find((p) => String(p.id) === String(puestoSeleccionado)) || null,
+        [puestos, puestoSeleccionado]
+    );
+
+    // Enriquecer cada postulación cruzándola con la ficha completa del candidato
+    const postulacionesEnriquecidas = useMemo(() => {
+        return (postulaciones || []).map((post) => {
+            const rutPost = (post.candidatoRut || post.rutCandidato || post.rut || "")
+                .replace(/[.-]/g, "")
+                .trim()
+                .toLowerCase();
+            const cand = listaCandidatos.find(
+                (c) =>
+                    (post.candidatoId && Number(c.id) === Number(post.candidatoId)) ||
+                    (rutPost && (c.rut || "").replace(/[.-]/g, "").trim().toLowerCase() === rutPost)
+            );
+
+            const nombre =
+                post.candidatoNombre ||
+                post.nombreCandidato ||
+                post.nombre ||
+                cand?.nombre ||
+                `${cand?.nombres || ""} ${cand?.apellidos || ""}`.trim() ||
+                "—";
+            const rut = post.candidatoRut || post.rutCandidato || post.rut || cand?.rut || "—";
+            const comuna =
+                post.comuna ||
+                cand?.comuna ||
+                post.puestoPlanta ||
+                post.planta ||
+                cand?.planta ||
+                "—";
+            const cv_pdf = post.cv_pdf || post.cvArchivo || cand?.cv_pdf || cand?.cvArchivo || null;
+            const cvDataUrl = post.cvDataUrl || cand?.cvDataUrl || "";
+            const evaluador =
+                post.evaluadorAsignado ||
+                post.encargado ||
+                post.evaluador ||
+                cand?.evaluador ||
+                "Sin asignar";
+            const puestoIdFinal = post.puestoTrabajoId || post.puestoId || null;
+
+            return {
+                ...cand,
+                ...post,
+                id: post.id,
+                postulacionId: post.id,
+                candidatoId: cand?.id || post.candidatoId || post.id,
+                puestoTrabajoId: puestoIdFinal,
+                puestoId: puestoIdFinal,
+                nombre,
+                candidatoNombre: nombre,
+                nombreCandidato: nombre,
+                nombres: post.nombres || cand?.nombres || "",
+                apellidos: post.apellidos || cand?.apellidos || "",
+                rut,
+                candidatoRut: rut,
+                rutCandidato: rut,
+                comuna,
+                direccion: post.direccion || cand?.direccion || "",
+                fecha_nacimiento: post.fecha_nacimiento || cand?.fecha_nacimiento || "",
+                antecedentes: post.antecedentes || cand?.antecedentes || "",
+                cv_pdf,
+                cvArchivo: cv_pdf,
+                cvDataUrl,
+                evaluadorAsignado: evaluador,
+                evaluador,
+                candidatoRef: cand || null,
+            };
+        });
+    }, [postulaciones, listaCandidatos]);
+
+    const coincideConPuesto = (post, puesto) => {
+        if (!puesto) return false;
+        const idPuestoPost = post.puestoTrabajoId ?? post.puestoId;
+        if (idPuestoPost !== undefined && idPuestoPost !== null && String(idPuestoPost) === String(puesto.id)) {
+            return true;
+        }
+        const tituloPost = (post.puestoTitulo || post.cargo || "").toLowerCase().trim();
+        const tituloPuesto = (puesto.titulo || puesto.nombre || "").toLowerCase().trim();
+        if (tituloPost && tituloPuesto && tituloPost === tituloPuesto) {
+            const plantaPost = (post.puestoPlanta || post.planta || "").toLowerCase().trim();
+            const plantaPuesto = (puesto.planta || "").toLowerCase().trim();
+            return !plantaPuesto || !plantaPost || plantaPost === plantaPuesto;
+        }
+        return false;
+    };
 
     // Filtrar postulaciones por puesto seleccionado
     const postulacionesFiltradas = useMemo(() => {
         if (!puestoSeleccionado) return [];
-        return postulaciones.filter(
-            (p) => String(p.puestoTrabajoId) === String(puestoSeleccionado)
+        if (puestoActual) {
+            return postulacionesEnriquecidas.filter((p) => coincideConPuesto(p, puestoActual));
+        }
+        return postulacionesEnriquecidas.filter(
+            (p) => String(p.puestoTrabajoId ?? p.puestoId) === String(puestoSeleccionado)
         );
-    }, [postulaciones, puestoSeleccionado]);
-
-    const puestoActual = puestos.find((p) => String(p.id) === String(puestoSeleccionado));
+    }, [postulacionesEnriquecidas, puestoSeleccionado, puestoActual]);
 
     return (
         <section
@@ -80,13 +203,19 @@ function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
                     <option value="">
                         {cargando ? "Cargando puestos..." : "— Seleccione un puesto —"}
                     </option>
-                    {puestos.map((p) => (
-                        <option key={p.id} value={p.id}>
-                            {p.titulo || p.nombre || `Puesto #${p.id}`}
-                            {p.planta ? ` · ${p.planta}` : ""}
-                            {p.estado ? ` (${p.estado})` : ""}
-                        </option>
-                    ))}
+                    {puestos.map((p) => {
+                        const cantidadInscritos = postulacionesEnriquecidas.filter((post) =>
+                            coincideConPuesto(post, p)
+                        ).length;
+                        return (
+                            <option key={p.id} value={p.id}>
+                                {p.titulo || p.nombre || `Puesto #${p.id}`}
+                                {p.planta ? ` · ${p.planta}` : ""}
+                                {p.estado ? ` (${p.estado})` : ""}
+                                {` — [${cantidadInscritos} postulante${cantidadInscritos !== 1 ? "s" : ""}]`}
+                            </option>
+                        );
+                    })}
                 </select>
 
                 {puestoSeleccionado && (
@@ -132,16 +261,39 @@ function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
                         </thead>
                         <tbody>
                             {postulacionesFiltradas.map((post) => {
-                                const nombre = post.nombreCandidato || post.nombre || "—";
-                                const rut = post.rutCandidato || post.rut || "—";
+                                const nombre = post.candidatoNombre || post.nombreCandidato || post.nombre || "—";
+                                const rut = post.candidatoRut || post.rutCandidato || post.rut || "—";
                                 const comuna = post.comuna || post.planta || "—";
                                 const fechaIns = post.fechaPostulacion || post.fecha || post.createdAt;
                                 const fechaMostrar = fechaIns
                                     ? new Date(fechaIns).toLocaleDateString("es-CL")
                                     : "—";
                                 const estado = post.estado || post.fase || "Inscrito";
-                                const evaluador = post.evaluadorAsignado || "Sin asignar";
+                                const evaluador = post.evaluadorAsignado || post.evaluador || "Sin asignar";
                                 const cvArchivo = post.cv_pdf || post.cvArchivo || null;
+
+                                const handleClickDetalle = () => {
+                                    const cand = post.candidatoRef || {};
+                                    onVerDetalle?.({
+                                        ...cand,
+                                        ...post,
+                                        id: post.candidatoId || cand.id || post.id,
+                                        candidatoId: post.candidatoId || cand.id || post.id,
+                                        postulacionId: post.id,
+                                        nombre,
+                                        rut,
+                                        comuna,
+                                        cargo: puestoActual?.titulo || post.puestoTitulo || post.cargo || cand.cargo,
+                                        familiaCargo:
+                                            puestoActual?.familiaCargo ||
+                                            post.puestoFamilia ||
+                                            post.familiaCargo ||
+                                            cand.familiaCargo,
+                                        planta: puestoActual?.planta || post.puestoPlanta || post.planta || cand.planta,
+                                        evaluador,
+                                        cv_pdf: cvArchivo,
+                                    });
+                                };
 
                                 return (
                                     <tr
@@ -160,13 +312,13 @@ function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
                                                     fontSize: "12px",
                                                     fontWeight: "bold",
                                                     backgroundColor:
-                                                        estado === "Inscrito" || estado === "pendiente"
+                                                        estado === "Inscrito" || estado === "Postulado" || estado === "pendiente" || estado === "Pendiente"
                                                             ? "#fff3cd"
-                                                            : estado === "Entrevista agendada" || estado === "en entrevista"
+                                                            : estado === "Entrevista agendada" || estado === "en entrevista" || estado === "En proceso"
                                                             ? "#cfe2ff"
-                                                            : estado === "Contratado"
+                                                            : estado === "Contratado" || estado === "Finalizado" || estado === "aceptado"
                                                             ? "#d1e7dd"
-                                                            : estado === "Rechazado"
+                                                            : estado === "Rechazado" || estado === "rechazado"
                                                             ? "#f8d7da"
                                                             : "#e2e3e5",
                                                     color: "#333",
@@ -180,7 +332,7 @@ function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
                                             {cvArchivo ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => abrirCvDocumento(cvArchivo)}
+                                                    onClick={() => abrirCvDocumento(post)}
                                                     style={{
                                                         background: "none",
                                                         border: "1px solid #0d6efd",
@@ -202,7 +354,7 @@ function PostulantesPorPuestoView({ postulaciones = [], onVerDetalle }) {
                                         <td style={{ padding: "12px 14px", textAlign: "center" }}>
                                             <button
                                                 type="button"
-                                                onClick={() => onVerDetalle?.(post)}
+                                                onClick={handleClickDetalle}
                                                 style={{
                                                     background: "#0d6efd",
                                                     border: "none",

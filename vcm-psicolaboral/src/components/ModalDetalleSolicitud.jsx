@@ -25,7 +25,7 @@ function ModalDetalleSolicitud({
     const informeAsociado = (informes || []).find((inf) => {
         const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitud?.candidatoId || solicitud?.id));
         const mismoNombre = inf.candidatoNombre && solicitud?.nombre && inf.candidatoNombre.toLowerCase() === solicitud.nombre.toLowerCase();
-        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud?.id));
+        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud?.postulacionId || solicitud?.id));
         return mismoCandidatoId || mismoNombre || mismaPostulacion;
     });
 
@@ -68,7 +68,7 @@ function ModalDetalleSolicitud({
     const informesRelacionados = (informes || []).filter((inf) => {
         const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitud.candidatoId || solicitud.id));
         const mismoNombre = inf.candidatoNombre && solicitud.nombre && inf.candidatoNombre.toLowerCase() === solicitud.nombre.toLowerCase();
-        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud.id));
+        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud.postulacionId || solicitud.id));
         return mismoCandidatoId || mismoNombre || mismaPostulacion;
     });
 

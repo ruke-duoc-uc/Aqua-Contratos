@@ -5,7 +5,15 @@
 import { dataStore } from "../data/dataStore.js";
 
 const ESTADOS_VALIDOS = ["Pendiente", "En revisión", "En proceso", "Finalizado", "Finalizada"];
-const RESULTADOS_VALIDOS = ["Pendiente", "Recomendado", "Recomendado con observaciones", "No recomendado"];
+const RESULTADOS_VALIDOS = [
+    "Pendiente",
+    "Recomendado",
+    "Recomendable",
+    "Recomendado con observaciones",
+    "Con reservas",
+    "No recomendado",
+    "No recomendable",
+];
 
 export const solicitudesController = {
     /**
@@ -190,7 +198,7 @@ export const solicitudesController = {
     async registrarEvaluacion(req, res) {
         try {
             const { id } = req.params;
-            const { resultadoPsicologico, fechaEvaluacion, conclusiones, estado } = req.body;
+            const { resultadoPsicologico, fechaEvaluacion, conclusiones, fortalezas, debilidades, historial, estado } = req.body;
 
             if (!resultadoPsicologico) {
                 return res.status(400).json({
@@ -214,6 +222,9 @@ export const solicitudesController = {
                 resultadoPsicologico: dictamenNormalizado,
                 fechaEvaluacion: fechaEvaluacion || new Date().toISOString().split("T")[0],
                 conclusiones: conclusiones || "",
+                fortalezas,
+                debilidades,
+                historial,
                 estado: estado || "Finalizado",
             });
 

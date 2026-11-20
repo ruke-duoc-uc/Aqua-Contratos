@@ -313,6 +313,7 @@ function AnalistaPage({ onVolver }) {
             {tabActiva === "postulantesPorPuesto" && (
                 <PostulantesPorPuestoView
                     postulaciones={postulaciones}
+                    candidatos={candidatos}
                     onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}

@@ -202,8 +202,9 @@ export default function BandejaInformesView({
             {/* Filas */}
             {informesFiltrados.length > 0 ? (
                 informesFiltrados.map((inf) => {
-                    const totalPreguntas = inf.preguntas?.length || 0;
-                    const totalRespuestas = inf.preguntas?.reduce(
+                    const listaPreguntas = inf.preguntasJefatura?.length ? inf.preguntasJefatura : (inf.preguntas || []);
+                    const totalPreguntas = listaPreguntas.length;
+                    const totalRespuestas = listaPreguntas.reduce(
                         (acc, p) => acc + (p.respuestas?.length || 0),
                         0
                     ) || 0;
@@ -211,7 +212,6 @@ export default function BandejaInformesView({
                     const fechaLimiteObj = inf.fechaLimite ? new Date(`${inf.fechaLimite}T23:59:59`) : null;
                     const fueraDePlazo = fechaLimiteObj ? new Date() > fechaLimiteObj : false;
                     const estaExpandida = filaExpandida === inf.id;
-                    const listaPreguntas = inf.preguntas || inf.preguntasJefatura || [];
 
                     return (
                         <div key={inf.id} style={{ borderBottom: "1px solid #eee" }}>

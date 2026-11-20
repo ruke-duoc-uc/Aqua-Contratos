@@ -14,13 +14,15 @@ export const informesController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, estado, candidatoId, puestoTrabajoId, postulacionId } = req.query;
+            const { busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo } = req.query;
             const informes = await dataStore.obtenerInformes({
                 busqueda,
                 estado,
                 candidatoId,
                 puestoTrabajoId,
                 postulacionId,
+                urgencia,
+                tipo,
             });
 
             return res.status(200).json({
@@ -32,6 +34,56 @@ export const informesController = {
             return res.status(500).json({
                 ok: false,
                 mensaje: "Error interno al listar los informes psicolaborales.",
+                error: error.message,
+            });
+        }
+    },
+
+    /**
+     * POST /api/informes-psicolaborales (y /api/solicitudes-informe)
+     * Permite registrar un nuevo informe psicolaboral o solicitud de preguntas de jefatura.
+     */
+    async crear(req, res) {
+        try {
+            const {
+                postulacionId,
+                candidatoId,
+                candidatoNombre,
+                puestoTrabajoId,
+                tipo,
+                solicitante,
+                urgencia,
+                fechaLimite,
+                destinatarios,
+                preguntas,
+                preguntasJefatura,
+                estado,
+            } = req.body;
+
+            const creado = await dataStore.crearInformePsicolaboral({
+                postulacionId,
+                candidatoId,
+                candidatoNombre,
+                puestoTrabajoId,
+                tipo,
+                solicitante,
+                urgencia,
+                fechaLimite,
+                destinatarios,
+                preguntas,
+                preguntasJefatura,
+                estado: estado || "Abierta",
+            });
+
+            return res.status(201).json({
+                ok: true,
+                mensaje: "Informe psicolaboral y consultas registrados exitosamente.",
+                datos: creado,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error interno al crear el informe psicolaboral.",
                 error: error.message,
             });
         }
@@ -86,7 +138,15 @@ export const informesController = {
             const { id } = req.params;
             const { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem } = req.body;
 
-            const dictamenesValidos = ["Pendiente", "Recomendable", "Con reservas", "No recomendable"];
+            const dictamenesValidos = [
+                "Pendiente",
+                "Recomendable",
+                "Recomendado",
+                "Con reservas",
+                "Recomendado con observaciones",
+                "No recomendable",
+                "No recomendado",
+            ];
             if (dictamen && !dictamenesValidos.includes(dictamen)) {
                 return res.status(400).json({
                     ok: false,
@@ -153,7 +213,7 @@ export const informesController = {
                 });
             }
 
-            if (informe.estado === "Cerrado") {
+            if (informe.estado === "Cerrado" || informe.estado === "Cerrada") {
                 return res.status(409).json({
                     ok: false,
                     mensaje: "No se pueden agregar preguntas a un informe cerrado.",
@@ -226,7 +286,7 @@ export const informesController = {
             const { id } = req.params;
             const { estado } = req.body;
 
-            const estadosValidos = ["Pendiente", "En evaluación", "Emitido", "Cerrado"];
+            const estadosValidos = ["Pendiente", "En evaluación", "Emitido", "Cerrado", "Abierta", "Cerrada"];
             if (!estado || !estadosValidos.includes(estado)) {
                 return res.status(400).json({
                     ok: false,
