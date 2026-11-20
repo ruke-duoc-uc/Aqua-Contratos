@@ -267,6 +267,32 @@ function EvaluadorPage({ onVolver }) {
     };
 
     const handleGuardarEvaluacion = async (id, evaluacionData) => {
+        // 1. Sincronizar en el informe psicolaboral (Fuente única de verdad)
+        const informeRelacionado = informes.find((inf) => {
+            const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitudSeleccionada?.candidatoId || id));
+            const mismoNombre = inf.candidatoNombre && solicitudSeleccionada?.nombre && inf.candidatoNombre.toLowerCase() === solicitudSeleccionada.nombre.toLowerCase();
+            const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(id));
+            return mismoCandidatoId || mismoNombre || mismaPostulacion;
+        });
+
+        if (informeRelacionado) {
+            handleActualizarInformeEvaluador(informeRelacionado.id, {
+                evaluador: "Carolina Díaz (Evaluador)",
+                fechaEvaluacion: evaluacionData.fechaEvaluacion,
+                dictamen: evaluacionData.resultadoPsicologico,
+                conclusiones: evaluacionData.conclusiones,
+                fortalezas: evaluacionData.fortalezas || [],
+                debilidades: evaluacionData.debilidades || [],
+                historialItem: {
+                    accion: "Evaluación formal registrada desde ficha de candidato",
+                    autor: "Carolina Díaz",
+                    rol: "evaluador",
+                    detalle: `Dictamen: ${evaluacionData.resultadoPsicologico}.`,
+                },
+            });
+        }
+
+        // 2. Mantener consistencia en el estado de candidatos
         setCandidatos((prev) => {
             const actualizados = prev.map((c) => (c.id === id ? { ...c, ...evaluacionData } : c));
             guardarCandidatosGlobales(actualizados);
@@ -279,7 +305,7 @@ function EvaluadorPage({ onVolver }) {
         try {
             await api.guardarEvaluacionSolicitud(id, evaluacionData);
             setBackendConectado(true);
-            setAlertaExito(`✓ Dictamen guardado en base de datos para ${solicitudSeleccionada?.nombre || "el postulante"}`);
+            setAlertaExito(`✓ Dictamen e informe sincronizados exitosamente para ${solicitudSeleccionada?.nombre || "el postulante"}`);
         } catch (err) {
             console.warn("Evaluación local:", err.message);
             setAlertaExito(`✓ Evaluación psicológica registrada con éxito para ${solicitudSeleccionada?.nombre || "el postulante"}`);

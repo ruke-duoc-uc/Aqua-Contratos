@@ -8,6 +8,8 @@ import { useState } from "react";
 import BotonOrange from "./BotonOrange";
 import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
+import SelectorTagsPsicolaborales from "./SelectorTagsPsicolaborales";
+import { TAGS_FORTALEZAS_SUGERIDOS, TAGS_DEBILIDADES_SUGERIDAS } from "../utils/constantes";
 
 const obtenerFechaHoy = () => new Date().toISOString().split("T")[0];
 
@@ -20,14 +22,30 @@ function ModalDetalleSolicitud({
     informes = [],
     rolActual,
 }) {
+    const informeAsociado = (informes || []).find((inf) => {
+        const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitud?.candidatoId || solicitud?.id));
+        const mismoNombre = inf.candidatoNombre && solicitud?.nombre && inf.candidatoNombre.toLowerCase() === solicitud.nombre.toLowerCase();
+        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud?.id));
+        return mismoCandidatoId || mismoNombre || mismaPostulacion;
+    });
+
     const [resultadoPsicologico, setResultadoPsicologico] = useState(
-        solicitud?.resultadoPsicologico || "Pendiente"
+        solicitud?.resultadoPsicologico || informeAsociado?.dictamen || "Pendiente"
     );
     const [fechaEvaluacion, setFechaEvaluacion] = useState(
-        solicitud?.fechaEvaluacion || obtenerFechaHoy()
+        solicitud?.fechaEvaluacion || informeAsociado?.fechaEvaluacion || obtenerFechaHoy()
     );
     const [conclusiones, setConclusiones] = useState(
-        solicitud?.conclusiones || ""
+        solicitud?.conclusiones || informeAsociado?.conclusiones || ""
+    );
+    const [fortalezas, setFortalezas] = useState(
+        solicitud?.fortalezas || informeAsociado?.fortalezas || []
+    );
+    const [debilidades, setDebilidades] = useState(
+        solicitud?.debilidades || informeAsociado?.debilidades || []
+    );
+    const [historial, setHistorial] = useState(
+        solicitud?.historial || informeAsociado?.historial || []
     );
     const [guardadoExitoso, setGuardadoExitoso] = useState(false);
     const [errorEvaluacion, setErrorEvaluacion] = useState("");
@@ -81,12 +99,24 @@ function ModalDetalleSolicitud({
         setErrorEvaluacion("");
 
         const nuevoEstado = "Finalizado";
+        const nuevoHistorialItem = {
+            fecha: new Date().toISOString(),
+            accion: "Evaluación Psicolaboral Registrada",
+            autor: rolActual === "evaluador" ? "Carolina Díaz" : "Profesional Evaluador",
+            rol: rolActual,
+            detalle: `Dictamen: ${resultadoPsicologico}. Fortalezas: ${fortalezas.length}, Debilidades: ${debilidades.length}.`,
+        };
+        const nuevoHistorial = [...historial, nuevoHistorialItem];
+        setHistorial(nuevoHistorial);
 
         if (typeof onGuardarEvaluacion === "function") {
             onGuardarEvaluacion(solicitud.id, {
                 resultadoPsicologico,
                 fechaEvaluacion,
                 conclusiones: conclusiones.trim(),
+                fortalezas,
+                debilidades,
+                historial: nuevoHistorial,
                 estado: nuevoEstado,
             });
         } else if (typeof onCambiarEstado === "function") {
@@ -362,9 +392,20 @@ function ModalDetalleSolicitud({
 
                     {/* 4. Sección de Evaluación Psicolaboral Formal */}
                     <div className="caja-evaluacion-psicolaboral">
-                        <h4 style={{ margin: "0 0 12px 0", color: "#0e97b3", fontSize: "15px" }}>
-                            🧠 Formulario de Evaluación Psicolaboral
-                        </h4>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                            <h4 style={{ margin: 0, color: "#0e97b3", fontSize: "15px" }}>
+                                🧠 Evaluación Psicolaboral
+                            </h4>
+                            <span style={{ fontSize: "12px", color: "#666" }}>
+                                Evaluador responsable: {solicitud.evaluador || "Carolina Díaz"}
+                            </span>
+                        </div>
+
+                        {guardadoExitoso && (
+                            <div style={{ backgroundColor: "#d1e7dd", color: "#0f5132", padding: "8px 12px", borderRadius: "5px", marginBottom: "12px", fontSize: "13px" }}>
+                                ✓ Evaluación psicológica registrada exitosamente.
+                            </div>
+                        )}
 
                         {puedeEvaluar ? (
                             <form onSubmit={handleGuardarEvaluacion}>
@@ -413,23 +454,46 @@ function ModalDetalleSolicitud({
                                             <option value="No recomendado">No recomendado</option>
                                         </select>
                                     </div>
+                                </div>
 
-                                    <div className="form-grupo form-col-span-2">
-                                        <label htmlFor="conclusiones-evaluacion">
-                                            Conclusiones y Observaciones Psicolaborales *
-                                        </label>
-                                        <textarea
-                                            id="conclusiones-evaluacion"
-                                            rows="3"
-                                            className="form-textarea"
-                                            placeholder="Detalle aptitudes, competencias evaluadas, adaptabilidad al clima de trabajo de planta o recomendaciones..."
-                                            value={conclusiones}
-                                            onChange={(e) => {
-                                                setConclusiones(e.target.value);
-                                                setErrorEvaluacion("");
-                                            }}
-                                        />
-                                    </div>
+                                {/* Tags de Fortalezas y Debilidades */}
+                                <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #ced4da" }}>
+                                    <SelectorTagsPsicolaborales
+                                        titulo="Fortalezas del Candidato"
+                                        tipo="fortaleza"
+                                        tagsActuales={fortalezas}
+                                        sugerencias={TAGS_FORTALEZAS_SUGERIDOS}
+                                        esEditable={true}
+                                        onAgregarTag={(tag) => setFortalezas([...fortalezas, tag])}
+                                        onRemoverTag={(tag) => setFortalezas(fortalezas.filter((t) => t !== tag))}
+                                    />
+
+                                    <SelectorTagsPsicolaborales
+                                        titulo="Debilidades / Áreas de Mejora"
+                                        tipo="debilidad"
+                                        tagsActuales={debilidades}
+                                        sugerencias={TAGS_DEBILIDADES_SUGERIDAS}
+                                        esEditable={true}
+                                        onAgregarTag={(tag) => setDebilidades([...debilidades, tag])}
+                                        onRemoverTag={(tag) => setDebilidades(debilidades.filter((t) => t !== tag))}
+                                    />
+                                </div>
+
+                                <div className="form-grupo" style={{ marginBottom: "12px" }}>
+                                    <label htmlFor="conclusiones-evaluacion">
+                                        Conclusiones y Observaciones Psicolaborales *
+                                    </label>
+                                    <textarea
+                                        id="conclusiones-evaluacion"
+                                        rows="3"
+                                        className="form-textarea"
+                                        placeholder="Detalle aptitudes, competencias evaluadas, adaptabilidad al clima de trabajo de planta o recomendaciones..."
+                                        value={conclusiones}
+                                        onChange={(e) => {
+                                            setConclusiones(e.target.value);
+                                            setErrorEvaluacion("");
+                                        }}
+                                    />
                                 </div>
 
                                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -443,21 +507,63 @@ function ModalDetalleSolicitud({
                             <div>
                                 <p style={{ margin: "4px 0", fontSize: "14px" }}>
                                     <strong>Dictamen:</strong>{" "}
-                                    {obtenerBadgeDictamen(solicitud.resultadoPsicologico)}
+                                    {obtenerBadgeDictamen(solicitud.resultadoPsicologico || resultadoPsicologico)}
                                 </p>
                                 <p style={{ margin: "6px 0", fontSize: "14px" }}>
                                     <strong>Fecha de Evaluación:</strong>{" "}
-                                    {solicitud.fechaEvaluacion || "Pendiente de agendamiento"}
+                                    {solicitud.fechaEvaluacion || fechaEvaluacion || "Pendiente de agendamiento"}
                                 </p>
+
+                                <div style={{ margin: "10px 0", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #ced4da" }}>
+                                    <SelectorTagsPsicolaborales
+                                        titulo="Fortalezas"
+                                        tipo="fortaleza"
+                                        tagsActuales={solicitud.fortalezas || fortalezas}
+                                        esEditable={false}
+                                    />
+
+                                    <SelectorTagsPsicolaborales
+                                        titulo="Debilidades"
+                                        tipo="debilidad"
+                                        tagsActuales={solicitud.debilidades || debilidades}
+                                        esEditable={false}
+                                    />
+                                </div>
+
                                 <p style={{ margin: "6px 0", fontSize: "14px" }}>
                                     <strong>Conclusiones:</strong>{" "}
-                                    {solicitud.conclusiones || "Sin informe cargado todavía."}
+                                    {solicitud.conclusiones || conclusiones || "Sin informe cargado todavía."}
                                 </p>
                                 <span style={{ fontSize: "12px", color: "gray", fontStyle: "italic" }}>
-                                    (Solo el Profesional Evaluador puede ingresar la fecha, observaciones y dictamen psicolaboral formal)
+                                    (Solo el Profesional Evaluador puede modificar las fortalezas, debilidades y dictamen psicolaboral formal)
                                 </span>
                             </div>
                         )}
+
+                        {/* Historial de eventos del candidato */}
+                        <div style={{ marginTop: "14px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #dee2e6" }}>
+                            <strong style={{ fontSize: "12.5px", color: "#495057", display: "block", marginBottom: "6px" }}>
+                                📜 Historial ({historial.length})
+                            </strong>
+                            {historial.length === 0 ? (
+                                <span style={{ fontSize: "11.5px", color: "#888", fontStyle: "italic" }}>
+                                    Sin eventos previos registrados.
+                                </span>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "120px", overflowY: "auto" }}>
+                                    {historial.map((h, hIdx) => (
+                                        <div key={hIdx} style={{ fontSize: "11.5px", padding: "4px 8px", backgroundColor: "#fff", borderRadius: "4px", borderLeft: "2px solid #0d6efd" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", color: "#666" }}>
+                                                <strong>{h.accion || "Registro"}</strong>
+                                                <span>{h.fecha ? new Date(h.fecha).toLocaleString("es-CL") : ""}</span>
+                                            </div>
+                                            <div style={{ color: "#333" }}>{h.detalle}</div>
+                                            <div style={{ fontSize: "10px", color: "#888" }}>Por: {h.autor || h.rol}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
