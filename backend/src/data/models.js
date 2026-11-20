@@ -97,21 +97,27 @@ const postulacionSchema = new mongoose.Schema(
     }
 );
 
-// 4. Esquema de Solicitudes de Informe (Jefatura)
+// 4. Esquema de Informes Psicolaborales
+// El informe se crea automáticamente al registrar una postulación (estado "Pendiente").
+// Contiene la evaluación técnica del profesional evaluador y las preguntas/repreguntas de jefatura.
 const solicitudInformeSchema = new mongoose.Schema(
     {
         id: { type: Number, required: true, unique: true, index: true },
-        candidatoId: { type: Number, default: null },
+        postulacionId: { type: Number, default: null, index: true }, // FK → postulaciones.id
+        candidatoId: { type: Number, default: null, index: true },
         candidatoNombre: { type: String, default: null },
         puestoTrabajoId: { type: Number, default: null },
-        tipo: { type: String, default: "candidato" },
-        solicitante: { type: String, required: true },
-        urgencia: { type: String, required: true },
-        fechaLimite: { type: String, default: null },
-        estado: { type: String, required: true, default: "Abierta" },
+        // Evaluación técnica (la completa el evaluador)
+        evaluador: { type: String, default: null },
+        fechaEvaluacion: { type: String, default: null },
+        dictamen: { type: String, default: "Pendiente" }, // "Pendiente" | "Recomendable" | "Con reservas" | "No recomendable"
+        conclusiones: { type: String, default: null },
+        // Metadatos del informe
+        estado: { type: String, required: true, default: "Pendiente" }, // "Pendiente" | "En evaluación" | "Emitido" | "Cerrado"
         fechaCreacion: { type: String, required: true },
         destinatarios: { type: [String], default: ["analista", "evaluador"] },
-        preguntas: { type: Array, default: [] },
+        // Preguntas de jefatura (embebidas, no existen fuera de este informe)
+        preguntasJefatura: { type: Array, default: [] },
     },
     {
         collection: "solicitudes_informe",

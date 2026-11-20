@@ -15,6 +15,11 @@ export default function BandejaInformesView({
     const [busqueda, setBusqueda] = useState("");
     const [filtroEstado, setFiltroEstado] = useState("todos");
     const [filtroUrgencia, setFiltroUrgencia] = useState("todas");
+    const [filaExpandida, setFilaExpandida] = useState(null);
+
+    const toggleExpandir = (id) => {
+        setFilaExpandida((prev) => (prev === id ? null : id));
+    };
 
     const esJefe = rolActual === "jefatura";
 
@@ -175,7 +180,7 @@ export default function BandejaInformesView({
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "60px 1.8fr 100px 110px 130px 100px 120px",
+                    gridTemplateColumns: "60px 1.8fr 100px 110px 140px 100px 140px",
                     alignItems: "center",
                     gap: "12px",
                     padding: "10px 16px",
@@ -205,91 +210,192 @@ export default function BandejaInformesView({
 
                     const fechaLimiteObj = inf.fechaLimite ? new Date(`${inf.fechaLimite}T23:59:59`) : null;
                     const fueraDePlazo = fechaLimiteObj ? new Date() > fechaLimiteObj : false;
+                    const estaExpandida = filaExpandida === inf.id;
+                    const listaPreguntas = inf.preguntas || inf.preguntasJefatura || [];
 
                     return (
-                        <div
-                            key={inf.id}
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "60px 1.8fr 100px 110px 130px 100px 120px",
-                                alignItems: "center",
-                                gap: "12px",
-                                padding: "12px 16px",
-                                borderBottom: "1px solid #eee",
-                                fontSize: "13px",
-                            }}
-                        >
-                            <span style={{ fontWeight: "bold", color: "#6c757d" }}>#{inf.id}</span>
+                        <div key={inf.id} style={{ borderBottom: "1px solid #eee" }}>
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "60px 1.8fr 100px 110px 140px 100px 140px",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                    padding: "12px 16px",
+                                    fontSize: "13px",
+                                    backgroundColor: estaExpandida ? "#f0f7ff" : "transparent",
+                                    transition: "background-color 0.2s",
+                                }}
+                            >
+                                <span style={{ fontWeight: "bold", color: "#6c757d" }}>#{inf.id}</span>
 
-                            <div>
-                                <strong style={{ color: "#212529", display: "block" }}>
-                                    {inf.candidatoNombre}
-                                </strong>
-                                <span style={{ fontSize: "11px", color: "#6c757d", display: "block" }}>
-                                    Solicitado por: {inf.solicitante}
-                                </span>
-                                {Array.isArray(inf.destinatarios) && inf.destinatarios.length > 0 && (
-                                    <span style={{ fontSize: "10px", color: "#0d6efd", fontWeight: "600", display: "block", marginTop: "2px" }}>
-                                        Dirigido a: {inf.destinatarios.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ")}
+                                <div>
+                                    <strong style={{ color: "#212529", display: "block" }}>
+                                        {inf.candidatoNombre || `Candidato #${inf.candidatoId || inf.id}`}
+                                    </strong>
+                                    <span style={{ fontSize: "11px", color: "#6c757d", display: "block" }}>
+                                        Solicitado por: {inf.solicitante || "Jefe de Área"}
                                     </span>
-                                )}
-                            </div>
+                                    {Array.isArray(inf.destinatarios) && inf.destinatarios.length > 0 && (
+                                        <span style={{ fontSize: "10px", color: "#0d6efd", fontWeight: "600", display: "block", marginTop: "2px" }}>
+                                            Dirigido a: {inf.destinatarios.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ")}
+                                        </span>
+                                    )}
+                                </div>
 
-                            <div>{obtenerBadgeUrgencia(inf.urgencia)}</div>
+                                <div>{obtenerBadgeUrgencia(inf.urgencia)}</div>
 
-                            <div>
-                                <span>{inf.fechaLimite || "—"}</span>
-                                {fueraDePlazo && (
+                                <div>
+                                    <span>{inf.fechaLimite || "—"}</span>
+                                    {fueraDePlazo && (
+                                        <span
+                                            style={{
+                                                display: "block",
+                                                fontSize: "10px",
+                                                color: "#dc3545",
+                                                fontWeight: "bold",
+                                            }}
+                                        >
+                                            [Fuera de plazo]
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleExpandir(inf.id)}
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            padding: 0,
+                                            cursor: "pointer",
+                                            fontSize: "12px",
+                                            color: "#0d6efd",
+                                            textAlign: "left",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                        }}
+                                        title="Ver preguntas en esta fila"
+                                    >
+                                        <span>{estaExpandida ? "▼" : "▶"}</span>
+                                        <span><strong>{totalPreguntas}</strong> preg. · <strong>{totalRespuestas}</strong> resp.</span>
+                                    </button>
+                                </div>
+
+                                <div>
                                     <span
                                         style={{
-                                            display: "block",
-                                            fontSize: "10px",
-                                            color: "#dc3545",
+                                            backgroundColor: inf.estado === "Abierta" ? "#d1e7dd" : "#e2e3e5",
+                                            color: inf.estado === "Abierta" ? "#0f5132" : "#495057",
+                                            padding: "3px 8px",
+                                            borderRadius: "4px",
+                                            fontSize: "11px",
                                             fontWeight: "bold",
                                         }}
                                     >
-                                        [Fuera de plazo]
+                                        {inf.estado}
                                     </span>
-                                )}
+                                </div>
+
+                                <div style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: "6px" }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleExpandir(inf.id)}
+                                        style={{
+                                            backgroundColor: estaExpandida ? "#e7f1ff" : "#f8f9fa",
+                                            border: "1px solid #ced4da",
+                                            borderRadius: "5px",
+                                            padding: "5px 8px",
+                                            fontSize: "12px",
+                                            cursor: "pointer",
+                                            color: "#333",
+                                        }}
+                                        title={estaExpandida ? "Ocultar preguntas" : "Desplegar preguntas"}
+                                    >
+                                        {estaExpandida ? "Ocultar" : "Preguntas"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => onVerDetalle(inf)}
+                                        style={{
+                                            backgroundColor: "#0d6efd",
+                                            border: "none",
+                                            borderRadius: "5px",
+                                            padding: "5px 10px",
+                                            fontSize: "12px",
+                                            cursor: "pointer",
+                                            fontWeight: "600",
+                                            color: "#fff",
+                                        }}
+                                    >
+                                        Detalle
+                                    </button>
+                                </div>
                             </div>
 
-                            <span style={{ fontSize: "12px", color: "#495057" }}>
-                                <strong>{totalPreguntas}</strong> preg. · <strong>{totalRespuestas}</strong> resp.
-                            </span>
-
-                            <div>
-                                <span
-                                    style={{
-                                        backgroundColor: inf.estado === "Abierta" ? "#d1e7dd" : "#e2e3e5",
-                                        color: inf.estado === "Abierta" ? "#0f5132" : "#495057",
-                                        padding: "3px 8px",
-                                        borderRadius: "4px",
-                                        fontSize: "11px",
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    {inf.estado}
-                                </span>
-                            </div>
-
-                            <div style={{ textAlign: "right" }}>
-                                <button
-                                    type="button"
-                                    onClick={() => onVerDetalle(inf)}
+                            {/* Desplegable de preguntas asociadas directamente en la bandeja */}
+                            {estaExpandida && (
+                                <div
                                     style={{
                                         backgroundColor: "#f8f9fa",
-                                        border: "1px solid #ced4da",
-                                        borderRadius: "5px",
-                                        padding: "5px 10px",
-                                        fontSize: "12px",
-                                        cursor: "pointer",
-                                        fontWeight: "600",
-                                        color: "#0d6efd",
+                                        padding: "12px 20px 16px 50px",
+                                        borderTop: "1px dashed #d0d7de",
                                     }}
                                 >
-                                    {esJefe ? "Ver / Repreguntar" : "Ver / Responder"}
-                                </button>
-                            </div>
+                                    <div style={{ fontWeight: "bold", fontSize: "13px", color: "#004085", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span>💬 Preguntas y Respuestas del Informe #{inf.id}:</span>
+                                    </div>
+
+                                    {listaPreguntas.length === 0 ? (
+                                        <p style={{ margin: 0, fontSize: "12.5px", color: "#6c757d", fontStyle: "italic" }}>
+                                            Este informe aún no tiene preguntas formuladas.
+                                        </p>
+                                    ) : (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            {listaPreguntas.map((preg, pIdx) => (
+                                                <div
+                                                    key={preg.id || pIdx}
+                                                    style={{
+                                                        backgroundColor: "#ffffff",
+                                                        border: "1px solid #e1e4e8",
+                                                        borderRadius: "6px",
+                                                        padding: "10px 12px",
+                                                        fontSize: "12.5px",
+                                                    }}
+                                                >
+                                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                                        <strong style={{ color: "#0d6efd" }}>
+                                                            Pregunta #{pIdx + 1}: {preg.texto}
+                                                        </strong>
+                                                        <span style={{ fontSize: "11px", color: "#888" }}>
+                                                            {preg.fecha ? new Date(preg.fecha).toLocaleDateString("es-CL") : ""}
+                                                        </span>
+                                                    </div>
+
+                                                    <div style={{ marginTop: "6px", marginLeft: "12px", borderLeft: "2px solid #0d6efd22", paddingLeft: "8px" }}>
+                                                        {(preg.respuestas || []).length > 0 ? (
+                                                            preg.respuestas.map((r, rIdx) => (
+                                                                <div key={r.id || rIdx} style={{ marginTop: "4px", color: "#333" }}>
+                                                                    <span style={{ fontWeight: "600", color: "#198754" }}>
+                                                                        ↳ {r.autor || r.rol || "Respuesta"}:
+                                                                    </span>{" "}
+                                                                    <span>{r.texto}</span>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span style={{ color: "#888", fontStyle: "italic", fontSize: "11.5px" }}>
+                                                                Sin respuestas aún.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     );
                 })

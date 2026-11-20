@@ -40,6 +40,7 @@ app.get("/api", (req, res) => {
             solicitudes: "/api/solicitudes",
             dashboard: "/api/dashboard",
             solicitudesInforme: "/api/solicitudes-informe",
+            informesPsicolaborales: "/api/informes-psicolaborales",
             etiquetas: "/api/etiquetas",
         },
     });
@@ -54,6 +55,7 @@ app.use("/api/candidatos", candidatosRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/solicitudes-informe", informesRoutes);
+app.use("/api/informes-psicolaborales", informesRoutes);
 app.use("/api/etiquetas", etiquetasRoutes);
 
 // Manejo de errores y 404

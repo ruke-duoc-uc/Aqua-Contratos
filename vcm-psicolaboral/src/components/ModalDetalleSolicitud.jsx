@@ -17,7 +17,7 @@ function ModalDetalleSolicitud({
     onCerrar,
     onCambiarEstado,
     onGuardarEvaluacion,
-
+    informes = [],
     rolActual,
 }) {
     const [resultadoPsicologico, setResultadoPsicologico] = useState(
@@ -45,6 +45,22 @@ function ModalDetalleSolicitud({
     const apellidosMostrar = solicitud.apellidos || (solicitud.nombre ? solicitud.nombre.split(" ").slice(-2).join(" ") : "—");
     const edad = solicitud.fecha_nacimiento ? calcularEdad(solicitud.fecha_nacimiento) : null;
     const cvArchivo = solicitud.cv_pdf || solicitud.cvArchivo || (solicitud.nombre ? `cv_${solicitud.nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf` : null);
+
+    // Obtener preguntas vinculadas al candidato o su postulación
+    const informesRelacionados = (informes || []).filter((inf) => {
+        const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitud.candidatoId || solicitud.id));
+        const mismoNombre = inf.candidatoNombre && solicitud.nombre && inf.candidatoNombre.toLowerCase() === solicitud.nombre.toLowerCase();
+        const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(solicitud.id));
+        return mismoCandidatoId || mismoNombre || mismaPostulacion;
+    });
+
+    const todasLasPreguntas = informesRelacionados.flatMap((inf) =>
+        (inf.preguntas || inf.preguntasJefatura || []).map((p) => ({
+            ...p,
+            informeId: inf.id,
+            solicitante: inf.solicitante || "Jefe de Área",
+        }))
+    );
 
     const handleGuardarEvaluacion = (e) => {
         e.preventDefault();
@@ -292,7 +308,59 @@ function ModalDetalleSolicitud({
                         )}
                     </div>
 
-                    {/* 3. Sección de Evaluación Psicolaboral Formal */}
+                    {/* 3. Preguntas de Jefatura sobre el Candidato */}
+                    <div style={{ margin: "16px 0", padding: "14px", backgroundColor: "#f8f9fa", borderRadius: "8px", border: "1px solid #ced4da" }}>
+                        <h4 style={{ margin: "0 0 10px 0", color: "#004085", fontSize: "15px" }}>
+                            💬 Preguntas de Jefatura ({todasLasPreguntas.length})
+                        </h4>
+                        {todasLasPreguntas.length === 0 ? (
+                            <p style={{ margin: 0, fontSize: "13px", color: "#6c757d", fontStyle: "italic" }}>
+                                No hay preguntas formuladas para este postulante.
+                            </p>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                {todasLasPreguntas.map((preg, pIdx) => (
+                                    <div
+                                        key={preg.id || pIdx}
+                                        style={{
+                                            backgroundColor: "#fff",
+                                            border: "1px solid #dee2e6",
+                                            borderRadius: "6px",
+                                            padding: "10px 12px",
+                                            fontSize: "13px",
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                            <strong style={{ color: "#0d6efd" }}>
+                                                #{pIdx + 1}: {preg.texto}
+                                            </strong>
+                                            <span style={{ fontSize: "11px", color: "#888" }}>
+                                                {preg.fecha ? new Date(preg.fecha).toLocaleDateString("es-CL") : ""}
+                                            </span>
+                                        </div>
+                                        <div style={{ marginLeft: "10px", marginTop: "6px", borderLeft: "2px solid #0d6efd33", paddingLeft: "8px" }}>
+                                            {(preg.respuestas || []).length > 0 ? (
+                                                preg.respuestas.map((r, rIdx) => (
+                                                    <div key={r.id || rIdx} style={{ fontSize: "12px", marginTop: "3px" }}>
+                                                        <span style={{ fontWeight: "600", color: "#198754" }}>
+                                                            ↳ {r.autor || r.rol}:
+                                                        </span>{" "}
+                                                        <span>{r.texto}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span style={{ fontSize: "11.5px", color: "#888", fontStyle: "italic" }}>
+                                                    Pendiente de respuesta.
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 4. Sección de Evaluación Psicolaboral Formal */}
                     <div className="caja-evaluacion-psicolaboral">
                         <h4 style={{ margin: "0 0 12px 0", color: "#0e97b3", fontSize: "15px" }}>
                             🧠 Formulario de Evaluación Psicolaboral

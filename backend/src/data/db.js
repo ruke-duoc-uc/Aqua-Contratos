@@ -800,8 +800,8 @@ export const db = {
             const coincideTexto =
                 !termino ||
                 inf.candidatoNombre?.toLowerCase().includes(termino) ||
-                inf.solicitante?.toLowerCase().includes(termino) ||
-                inf.preguntas?.some((p) => p.texto?.toLowerCase().includes(termino));
+                inf.evaluador?.toLowerCase().includes(termino) ||
+                inf.preguntasJefatura?.some((p) => p.texto?.toLowerCase().includes(termino));
 
             const coincideEstado =
                 !estado ||
@@ -816,17 +816,11 @@ export const db = {
                 !puestoTrabajoId ||
                 Number(inf.puestoTrabajoId) === Number(puestoTrabajoId);
 
-            const coincideTipo =
-                !tipo ||
-                tipo === "todos" ||
-                (inf.tipo && inf.tipo.toLowerCase() === tipo.toLowerCase());
+            const coincidePostulacion =
+                !postulacionId ||
+                Number(inf.postulacionId) === Number(postulacionId);
 
-            const coincideUrgencia =
-                !urgencia ||
-                urgencia === "todas" ||
-                inf.urgencia?.toLowerCase() === urgencia.toLowerCase();
-
-            return coincideTexto && coincideEstado && coincideCandidato && coincidePuesto && coincideTipo && coincideUrgencia;
+            return coincideTexto && coincideEstado && coincideCandidato && coincidePuesto && coincidePostulacion;
         });
     },
 
@@ -842,49 +836,29 @@ export const db = {
     async insertarSolicitudInforme(datos) {
         const candidato = datos.candidatoId ? await this.obtenerPorId(datos.candidatoId) : null;
         const candidatoNombre = datos.candidatoNombre || candidato?.nombre || null;
-        const solicitante = datos.solicitante?.trim() || "Jefe de Área";
-        const urgencia = datos.urgencia || "Media";
-        const fechaLimite = datos.fechaLimite || null;
-        const estado = datos.estado || "Abierta";
         const fechaCreacion = datos.fechaCreacion || new Date().toISOString();
         const puestoTrabajoId = datos.puestoTrabajoId ? Number(datos.puestoTrabajoId) : null;
-        const tipo = datos.tipo || (puestoTrabajoId && !datos.candidatoId ? "puesto" : "candidato");
         const destinatarios = Array.isArray(datos.destinatarios) ? datos.destinatarios : ["analista", "evaluador"];
-
-        const preguntas = (datos.preguntas || []).map((p, index) => {
-            if (typeof p === "string") {
-                return {
-                    id: index + 1,
-                    texto: p.trim(),
-                    fecha: fechaCreacion,
-                    creadaPor: solicitante,
-                    respuestas: [],
-                };
-            }
-            return {
-                id: p.id || index + 1,
-                texto: p.texto?.trim() || "",
-                fecha: p.fecha || fechaCreacion,
-                creadaPor: p.creadaPor || solicitante,
-                respuestas: Array.isArray(p.respuestas) ? p.respuestas : [],
-            };
-        });
 
         const nuevoId = await siguienteIdMongo(SolicitudInformeModel, memoryStoreInformes);
 
         const nuevoInforme = {
             id: nuevoId,
+            postulacionId: datos.postulacionId ? Number(datos.postulacionId) : null,
             candidatoId: datos.candidatoId ? Number(datos.candidatoId) : null,
             candidatoNombre,
             puestoTrabajoId,
-            tipo,
-            solicitante,
-            urgencia,
-            fechaLimite,
-            estado,
+            // Evaluación técnica (vacía al inicio, la llena el evaluador)
+            evaluador: datos.evaluador || null,
+            fechaEvaluacion: datos.fechaEvaluacion || null,
+            dictamen: datos.dictamen || "Pendiente",
+            conclusiones: datos.conclusiones || null,
+            // Metadatos
+            estado: datos.estado || "Pendiente",
             fechaCreacion,
             destinatarios,
-            preguntas,
+            // Preguntas de jefatura (embebidas)
+            preguntasJefatura: [],
         };
 
         if (this.isUsingMongo()) {
@@ -903,20 +877,23 @@ export const db = {
         const informe = await this.obtenerSolicitudInformePorId(numId);
         if (!informe) return null;
 
+        // Informe cerrado: rechazar (la validación también está en el controlador)
+        if (informe.estado === "Cerrado") return informe;
+
         const nuevaPregunta = {
             id: Date.now(),
             texto: texto.trim(),
             fecha: new Date().toISOString(),
-            creadaPor: creadaPor || informe.solicitante || "Jefe de Área",
+            creadaPor: creadaPor || "Jefe de Área",
             respuestas: [],
         };
 
-        const preguntasActualizadas = [...(informe.preguntas || []), nuevaPregunta];
+        const preguntasActualizadas = [...(informe.preguntasJefatura || []), nuevaPregunta];
 
         if (this.isUsingMongo()) {
             const doc = await SolicitudInformeModel.findOneAndUpdate(
                 { id: numId },
-                { $set: { preguntas: preguntasActualizadas } },
+                { $set: { preguntasJefatura: preguntasActualizadas } },
                 { new: true }
             );
             return doc ? doc.toJSON() : null;
@@ -924,7 +901,35 @@ export const db = {
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
-            memoryStoreInformes[idx].preguntas = preguntasActualizadas;
+            memoryStoreInformes[idx].preguntasJefatura = preguntasActualizadas;
+            persistJson("informes");
+            return memoryStoreInformes[idx];
+        }
+        return null;
+    },
+
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones }) {
+        const numId = Number(id);
+        const payload = {};
+        if (evaluador !== undefined) payload.evaluador = evaluador;
+        if (fechaEvaluacion !== undefined) payload.fechaEvaluacion = fechaEvaluacion;
+        if (dictamen !== undefined) payload.dictamen = dictamen;
+        if (conclusiones !== undefined) payload.conclusiones = conclusiones;
+        // Al registrar un dictamen distinto de Pendiente, el informe pasa a "En evaluación" o "Emitido"
+        if (dictamen && dictamen !== "Pendiente") payload.estado = "Emitido";
+
+        if (this.isUsingMongo()) {
+            const doc = await SolicitudInformeModel.findOneAndUpdate(
+                { id: numId },
+                { $set: payload },
+                { new: true }
+            );
+            return doc ? doc.toJSON() : null;
+        }
+
+        const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
+        if (idx !== -1) {
+            Object.assign(memoryStoreInformes[idx], payload);
             persistJson("informes");
             return memoryStoreInformes[idx];
         }
@@ -945,7 +950,7 @@ export const db = {
             fecha: new Date().toISOString(),
         };
 
-        const preguntasActualizadas = (informe.preguntas || []).map((p) => {
+        const preguntasActualizadas = (informe.preguntasJefatura || []).map((p) => {
             if (Number(p.id) === numPreguntaId) {
                 return {
                     ...p,
@@ -958,7 +963,7 @@ export const db = {
         if (this.isUsingMongo()) {
             const doc = await SolicitudInformeModel.findOneAndUpdate(
                 { id: numId },
-                { $set: { preguntas: preguntasActualizadas } },
+                { $set: { preguntasJefatura: preguntasActualizadas } },
                 { new: true }
             );
             return doc ? doc.toJSON() : null;
@@ -966,7 +971,7 @@ export const db = {
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
-            memoryStoreInformes[idx].preguntas = preguntasActualizadas;
+            memoryStoreInformes[idx].preguntasJefatura = preguntasActualizadas;
             persistJson("informes");
             return memoryStoreInformes[idx];
         }

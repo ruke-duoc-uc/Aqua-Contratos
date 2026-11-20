@@ -30,6 +30,11 @@ export default function ModalDetalleInforme({
         return candidatos.find((c) => Number(c.id) === Number(informe.candidatoId)) || null;
     }, [informe, candidatos]);
 
+    const listaPreguntas = useMemo(() => {
+        if (!informe) return [];
+        return informe.preguntas || informe.preguntasJefatura || [];
+    }, [informe]);
+
     if (!isOpen || !informe) return null;
 
     const fechaLimiteObj = informe.fechaLimite ? new Date(`${informe.fechaLimite}T23:59:59`) : null;
@@ -212,6 +217,28 @@ export default function ModalDetalleInforme({
                                         </span>
                                     </div>
 
+                                    {/* Conclusiones y dictamen de la evaluación técnica */}
+                                    <div style={{ marginTop: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #b8daff" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                            <strong style={{ fontSize: "12.5px", color: "#004085" }}>📋 Informe Psicolaboral Emitido:</strong>
+                                            <span style={{ fontSize: "11px", color: "#6c757d" }}>{informe.fechaEvaluacion || informe.fechaCreacion ? new Date(informe.fechaEvaluacion || informe.fechaCreacion).toLocaleDateString("es-CL") : ""}</span>
+                                        </div>
+                                        <div style={{ fontSize: "12px", color: "#333", marginTop: "4px" }}>
+                                            <strong>Evaluador:</strong> {informe.evaluador || candidato.evaluador || "Carolina Díaz"}
+                                        </div>
+                                        <div style={{ fontSize: "12px", color: "#333", marginTop: "2px" }}>
+                                            <strong>Dictamen:</strong>{" "}
+                                            <span style={{ fontWeight: "bold", color: (informe.dictamen || candidato.resultadoPsicologico)?.includes("Recomendable") ? "#0f5132" : "#856404" }}>
+                                                {informe.dictamen || candidato.resultadoPsicologico || "Pendiente"}
+                                            </span>
+                                        </div>
+                                        {(informe.conclusiones || candidato.conclusiones) && (
+                                            <div style={{ marginTop: "6px", fontSize: "12px", color: "#495057", backgroundColor: "#f8f9fa", padding: "6px 8px", borderRadius: "4px" }}>
+                                                <strong>Conclusiones:</strong> {informe.conclusiones || candidato.conclusiones}
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {candidato.antecedentes && (
                                         <div style={{ marginTop: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e9ecef" }}>
                                             <strong style={{ fontSize: "12px", color: "#495057", display: "block" }}>Antecedentes:</strong>
@@ -268,11 +295,11 @@ export default function ModalDetalleInforme({
 
                             {/* Listado de Preguntas y Respuestas */}
                             <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#333" }}>
-                                💬 Preguntas y Comentarios Consolidados ({informe.preguntas?.length || 0})
+                                💬 Preguntas y Comentarios Consolidados ({listaPreguntas.length})
                             </h4>
 
                             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                                {(informe.preguntas || []).map((pregunta, index) => (
+                                {listaPreguntas.map((pregunta, index) => (
                                     <div
                                         key={pregunta.id || index}
                                         style={{

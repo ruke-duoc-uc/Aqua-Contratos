@@ -3,7 +3,7 @@ import HeaderRoles from "../components/HeaderRoles";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
-import GestionCandidatosView from "../components/GestionCandidatosView";
+import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
@@ -297,6 +297,9 @@ function EvaluadorPage({ onVolver }) {
 
                     <PanelSolicitudes
                         anchoCompleto
+                        encabezado={
+                            <EncabezadoRegistro subtitulo="Dictámenes psicolaborales y actualización de estado" />
+                        }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
                         mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
@@ -312,23 +315,10 @@ function EvaluadorPage({ onVolver }) {
                 />
             )}
 
-            {tabActiva === "candidatos" && (
-                <GestionCandidatosView
-                    candidatos={candidatos}
-                    rolActual={rolActual}
-                    onVerDetalle={(cand) => setSolicitudSeleccionada(cand)}
-                />
-            )}
-
-            {tabActiva === "solicitudes" && (
-                <PanelSolicitudes
-                    encabezado={
-                        <EncabezadoRegistro subtitulo="Dictámenes psicolaborales y actualización de estado" />
-                    }
-                    filtros={propsFiltros}
-                    solicitudes={solicitudesFiltradas}
-                    mensajeVacio="🔍 No se encontraron solicitudes que coincidan con la búsqueda."
-                    onDetalle={setSolicitudSeleccionada}
+            {tabActiva === "postulantesPorPuesto" && (
+                <PostulantesPorPuestoView
+                    postulaciones={postulaciones}
+                    onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}
 
@@ -344,6 +334,7 @@ function EvaluadorPage({ onVolver }) {
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
+                informes={informes}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 onCambiarEstado={handleCambiarEstado}
                 onGuardarEvaluacion={handleGuardarEvaluacion}

@@ -243,17 +243,26 @@ export const dataStore = {
         return db.obtenerCatalogos();
     },
 
-    // ==================== SOLICITUDES DE INFORME ====================
-    async obtenerSolicitudesInforme(filtros) {
+    // ==================== INFORMES PSICOLABORALES ====================
+    async obtenerInformes(filtros) {
         return db.obtenerSolicitudesInforme(filtros);
     },
 
+    async obtenerInformePorId(id) {
+        return db.obtenerSolicitudInformePorId(id);
+    },
+
+    // Alias para compatibilidad interna (lo usa postulacionesController al crear)
     async obtenerSolicitudInformePorId(id) {
         return db.obtenerSolicitudInformePorId(id);
     },
 
-    async crearSolicitudInforme(datos) {
+    async crearInformePsicolaboral(datos) {
         return db.insertarSolicitudInforme(datos);
+    },
+
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones }) {
+        return db.actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones });
     },
 
     async agregarPreguntaInforme(id, datosPregunta) {
