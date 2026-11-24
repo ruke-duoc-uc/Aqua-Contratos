@@ -5,6 +5,7 @@
 import { NARANJA, NARANJA_CLARO, ESTILO_ETIQUETA, ESTILO_VALOR } from "./Estilos";
 import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
+import Icono from "./Icono";
 
 /* Convierte una fecha a texto. */
 const formatearFecha = (valor) => {
@@ -15,10 +16,10 @@ const formatearFecha = (valor) => {
 };
 
 const COLORES_FASE = {
-    "en entrevista": { fondo: "#e3f2fd", texto: "#0d47a1", borde: "#90caf9", icono: "🗓️" },
-    "aceptado": { fondo: "#e8f5e9", texto: "#1b5e20", borde: "#a5d6a7", icono: "✓" },
-    "rechazado": { fondo: "#ffebee", texto: "#b71c1c", borde: "#ef9a9a", icono: "✕" },
-    "esperando respuesta": { fondo: "#fff8e1", texto: "#f57f17", borde: "#ffe082", icono: "⏳" },
+    "en entrevista": { fondo: "#e3f2fd", texto: "#0d47a1", borde: "#90caf9", icono: "calendar" },
+    "aceptado": { fondo: "#e8f5e9", texto: "#1b5e20", borde: "#a5d6a7", icono: "check" },
+    "rechazado": { fondo: "#ffebee", texto: "#b71c1c", borde: "#ef9a9a", icono: "close" },
+    "esperando respuesta": { fondo: "#fff8e1", texto: "#f57f17", borde: "#ffe082", icono: "clock" },
 };
 
 function ComprobantePostulacion({ postulacion }) {
@@ -68,7 +69,7 @@ function ComprobantePostulacion({ postulacion }) {
                         textTransform: "capitalize",
                     }}
                 >
-                    <span>{estiloFase.icono}</span>
+                    <Icono nombre={estiloFase.icono} size={13} />
                     <span>{fase}</span>
                 </span>
             </div>
@@ -87,8 +88,9 @@ function ComprobantePostulacion({ postulacion }) {
                 {postulacion.entrevista && postulacion.entrevista !== "Por agendar" && (
                     <div>
                         <span style={{ ...ESTILO_ETIQUETA, color: "#0d47a1" }}>Entrevista</span>
-                        <p style={{ ...ESTILO_VALOR, color: "#0d47a1", fontWeight: "bold" }}>
-                            📅 {postulacion.entrevista}
+                        <p style={{ ...ESTILO_VALOR, color: "#0d47a1", fontWeight: "bold", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <Icono nombre="calendar" size={13} />
+                            {postulacion.entrevista}
                         </p>
                     </div>
                 )}
@@ -103,15 +105,19 @@ function ComprobantePostulacion({ postulacion }) {
                 )}
                 <div>
                     <span style={ESTILO_ETIQUETA}>CV Adjunto</span>
-                    <p style={{ ...ESTILO_VALOR, wordBreak: "break-word", margin: "2px 0 6px 0" }}>📄 {cv}</p>
+                    <p style={{ ...ESTILO_VALOR, wordBreak: "break-word", margin: "2px 0 6px 0", display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Icono nombre="fileText" size={13} />
+                        {cv}
+                    </p>
                     <button
                         type="button"
                         onClick={() => abrirCvDocumento(postulacion)}
-                        className="btn btn-sm btn-outline-primary"
+                        className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
                         style={{ fontSize: "11px", padding: "2px 8px" }}
                         title="Ver documento en nueva pestaña"
                     >
-                        ↗ Ver CV en nueva pestaña
+                        <Icono nombre="externalLink" size={11} />
+                        Ver CV en nueva pestaña
                     </button>
                 </div>
             </div>
@@ -127,9 +133,13 @@ function ComprobantePostulacion({ postulacion }) {
                         borderLeft: "4px solid #0dcaf0",
                         padding: "8px 12px",
                         borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
                     }}
                 >
-                    🗓️ <strong>¡Entrevista Agendada!</strong> Revisa la fecha indicada arriba. El evaluador asignado se contactará contigo.
+                    <Icono nombre="calendar" size={15} />
+                    <span><strong>¡Entrevista Agendada!</strong> Revisa la fecha indicada arriba. El evaluador asignado se contactará contigo.</span>
                 </p>
             ) : fase === "aceptado" ? (
                 <p
@@ -141,9 +151,13 @@ function ComprobantePostulacion({ postulacion }) {
                         borderLeft: "4px solid #198754",
                         padding: "8px 12px",
                         borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
                     }}
                 >
-                    🎉 <strong>¡Postulación Aprobada!</strong> Has sido seleccionado(a) en el proceso psicolaboral de AquaChile.
+                    <Icono nombre="award" size={15} />
+                    <span><strong>¡Postulación Aprobada!</strong> Has sido seleccionado(a) en el proceso psicolaboral de AquaChile.</span>
                 </p>
             ) : fase === "rechazado" ? (
                 <p

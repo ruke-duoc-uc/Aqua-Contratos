@@ -5,6 +5,7 @@
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
+import Icono from "./Icono";
 import { validarRutCompleto } from "../utils/calcularRut";
 import { COMUNAS } from "../utils/constantes";
 
@@ -16,17 +17,19 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
     const [nombres, setNombres] = useState(nombresIniciales);
     const [apellidos, setApellidos] = useState(apellidosIniciales);
     const [direccion, setDireccion] = useState(candidato?.direccion || "");
-    const [comuna, setComuna] = useState(candidato?.comuna || candidato?.planta || "Puerto Montt");
+    const [comuna, setComuna] = useState(candidato?.comuna || "");
     const [fechaNacimiento, setFechaNacimiento] = useState(candidato?.fecha_nacimiento || "");
     const [cvPdf, setCvPdf] = useState(candidato?.cv_pdf || candidato?.cvArchivo || "");
     const [especialidad, setEspecialidad] = useState(candidato?.especialidad || "");
     const [antecedentes, setAntecedentes] = useState(candidato?.antecedentes || "");
     const [error, setError] = useState("");
+    const [intentoGuardar, setIntentoGuardar] = useState(false);
 
     if (!isOpen || !candidato) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setIntentoGuardar(true);
 
         if (!rut.trim()) {
             setError("El RUT es obligatorio.");
@@ -80,7 +83,10 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                 style={{ maxWidth: "680px" }}
             >
                 <div className="modal-header">
-                    <h3>✏️ Modificar Información del Postulante</h3>
+                    <h3 style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                        <Icono nombre="edit" size={18} color="#e8590c" />
+                        Modificar Información del Postulante
+                    </h3>
                     <button
                         type="button"
                         className="modal-cerrar-btn"
@@ -91,11 +97,12 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                     <div className="modal-body">
                         {error && (
-                            <div className="form-error-mensaje" role="alert">
-                                <strong>⚠️ Atención: </strong>{error}
+                            <div className="form-error-mensaje" role="alert" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Icono nombre="alert" size={16} />
+                                <span><strong>Atención: </strong>{error}</span>
                             </div>
                         )}
 
@@ -110,21 +117,15 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                                     onChange={(e) => {
                                         setRut(e.target.value);
                                         setError("");
+                                        setIntentoGuardar(false);
                                     }}
                                     placeholder="11.111.111-1"
-                                    required
                                 />
-                                {mostrarEstadoRut && (
+                                {intentoGuardar && mostrarEstadoRut && !rutValido && (
                                     <div style={{ marginTop: "4px" }}>
-                                        {rutValido ? (
-                                            <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>
-                                                ✓ RUT válido
-                                            </span>
-                                        ) : (
-                                            <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
-                                                ✕ Dígito verificador inválido
-                                            </span>
-                                        )}
+                                        <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
+                                            ✕ Dígito verificador inválido
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -186,6 +187,7 @@ function ModalEditarCandidato({ candidato, isOpen, onCerrar, onGuardar }) {
                                     value={comuna}
                                     onChange={(e) => setComuna(e.target.value)}
                                 >
+                                    <option value="">Seleccionar Comuna</option>
                                     {COMUNAS.map((c) => (
                                         <option key={c} value={c}>
                                             {c}

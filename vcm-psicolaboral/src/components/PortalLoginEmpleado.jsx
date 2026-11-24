@@ -13,7 +13,9 @@
  */
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
-import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
+import Icono from "./Icono";
+import LogoAquaChile from "./LogoAquaChile";
+import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO, AZUL_MARINO_AQUA } from "./Estilos";
 import { iniciarSesionEmpleado } from "../services/empleadosStorage";
 
 /**
@@ -23,7 +25,8 @@ import { iniciarSesionEmpleado } from "../services/empleadosStorage";
 const CUENTAS_DEMO_EMPLEADOS = [
     { email: "analista@aquachile.cl", etiqueta: "Analista de Reclutamiento" },
     { email: "evaluador@aquachile.cl", etiqueta: "Profesional Evaluador" },
-    { email: "jefe@aquachile.cl", etiqueta: "Jefe de Área" },
+    { email: "jefe@aquachile.cl", etiqueta: "Jefe Área Sistemas y TI" },
+    { email: "jefe.mantenimiento@aquachile.cl", etiqueta: "Jefe Área Mantenimiento" },
 ];
 
 function PortalLoginEmpleado({ onAutenticado, onVolver }) {
@@ -69,8 +72,8 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
     return (
         <main
             style={{
-                backgroundColor: "#F0F8FF",
-                fontFamily: "Arial, Helvetica, sans-serif",
+                backgroundColor: "#f3f6f9",
+                fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif",
                 padding: "24px 16px",
                 minHeight: "100vh",
                 display: "flex",
@@ -85,8 +88,9 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                     maxWidth: "720px",
                     backgroundColor: "white",
                     borderRadius: "10px",
-                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
-                    padding: "16px 20px",
+                    borderTop: `4px solid ${AZUL_MARINO_AQUA}`,
+                    boxShadow: "0 3px 10px rgba(34, 59, 76, 0.06)",
+                    padding: "14px 20px",
                     marginBottom: "24px",
                     display: "flex",
                     justifyContent: "space-between",
@@ -95,11 +99,14 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                     flexWrap: "wrap",
                 }}
             >
-                <div>
-                    <h1 style={{ margin: 0, fontSize: "1.2rem" }}>AquaChile · Aqua-Contratos</h1>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                        Portal de Empleados · Acceso de Funcionarios
-                    </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <LogoAquaChile height={42} />
+                    <div style={{ borderLeft: "2px solid #dbe3eb", paddingLeft: "12px" }}>
+                        <h1 style={{ margin: 0, fontSize: "1.1rem", color: "#223b4c" }}>AquaChile · Aqua-Contratos</h1>
+                        <span style={{ fontSize: "12px", color: "#5c7485" }}>
+                            Portal de Empleados · Acceso de Funcionarios
+                        </span>
+                    </div>
                 </div>
 
                 {onVolver && (
@@ -121,8 +128,8 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                     maxWidth: "720px",
                     backgroundColor: "white",
                     borderRadius: "12px",
-                    borderTop: `6px solid ${NARANJA}`,
-                    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.08)",
+                    borderTop: `6px solid ${AZUL_MARINO_AQUA}`,
+                    boxShadow: "0 4px 14px rgba(34, 59, 76, 0.08)",
                     overflow: "hidden",
                 }}
             >
@@ -143,14 +150,14 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                         <div
                             className="form-error-mensaje"
                             role="alert"
-                            style={{ marginBottom: "18px" }}
+                            style={{ marginBottom: "18px", display: "flex", alignItems: "center", gap: "8px" }}
                         >
-                            <strong>⚠️ Atención: </strong>
-                            {error}
+                            <Icono nombre="alert" size={16} />
+                            <span><strong>Atención: </strong>{error}</span>
                         </div>
                     )}
 
-                    <form onSubmit={handleLoginSubmit}>
+                    <form onSubmit={handleLoginSubmit} noValidate>
                         <div className="form-grid" style={{ marginBottom: "18px" }}>
                             {/* Correo corporativo */}
                             <div className="form-grupo form-col-span-2">
@@ -225,9 +232,13 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                                 fontWeight: "bold",
                                 color: NARANJA_OSCURO,
                                 marginBottom: "8px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
                             }}
                         >
-                            ⚡ Cuentas de Empleados de demostración (Clic para autocompletar · Contraseña: password123):
+                            <Icono nombre="zap" size={15} />
+                            Cuentas de Empleados de demostración (Clic para autocompletar · Contraseña: password123):
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                             {CUENTAS_DEMO_EMPLEADOS.map((cuenta) => (
@@ -244,9 +255,13 @@ function PortalLoginEmpleado({ onAutenticado, onVolver }) {
                                         color: "#333",
                                         cursor: "pointer",
                                         fontWeight: "600",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
                                     }}
                                 >
-                                    👤 {cuenta.etiqueta} ({cuenta.email})
+                                    <Icono nombre="user" size={13} color={NARANJA_OSCURO} />
+                                    {cuenta.etiqueta} ({cuenta.email})
                                 </button>
                             ))}
                         </div>

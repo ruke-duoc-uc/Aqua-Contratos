@@ -3,16 +3,16 @@
 }
 :root{
   --fondo-cuadros: white;
-  --fondo-pagina: whitesmoke;
-  --font-negro: black;
-  --borde-boton: #000;
-  --borde-boton-hover: #0e97b3;
-  --font-boton-hover: #1699b3;
-  --transicion-rapida: 0.3s;
-  --radio-cuadros: 8px;
-  --fondo-modal-overlay: rgba(0, 0, 0, 0.55);
-  --borde-campo-input: #cccccc;
-  --borde-campo-focus: #0e97b3;
+  --fondo-pagina: #f3f6f9;
+  --font-negro: #1e3240;
+  --borde-boton: #223b4c;
+  --borde-boton-hover: #0e6b8a;
+  --font-boton-hover: #0e6b8a;
+  --transicion-rapida: 0.25s;
+  --radio-cuadros: 10px;
+  --fondo-modal-overlay: rgba(22, 41, 54, 0.6);
+  --borde-campo-input: #cbd5e1;
+  --borde-campo-focus: #223b4c;
   --fondo-badge-verde: #d1e7dd;
   --color-badge-verde: #0f5132;
   --fondo-badge-amarillo: #fff3cd;
@@ -22,7 +22,7 @@
 }
 body{
   margin: 0;
-  font-family: 'Source Code Pro', Arial, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--fondo-pagina);
   color:var(--font-negro);
 }
@@ -106,10 +106,12 @@ h1{
   justify-content: space-between;
   align-items: center;
   background-color: var(--fondo-cuadros);
-  padding: 12px 24px;
+  padding: 14px 24px;
   border-radius: var(--radio-cuadros);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
+  border-top: 4px solid #223b4c;
+  border-bottom: 1px solid #dbe3eb;
+  box-shadow: 0 3px 10px rgba(34, 59, 76, 0.06);
+  margin-bottom: 20px;
 }
 
 .selector-rol-container {
@@ -156,24 +158,25 @@ h1{
 
 .nav-tab-boton {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
   border-radius: 6px;
-  color: #495057;
+  color: #475569;
   transition: all var(--transicion-rapida);
 }
 
 .nav-tab-boton:hover {
-  background-color: #f1f3f5;
-  color: #000;
+  background-color: #e2e8f0;
+  color: #1e3240;
 }
 
 .nav-tab-boton.activo {
-  background-color: #0e97b3;
+  background-color: #223b4c;
   color: white;
+  box-shadow: 0 2px 6px rgba(34, 59, 76, 0.2);
 }
 
 /* Modal y Formulario para Nueva Solicitud */

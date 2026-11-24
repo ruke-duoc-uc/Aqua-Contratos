@@ -5,7 +5,9 @@
  */
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
-import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO } from "./Estilos";
+import Icono from "./Icono";
+import LogoAquaChile from "./LogoAquaChile";
+import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO, AZUL_MARINO_AQUA } from "./Estilos";
 import { calcularRut } from "../utils/calcularRut";
 import {
     iniciarSesionPostulante,
@@ -33,10 +35,12 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
         password: "",
         confirmarPassword: "",
     });
+    const [intentoRegistro, setIntentoRegistro] = useState(false);
 
     const cambiarModo = (nuevoModo) => {
         setModo(nuevoModo);
         setError("");
+        setIntentoRegistro(false);
     };
 
     const handleSeleccionarDemo = (candidatoDemo) => {
@@ -72,6 +76,7 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
     const handleRegistroSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        setIntentoRegistro(true);
 
         if (!calcularRut(registro.rutCuerpo, registro.rutDv)) {
             setError("El RUT ingresado no es válido según el algoritmo Módulo 11. Revisa el cuerpo y el dígito verificador.");
@@ -119,8 +124,8 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
     return (
         <main
             style={{
-                backgroundColor: "#F0F8FF",
-                fontFamily: "Arial, Helvetica, sans-serif",
+                backgroundColor: "#f3f6f9",
+                fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif",
                 padding: "24px 16px",
                 minHeight: "100vh",
                 display: "flex",
@@ -135,8 +140,9 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                     maxWidth: "720px",
                     backgroundColor: "white",
                     borderRadius: "10px",
-                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
-                    padding: "16px 20px",
+                    borderTop: `4px solid ${AZUL_MARINO_AQUA}`,
+                    boxShadow: "0 3px 10px rgba(34, 59, 76, 0.06)",
+                    padding: "14px 20px",
                     marginBottom: "24px",
                     display: "flex",
                     justifyContent: "space-between",
@@ -145,11 +151,14 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                     flexWrap: "wrap",
                 }}
             >
-                <div>
-                    <h1 style={{ margin: 0, fontSize: "1.2rem" }}>AquaChile · Aqua-Contratos</h1>
-                    <span style={{ fontSize: "12px", color: "#666" }}>
-                        Portal de Postulantes · Acceso y Registro de Cuenta
-                    </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <LogoAquaChile height={42} />
+                    <div style={{ borderLeft: "2px solid #dbe3eb", paddingLeft: "12px" }}>
+                        <h1 style={{ margin: 0, fontSize: "1.1rem", color: "#223b4c" }}>AquaChile · Aqua-Contratos</h1>
+                        <span style={{ fontSize: "12px", color: "#5c7485" }}>
+                            Portal de Postulantes · Acceso y Registro de Cuenta
+                        </span>
+                    </div>
                 </div>
 
                 {onVolver && (
@@ -171,8 +180,8 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                     maxWidth: "720px",
                     backgroundColor: "white",
                     borderRadius: "12px",
-                    borderTop: `6px solid ${NARANJA}`,
-                    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.08)",
+                    borderTop: `6px solid ${AZUL_MARINO_AQUA}`,
+                    boxShadow: "0 4px 14px rgba(34, 59, 76, 0.08)",
                     overflow: "hidden",
                 }}
             >
@@ -197,9 +206,14 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                             fontSize: "15px",
                             borderBottom: modo === "login" ? `3px solid ${NARANJA}` : "3px solid transparent",
                             cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
                         }}
                     >
-                        🔑 Iniciar Sesión Postulante
+                        <Icono nombre="key" size={16} />
+                        Iniciar Sesión Postulante
                     </button>
                     <button
                         type="button"
@@ -213,9 +227,14 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                             fontSize: "15px",
                             borderBottom: modo === "registro" ? `3px solid ${NARANJA}` : "3px solid transparent",
                             cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
                         }}
                     >
-                        📝 Crear Usuario Postulante
+                        <Icono nombre="fileText" size={16} />
+                        Crear Usuario Postulante
                     </button>
                 </div>
 
@@ -224,10 +243,10 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                         <div
                             className="form-error-mensaje"
                             role="alert"
-                            style={{ marginBottom: "18px" }}
+                            style={{ marginBottom: "18px", display: "flex", alignItems: "center", gap: "8px" }}
                         >
-                            <strong>⚠️ Atención: </strong>
-                            {error}
+                            <Icono nombre="alert" size={16} />
+                            <span><strong>Atención: </strong>{error}</span>
                         </div>
                     )}
 
@@ -243,7 +262,7 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                 </p>
                             </div>
 
-                            <form onSubmit={handleLoginSubmit}>
+                            <form onSubmit={handleLoginSubmit} noValidate>
                                 <div className="form-grid" style={{ marginBottom: "18px" }}>
                                     <div className="form-grupo form-col-span-2">
                                         <label htmlFor="login-identificador">
@@ -317,8 +336,9 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                     borderRadius: "8px",
                                 }}
                             >
-                                <div style={{ fontSize: "12.5px", fontWeight: "bold", color: NARANJA_OSCURO, marginBottom: "8px" }}>
-                                    ⚡ Cuentas de Postulantes registradas (Clic para autocompletar · Contraseña: password123):
+                                <div style={{ fontSize: "12.5px", fontWeight: "bold", color: NARANJA_OSCURO, marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <Icono nombre="zap" size={15} />
+                                    Cuentas de Postulantes registradas (Clic para autocompletar · Contraseña: password123):
                                 </div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                                     {CANDIDATOS_BASE.slice(0, 4).map((cand) => (
@@ -335,9 +355,13 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                                 color: "#333",
                                                 cursor: "pointer",
                                                 fontWeight: "600",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "6px",
                                             }}
                                         >
-                                            👤 {cand.nombres} {cand.apellidos} ({cand.rut})
+                                            <Icono nombre="user" size={13} color={NARANJA_OSCURO} />
+                                            {cand.nombres} {cand.apellidos} ({cand.rut})
                                         </button>
                                     ))}
                                 </div>
@@ -355,7 +379,7 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                 </p>
                             </div>
 
-                            <form onSubmit={handleRegistroSubmit}>
+                            <form onSubmit={handleRegistroSubmit} noValidate>
                                 <div
                                     style={{
                                         display: "grid",
@@ -382,8 +406,8 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                                         rutCuerpo: e.target.value.replace(/\D/g, "").slice(0, 8),
                                                     }));
                                                     setError("");
+                                                    setIntentoRegistro(false);
                                                 }}
-                                                required
                                             />
                                             <span>-</span>
                                             <input
@@ -404,21 +428,15 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                                             .slice(0, 1),
                                                     }));
                                                     setError("");
+                                                    setIntentoRegistro(false);
                                                 }}
-                                                required
                                             />
                                         </div>
-                                        {rutCompleto && (
+                                        {intentoRegistro && rutCompleto && !rutValido && (
                                             <div style={{ marginTop: "4px" }}>
-                                                {rutValido ? (
-                                                    <span style={{ color: "#198754", fontSize: "12px", fontWeight: "bold" }}>
-                                                        ✓ RUT válido (Módulo 11)
-                                                    </span>
-                                                ) : (
-                                                    <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
-                                                        ✕ Dígito verificador incorrecto
-                                                    </span>
-                                                )}
+                                                <span style={{ color: "#dc3545", fontSize: "12px", fontWeight: "bold" }}>
+                                                    ✕ Dígito verificador incorrecto
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -432,10 +450,10 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             className="form-input"
                                             placeholder="Ej. rafael.munoz@gmail.com"
                                             value={registro.email}
-                                            onChange={(e) =>
-                                                setRegistro((prev) => ({ ...prev, email: e.target.value }))
-                                            }
-                                            required
+                                            onChange={(e) => {
+                                                setRegistro((prev) => ({ ...prev, email: e.target.value }));
+                                                setError("");
+                                            }}
                                         />
                                     </div>
 
@@ -448,10 +466,10 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             className="form-input"
                                             placeholder="Ej. Rafael Andrés"
                                             value={registro.nombres}
-                                            onChange={(e) =>
-                                                setRegistro((prev) => ({ ...prev, nombres: e.target.value }))
-                                            }
-                                            required
+                                            onChange={(e) => {
+                                                setRegistro((prev) => ({ ...prev, nombres: e.target.value }));
+                                                setError("");
+                                            }}
                                         />
                                     </div>
 
@@ -464,10 +482,10 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             className="form-input"
                                             placeholder="Ej. Muñoz Soto"
                                             value={registro.apellidos}
-                                            onChange={(e) =>
-                                                setRegistro((prev) => ({ ...prev, apellidos: e.target.value }))
-                                            }
-                                            required
+                                            onChange={(e) => {
+                                                setRegistro((prev) => ({ ...prev, apellidos: e.target.value }));
+                                                setError("");
+                                            }}
                                         />
                                     </div>
 
@@ -480,10 +498,10 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             className="form-input"
                                             placeholder="Crea una contraseña segura"
                                             value={registro.password}
-                                            onChange={(e) =>
-                                                setRegistro((prev) => ({ ...prev, password: e.target.value }))
-                                            }
-                                            required
+                                            onChange={(e) => {
+                                                setRegistro((prev) => ({ ...prev, password: e.target.value }));
+                                                setError("");
+                                            }}
                                         />
                                     </div>
 
@@ -496,13 +514,13 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             className="form-input"
                                             placeholder="Repite tu contraseña"
                                             value={registro.confirmarPassword}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
                                                 setRegistro((prev) => ({
                                                     ...prev,
                                                     confirmarPassword: e.target.value,
-                                                }))
-                                            }
-                                            required
+                                                }));
+                                                setError("");
+                                            }}
                                         />
                                     </div>
                                 </div>

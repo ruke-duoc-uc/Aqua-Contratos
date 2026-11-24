@@ -182,7 +182,14 @@ export const postulacionesController = {
     async agendarEntrevista(req, res) {
         try {
             const { id } = req.params;
-            const { fechaEntrevista, evaluadorAsignado, observaciones } = req.body;
+            const {
+                fechaEntrevista,
+                evaluadorAsignado,
+                tipoCitacion,
+                enlaceGoogleMeet,
+                urlGoogleCalendar,
+                observaciones,
+            } = req.body;
 
             if (!fechaEntrevista) {
                 return res.status(400).json({
@@ -194,6 +201,9 @@ export const postulacionesController = {
             const actualizada = await dataStore.agendarEntrevistaPostulacion(id, {
                 fechaEntrevista,
                 evaluadorAsignado,
+                tipoCitacion,
+                enlaceGoogleMeet,
+                urlGoogleCalendar,
                 observaciones,
             });
 

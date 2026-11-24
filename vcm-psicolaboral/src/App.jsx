@@ -3,6 +3,8 @@ import AnalistaPage from "./pages/AnalistaPage.jsx";
 import EvaluadorPage from "./pages/EvaluadorPage.jsx";
 import JefaturaPage from "./pages/JefaturaPage.jsx";
 import CandidatoPage from "./pages/CandidatoPage.jsx";
+import Icono from "./components/Icono.jsx";
+import LogoAquaChile from "./components/LogoAquaChile.jsx";
 // Portal de acceso para funcionarios internos (reemplaza al antiguo selector de cargo).
 import PortalLoginEmpleado from "./components/PortalLoginEmpleado.jsx";
 // Sesión de empleados y mapa rol → ruta (independiente del flujo de postulantes).
@@ -22,27 +24,27 @@ function PortalHome() {
         {
             id: "empleados",
             titulo: "Portal de Empleados",
-            icono: "👥",
+            icono: "users",
             badge: "Equipo AquaChile",
             ruta: "/empleados",
             descripcion:
                 "Espacio de trabajo para Reclutadores, Evaluadores y Jefaturas. Gestión de postulantes por cargo activo, entrevistas agendadas, catálogo de candidatos y evaluaciones psicolaborales.",
-            colorBorde: "#0e97b3",
-            colorFondoBadge: "#e0f7fa",
-            colorTextoBadge: "#006064",
+            colorBorde: "#223b4c",
+            colorFondoBadge: "#e6eef4",
+            colorTextoBadge: "#162936",
             botonTexto: "Ingresar como Empleado",
         },
         {
             id: "candidato",
             titulo: "Postulante a Trabajo",
-            icono: "📝",
+            icono: "fileText",
             badge: "Portal Público",
             ruta: "/candidato",
             descripcion:
                 "Portal público de postulación: explora las vacantes abiertas de AquaChile, completa el formulario de postulación, adjunta tu currículum y obtén tu comprobante en tiempo real.",
-            colorBorde: "#f57c00",
-            colorFondoBadge: "#fff4e6",
-            colorTextoBadge: "#e8590c",
+            colorBorde: "#0e6b8a",
+            colorFondoBadge: "#e0f2fe",
+            colorTextoBadge: "#0c4a6e",
             botonTexto: "Postular a un cargo",
         },
     ];
@@ -52,24 +54,21 @@ function PortalHome() {
             className="container-fluid d-flex flex-column align-items-center justify-content-center py-5"
             style={{
                 minHeight: "100vh",
-                backgroundColor: "#F0F8FF",
-                fontFamily: "Arial, Helvetica, sans-serif",
+                backgroundColor: "#f3f6f9",
+                fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif",
             }}
         >
             <div className="text-center mb-4" style={{ maxWidth: "800px", width: "100%" }}>
                 <div
-                    className="badge mb-3 px-3 py-2"
+                    className="mb-3 d-inline-flex align-items-center justify-content-center px-4 py-2 bg-white shadow-sm"
                     style={{
-                        backgroundColor: "#e3f2fd",
-                        color: "#0d47a1",
-                        borderRadius: "20px",
-                        fontSize: "13px",
-                        fontWeight: "bold",
+                        borderRadius: "12px",
+                        border: "1px solid #dbe3eb",
                     }}
                 >
-                    AquaChile · Aqua-Contratos
+                    <LogoAquaChile height={52} mostrarSubtitulo={true} />
                 </div>
-                <h1 className="fw-bold mb-2 text-dark" style={{ fontSize: "2.2rem" }}>
+                <h1 className="fw-bold mb-2" style={{ fontSize: "2.15rem", color: "#162936" }}>
                     Portal de Acceso al Sistema
                 </h1>
                 <p className="text-muted fs-6 mb-0">
@@ -91,7 +90,9 @@ function PortalHome() {
                         >
                             <div>
                                 <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div style={{ fontSize: "2.5rem" }}>{p.icono}</div>
+                                    <div style={{ color: p.colorBorde }}>
+                                        <Icono nombre={p.icono} size={36} />
+                                    </div>
                                     <span
                                         className="badge"
                                         style={{

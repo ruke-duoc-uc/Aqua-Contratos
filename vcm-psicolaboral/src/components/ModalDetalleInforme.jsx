@@ -8,6 +8,7 @@
  */
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange";
+import Icono from "./Icono";
 import SelectorTagsPsicolaborales from "./SelectorTagsPsicolaborales";
 import { TAGS_FORTALEZAS_SUGERIDOS, TAGS_DEBILIDADES_SUGERIDAS } from "../utils/constantes";
 
@@ -149,13 +150,29 @@ export default function ModalDetalleInforme({
     const obtenerBadgeUrgencia = (urg) => {
         switch (urg) {
             case "Urgente":
-                return <span style={{ backgroundColor: "#f8d7da", color: "#842029", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>🔴 Urgente</span>;
+                return (
+                    <span style={{ backgroundColor: "#f8d7da", color: "#842029", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <Icono nombre="circle" size={8} color="#dc3545" /> Urgente
+                    </span>
+                );
             case "Alta":
-                return <span style={{ backgroundColor: "#ffeeba", color: "#856404", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>🟠 Alta</span>;
+                return (
+                    <span style={{ backgroundColor: "#ffeeba", color: "#856404", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <Icono nombre="circle" size={8} color="#fd7e14" /> Alta
+                    </span>
+                );
             case "Baja":
-                return <span style={{ backgroundColor: "#d1e7dd", color: "#0f5132", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>🟢 Baja</span>;
+                return (
+                    <span style={{ backgroundColor: "#d1e7dd", color: "#0f5132", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <Icono nombre="circle" size={8} color="#198754" /> Baja
+                    </span>
+                );
             default:
-                return <span style={{ backgroundColor: "#cff4fc", color: "#055160", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px" }}>🟡 Media</span>;
+                return (
+                    <span style={{ backgroundColor: "#cff4fc", color: "#055160", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <Icono nombre="circle" size={8} color="#0dcaf0" /> Media
+                    </span>
+                );
         }
     };
 
@@ -230,8 +247,9 @@ export default function ModalDetalleInforme({
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: "20px" }}>
                         {/* PANEL IZQUIERDO: FICHA COMPLETA DEL CANDIDATO */}
                         <div style={{ backgroundColor: "#f8f9fa", border: "1px solid #dee2e6", borderRadius: "8px", padding: "16px", height: "fit-content" }}>
-                            <h4 style={{ margin: "0 0 12px 0", color: "#004085", borderBottom: "2px solid #b8daff", paddingBottom: "6px" }}>
-                                👤 Perfil del Candidato
+                            <h4 style={{ margin: "0 0 12px 0", color: "#004085", borderBottom: "2px solid #b8daff", paddingBottom: "6px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Icono nombre="user" size={16} />
+                                Perfil del Candidato
                             </h4>
 
                             {candidato ? (
@@ -261,7 +279,10 @@ export default function ModalDetalleInforme({
                                     {/* SECCIÓN DEL INFORME PSICOLABORAL (Evaluador edita, otros roles leen) */}
                                     <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #b8daff" }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                            <strong style={{ fontSize: "13px", color: "#004085" }}>📋 Informe Psicolaboral Oficial</strong>
+                                            <strong style={{ fontSize: "13px", color: "#004085", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                                <Icono nombre="clipboard" size={14} />
+                                                Informe Psicolaboral Oficial
+                                            </strong>
                                             <span style={{ fontSize: "11px", color: "#6c757d" }}>
                                                 {informe.fechaEvaluacion || informe.fechaCreacion ? new Date(informe.fechaEvaluacion || informe.fechaCreacion).toLocaleDateString("es-CL") : ""}
                                             </span>
@@ -332,9 +353,14 @@ export default function ModalDetalleInforme({
                                                         fontSize: "12px",
                                                         cursor: "pointer",
                                                         fontWeight: "bold",
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        gap: "6px",
                                                     }}
                                                 >
-                                                    {guardandoEvaluacion ? "Guardando..." : "💾 Guardar Informe Psicolaboral"}
+                                                    <Icono nombre="save" size={14} />
+                                                    {guardandoEvaluacion ? "Guardando..." : "Guardar Informe Psicolaboral"}
                                                 </button>
                                             </div>
                                         ) : (
@@ -373,8 +399,9 @@ export default function ModalDetalleInforme({
 
                                     {/* HISTORIAL DEL INFORME (Timeline de trazabilidad) */}
                                     <div style={{ marginTop: "12px", padding: "10px", backgroundColor: "#fff", borderRadius: "6px", border: "1px solid #e1e4e8" }}>
-                                        <strong style={{ fontSize: "12.5px", color: "#495057", display: "block", marginBottom: "6px" }}>
-                                            📜 Historial de Eventos ({historial.length})
+                                        <strong style={{ fontSize: "12.5px", color: "#495057", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                                            <Icono nombre="history" size={14} />
+                                            Historial de Eventos ({historial.length})
                                         </strong>
                                         {historial.length === 0 ? (
                                             <span style={{ fontSize: "11.5px", color: "#888", fontStyle: "italic" }}>
@@ -440,8 +467,9 @@ export default function ModalDetalleInforme({
                                     {informe.fechaLimite || "Sin fecha fija"}
                                 </div>
                                 {fueraDePlazo ? (
-                                    <span style={{ color: "#856404", fontWeight: "bold" }}>
-                                        ⚠️ Límite sobrepasado (Se permite seguir respondiendo)
+                                    <span style={{ color: "#856404", fontWeight: "bold", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                        <Icono nombre="alert" size={14} />
+                                        Límite sobrepasado (Se permite seguir respondiendo)
                                     </span>
                                 ) : (
                                     <span style={{ color: "#0d6efd", fontWeight: "bold" }}>
@@ -451,8 +479,9 @@ export default function ModalDetalleInforme({
                             </div>
 
                             {/* Listado de Preguntas y Respuestas */}
-                            <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#333" }}>
-                                💬 Preguntas y Comentarios Consolidados ({listaPreguntas.length})
+                            <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#333", display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Icono nombre="message" size={16} />
+                                Preguntas y Comentarios Consolidados ({listaPreguntas.length})
                             </h4>
 
                             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -562,8 +591,11 @@ export default function ModalDetalleInforme({
                                                     </button>
                                                 </div>
                                             ) : !esJefe && !esDestinatario ? (
-                                                <div style={{ marginTop: "6px", fontSize: "11px", color: "#6c757d", fontStyle: "italic" }}>
-                                                    🔒 Solicitud dirigida exclusivamente a: {informe.destinatarios?.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ") || "otro rol"}.
+                                                <div style={{ marginTop: "6px", fontSize: "11px", color: "#6c757d", fontStyle: "italic", display: "flex", alignItems: "center", gap: "5px" }}>
+                                                    <Icono nombre="lock" size={12} />
+                                                    <span>
+                                                        Solicitud dirigida exclusivamente a: {informe.destinatarios?.map((d) => (d === "analista" ? "Analista" : d === "evaluador" ? "Evaluador" : d)).join(" y ") || "otro rol"}.
+                                                    </span>
                                                 </div>
                                             ) : null}
                                         </div>
@@ -583,8 +615,9 @@ export default function ModalDetalleInforme({
                                         border: "1px dashed #0d6efd",
                                     }}
                                 >
-                                    <label style={{ display: "block", fontSize: "13px", fontWeight: "bold", color: "#084298", marginBottom: "6px" }}>
-                                        ➕ Formular Nueva Pregunta (Jefe de Área):
+                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "bold", color: "#084298", marginBottom: "6px" }}>
+                                        <Icono nombre="plus" size={14} />
+                                        Formular Nueva Pregunta (Jefe de Área):
                                     </label>
                                     <div style={{ display: "flex", gap: "10px" }}>
                                         <textarea

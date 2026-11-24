@@ -15,6 +15,7 @@
 import { useState, useMemo } from "react";
 import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
+import Icono from "./Icono";
 
 function GestionCandidatosView({
     candidatos = [],
@@ -77,8 +78,10 @@ function GestionCandidatosView({
             style={{
                 backgroundColor: "white",
                 borderRadius: "10px",
-                border: "2px solid gray",
+                border: "1px solid #dbe3eb",
+                borderTop: "4px solid #223b4c",
                 overflow: "hidden",
+                boxShadow: "0 3px 10px rgba(34, 59, 76, 0.05)",
             }}
         >
             {/* Cabecera de la sección */}
@@ -94,11 +97,12 @@ function GestionCandidatosView({
                 }}
             >
                 <div>
-                    <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                        Catálogo de Postulantes
+                    <h2 style={{ margin: 0, fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Icono nombre="users" size={20} color="#0e97b3" />
+                        Lista de Postulantes (Usuarios Registrados)
                     </h2>
                     <span style={{ fontSize: "13px", color: "gray" }}>
-                        Registro maestro con RUT, nombres, apellidos, dirección, comuna, fecha de nacimiento, edad y CV
+                        Todos los usuarios que se registraron en la plataforma con su RUT, nombres, apellidos, dirección, comuna, edad y CV
                     </span>
                 </div>
             </div>
@@ -151,7 +155,7 @@ function GestionCandidatosView({
             <div className="table-responsive shadow-sm" style={{ borderRadius: "8px" }}>
                 <table className="table table-hover align-middle mb-0" style={{ fontSize: "13.5px" }}>
                     <thead>
-                        <tr style={{ backgroundColor: "#CDCDCD", color: "#333", textAlign: "left" }}>
+                        <tr style={{ backgroundColor: "#223b4c", color: "white", textAlign: "left" }}>
                             <th style={{ padding: "12px 14px" }}>RUT</th>
                             <th style={{ padding: "12px 14px" }}>Nombres</th>
                             <th style={{ padding: "12px 14px" }}>Apellidos</th>
@@ -253,7 +257,9 @@ function GestionCandidatosView({
                                                     title={`Abrir ${cvArchivo} en nueva pestaña`}
                                                     style={{ fontSize: "12px", padding: "3px 8px", cursor: "pointer" }}
                                                 >
-                                                    📄 {cvArchivo} ↗
+                                                    <Icono nombre="fileText" size={13} />
+                                                    <span>{cvArchivo}</span>
+                                                    <Icono nombre="externalLink" size={12} />
                                                 </button>
                                             ) : (
                                                 <span style={{ color: "#999", fontSize: "12px" }}>Sin CV</span>

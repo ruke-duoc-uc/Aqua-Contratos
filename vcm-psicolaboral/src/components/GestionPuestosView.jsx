@@ -1,10 +1,20 @@
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange.jsx";
-import EncabezadoRegistro from "./EncabezadoRegistro.jsx";
+import Icono from "./Icono.jsx";
 import { PLANTAS_DISPONIBLES, FAMILIAS_CARGO } from "../utils/constantes";
 import { ESTILO_ETIQUETA, ESTILO_VALOR, NARANJA, NARANJA_OSCURO } from "./Estilos.jsx";
 
-function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas = [], onCrearEtiqueta }) {
+function GestionPuestosView({
+    puestos,
+    onAbrirCrear,
+    onAbrirEditar,
+    onCambiarEstado,
+    onEliminarPuesto,
+    areaJefeId = null,
+    nombreAreaJefe = "",
+    etiquetas = [],
+    onCrearEtiqueta,
+}) {
     const [busqueda, setBusqueda] = useState("");
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
     const [filtroFamilia, setFiltroFamilia] = useState("todas");
@@ -77,9 +87,12 @@ function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas 
                 }}
             >
                 <div>
-                    <h2 style={{ margin: 0, fontSize: "1.25rem" }}>Puestos de Trabajo</h2>
+                    <h2 style={{ margin: 0, fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <Icono nombre="briefcase" size={20} color="#0e97b3" />
+                        Puestos de Trabajo {nombreAreaJefe ? `· Área ${nombreAreaJefe}` : ""}
+                    </h2>
                     <span style={{ fontSize: "13px", color: "gray" }}>
-                        Gestión de ofertas laborales · {puestosFiltrados.length} de {puestos.length} puestos
+                        Gestión, edición e historial de ofertas laborales · {puestosFiltrados.length} de {puestos.length} puestos
                     </span>
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
@@ -101,7 +114,8 @@ function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas 
                             boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                         }}
                     >
-                        🏷️ Banco de Etiquetas ({etiquetas.length})
+                        <Icono nombre="tag" size={15} />
+                        Banco de Etiquetas ({etiquetas.length})
                     </button>
                     <BotonOrange texto="+ Crear Puesto de Trabajo" onClick={onAbrirCrear} />
                 </div>
@@ -131,12 +145,14 @@ function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas 
                         <option key={p} value={p}>{p}</option>
                     ))}
                 </select>
-                <select value={filtroFamilia} onChange={(e) => setFiltroFamilia(e.target.value)} style={estiloFiltro}>
-                    <option value="todas">Todas las familias</option>
-                    {FAMILIAS_CARGO.map((f) => (
-                        <option key={f} value={f}>{f}</option>
-                    ))}
-                </select>
+                {!areaJefeId && (
+                    <select value={filtroFamilia} onChange={(e) => setFiltroFamilia(e.target.value)} style={estiloFiltro}>
+                        <option value="todas">Todas las familias</option>
+                        {FAMILIAS_CARGO.map((f) => (
+                            <option key={f} value={f}>{f}</option>
+                        ))}
+                    </select>
+                )}
                 <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} style={estiloFiltro}>
                     <option value="todos">Todos los estados</option>
                     <option value="Abierto">Abierto</option>
@@ -149,188 +165,318 @@ function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas 
             <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}>
                 {puestosFiltrados.length === 0 ? (
                     <div style={{ padding: "40px 20px", textAlign: "center", color: "#6c757d" }}>
-                        <p style={{ fontSize: "16px", margin: 0 }}>
+                        <p style={{ fontSize: "16px", margin: 0, display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                            <Icono nombre="search" size={18} />
                             {puestos.length === 0
-                                ? "No hay puestos de trabajo creados. Cree el primero con el botón superior."
-                                : "🔍 No se encontraron puestos con los filtros aplicados."}
+                                ? "No hay puestos de trabajo creados en tu área. Cree el primero con el botón superior."
+                                : "No se encontraron puestos con los filtros aplicados."}
                         </p>
                     </div>
                 ) : (
-                    puestosFiltrados.map((puesto) => (
-                        <article
-                            key={puesto.id}
-                            style={{
-                                backgroundColor: "white",
-                                borderRadius: "10px",
-                                border: "1px solid #dee2e6",
-                                padding: "16px 20px",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                            }}
-                        >
-                            {/* Cabecera */}
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", flexWrap: "wrap" }}>
-                                <div>
-                                    <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{puesto.titulo}</h3>
-                                    <span style={{ fontSize: "12px", color: "#666" }}>
-                                        {puesto.planta} · {puesto.familiaCargo}
-                                    </span>
-                                </div>
-                                <span style={badgeEstado(puesto.estado)}>{puesto.estado}</span>
-                            </div>
+                    puestosFiltrados.map((puesto) => {
+                        const historial = Array.isArray(puesto.historialModificaciones)
+                            ? puesto.historialModificaciones
+                            : [];
+                        const conteoMod =
+                            puesto.conteoModificaciones !== undefined
+                                ? Number(puesto.conteoModificaciones)
+                                : historial.length;
 
-                            {/* Descripción */}
-                            {puesto.descripcion && (
-                                <p style={{ margin: 0, fontSize: "13.5px", color: "#555", lineHeight: "1.5" }}>
-                                    {puesto.descripcion}
-                                </p>
-                            )}
-
-                            {/* Requisitos colapsables */}
-                            {puesto.requisitos && (
-                                <details>
-                                    <summary
-                                        style={{
-                                            fontSize: "13px",
-                                            fontWeight: "600",
-                                            color: NARANJA_OSCURO,
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Ver requisitos
-                                    </summary>
-                                    <p style={{ margin: "8px 0 0 0", fontSize: "13px", color: "#555", lineHeight: "1.5" }}>
-                                        {puesto.requisitos}
-                                    </p>
-                                </details>
-                            )}
-
-                            {/* Apartado de Cualidades / Etiquetas */}
-                            {Array.isArray(puesto.etiquetas) && puesto.etiquetas.length > 0 && (
-                                <div
-                                    style={{
-                                        padding: "8px 12px",
-                                        backgroundColor: "#f8fafc",
-                                        borderRadius: "8px",
-                                        border: "1px solid #e2e8f0",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "5px",
-                                    }}
-                                >
-                                    <span style={{ ...ESTILO_ETIQUETA, fontSize: "11px", color: "#64748b" }}>
-                                        Cualidades solicitadas
-                                    </span>
-                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                        {puesto.etiquetas.map((tag, idx) => (
+                        return (
+                            <article
+                                key={puesto.id}
+                                style={{
+                                    backgroundColor: "white",
+                                    borderRadius: "10px",
+                                    border: "1px solid #dee2e6",
+                                    padding: "16px 20px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "8px",
+                                }}
+                            >
+                                {/* Cabecera */}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", flexWrap: "wrap" }}>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{puesto.titulo}</h3>
+                                        <span style={{ fontSize: "12px", color: "#666" }}>
+                                            {puesto.planta} · {puesto.familiaCargo}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                        {conteoMod > 0 && (
                                             <span
-                                                key={idx}
                                                 style={{
-                                                    display: "inline-block",
-                                                    padding: "3px 10px",
-                                                    fontSize: "12px",
-                                                    fontWeight: "600",
-                                                    color: "#1e293b",
-                                                    backgroundColor: "#e2e8f0",
-                                                    borderRadius: "14px",
-                                                    border: "1px solid #cbd5e1",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: "4px",
+                                                    padding: "3px 9px",
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                    borderRadius: "12px",
+                                                    backgroundColor: "#eff6ff",
+                                                    color: "#1d4ed8",
+                                                    border: "1px solid #bfdbfe",
                                                 }}
                                             >
-                                                {tag}
+                                                <Icono nombre="history" size={12} />
+                                                {conteoMod} modificación{conteoMod !== 1 ? "es" : ""}
                                             </span>
-                                        ))}
+                                        )}
+                                        <span style={badgeEstado(puesto.estado)}>{puesto.estado}</span>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Datos y acciones */}
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "10px", marginTop: "4px" }}>
-                                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-                                    <div>
-                                        <span style={ESTILO_ETIQUETA}>Vacantes</span>
-                                        <p style={ESTILO_VALOR}>{puesto.vacantes}</p>
-                                    </div>
-                                    <div>
-                                        <span style={ESTILO_ETIQUETA}>Creado por</span>
-                                        <p style={ESTILO_VALOR}>{puesto.creadoPor || "Jefe de Área"}</p>
-                                    </div>
-                                    <div>
-                                        <span style={ESTILO_ETIQUETA}>Fecha</span>
-                                        <p style={ESTILO_VALOR}>
-                                            {puesto.fechaCreacion
-                                                ? new Date(puesto.fechaCreacion).toLocaleDateString("es-CL")
-                                                : "—"}
+                                {/* Descripción */}
+                                {puesto.descripcion && (
+                                    <p style={{ margin: 0, fontSize: "13.5px", color: "#555", lineHeight: "1.5" }}>
+                                        {puesto.descripcion}
+                                    </p>
+                                )}
+
+                                {/* Requisitos colapsables */}
+                                {puesto.requisitos && (
+                                    <details>
+                                        <summary
+                                            style={{
+                                                fontSize: "13px",
+                                                fontWeight: "600",
+                                                color: NARANJA_OSCURO,
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            Ver requisitos
+                                        </summary>
+                                        <p style={{ margin: "8px 0 0 0", fontSize: "13px", color: "#555", lineHeight: "1.5" }}>
+                                            {puesto.requisitos}
                                         </p>
-                                    </div>
-                                    {puesto.totalPostulantes !== undefined && (
-                                        <div>
-                                            <span style={ESTILO_ETIQUETA}>Postulantes</span>
-                                            <p style={ESTILO_VALOR}>{puesto.totalPostulantes}</p>
-                                        </div>
-                                    )}
-                                </div>
+                                    </details>
+                                )}
 
-                                {/* Botones de cambio de estado */}
-                                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                                    {puesto.estado !== "Abierto" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => onCambiarEstado(puesto.id, "Abierto")}
+                                {/* Apartado de Cualidades / Etiquetas */}
+                                {Array.isArray(puesto.etiquetas) && puesto.etiquetas.length > 0 && (
+                                    <div
+                                        style={{
+                                            padding: "8px 12px",
+                                            backgroundColor: "#f8fafc",
+                                            borderRadius: "8px",
+                                            border: "1px solid #e2e8f0",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "5px",
+                                        }}
+                                    >
+                                        <span style={{ ...ESTILO_ETIQUETA, fontSize: "11px", color: "#64748b" }}>
+                                            Cualidades solicitadas
+                                        </span>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                            {puesto.etiquetas.map((tag, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    style={{
+                                                        display: "inline-block",
+                                                        padding: "3px 10px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        color: "#1e293b",
+                                                        backgroundColor: "#e2e8f0",
+                                                        borderRadius: "14px",
+                                                        border: "1px solid #cbd5e1",
+                                                    }}
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Historial de Modificaciones desplegable */}
+                                {historial.length > 0 && (
+                                    <details
+                                        style={{
+                                            backgroundColor: "#f8fafc",
+                                            border: "1px solid #e2e8f0",
+                                            borderRadius: "6px",
+                                            padding: "6px 10px",
+                                        }}
+                                    >
+                                        <summary
                                             style={{
-                                                padding: "5px 12px",
                                                 fontSize: "12px",
-                                                fontWeight: "600",
-                                                border: "1px solid #c3e6cb",
-                                                borderRadius: "5px",
-                                                backgroundColor: "#d4edda",
-                                                color: "#155724",
+                                                fontWeight: "700",
+                                                color: "#1e40af",
                                                 cursor: "pointer",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "6px",
                                             }}
                                         >
-                                            Abrir
-                                        </button>
-                                    )}
-                                    {puesto.estado !== "Pausado" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => onCambiarEstado(puesto.id, "Pausado")}
-                                            style={{
-                                                padding: "5px 12px",
-                                                fontSize: "12px",
-                                                fontWeight: "600",
-                                                border: "1px solid #ffeeba",
-                                                borderRadius: "5px",
-                                                backgroundColor: "#fff3cd",
-                                                color: "#856404",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            Pausar
-                                        </button>
-                                    )}
-                                    {puesto.estado !== "Cerrado" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => onCambiarEstado(puesto.id, "Cerrado")}
-                                            style={{
-                                                padding: "5px 12px",
-                                                fontSize: "12px",
-                                                fontWeight: "600",
-                                                border: "1px solid #f5c6cb",
-                                                borderRadius: "5px",
-                                                backgroundColor: "#f8d7da",
-                                                color: "#721c24",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            Cerrar
-                                        </button>
-                                    )}
+                                            <Icono nombre="history" size={13} />
+                                            Historial de Modificaciones ({conteoMod})
+                                        </summary>
+                                        <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            {historial.map((h, hIdx) => (
+                                                <div
+                                                    key={hIdx}
+                                                    style={{
+                                                        fontSize: "11.5px",
+                                                        backgroundColor: "white",
+                                                        padding: "6px 8px",
+                                                        borderRadius: "4px",
+                                                        borderLeft: "3px solid #3b82f6",
+                                                    }}
+                                                >
+                                                    <div style={{ display: "flex", justifyContent: "space-between", color: "#64748b" }}>
+                                                        <strong>{h.autor || "Jefe de Área"}</strong>
+                                                        <span>
+                                                            {h.fecha ? new Date(h.fecha).toLocaleString("es-CL") : ""}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ color: "#1e293b", marginTop: "2px" }}>{h.detalle}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </details>
+                                )}
+
+                                {/* Datos y acciones */}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "10px", marginTop: "4px" }}>
+                                    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                                        <div>
+                                            <span style={ESTILO_ETIQUETA}>Vacantes</span>
+                                            <p style={ESTILO_VALOR}>{puesto.vacantes}</p>
+                                        </div>
+                                        <div>
+                                            <span style={ESTILO_ETIQUETA}>Creado por</span>
+                                            <p style={ESTILO_VALOR}>{puesto.creadoPor || "Jefe de Área"}</p>
+                                        </div>
+                                        <div>
+                                            <span style={ESTILO_ETIQUETA}>Fecha Creación</span>
+                                            <p style={ESTILO_VALOR}>
+                                                {puesto.fechaCreacion
+                                                    ? new Date(puesto.fechaCreacion).toLocaleDateString("es-CL")
+                                                    : "—"}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span style={ESTILO_ETIQUETA}>Modificaciones</span>
+                                            <p style={ESTILO_VALOR}>{conteoMod}</p>
+                                        </div>
+                                        {puesto.totalPostulantes !== undefined && (
+                                            <div>
+                                                <span style={ESTILO_ETIQUETA}>Postulantes</span>
+                                                <p style={ESTILO_VALOR}>{puesto.totalPostulantes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Botones de Edición, Cambio de estado y Eliminación */}
+                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                        {onAbrirEditar && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onAbrirEditar(puesto)}
+                                                style={{
+                                                    padding: "5px 12px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #93c5fd",
+                                                    borderRadius: "5px",
+                                                    backgroundColor: "#eff6ff",
+                                                    color: "#1d4ed8",
+                                                    cursor: "pointer",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: "5px",
+                                                }}
+                                            >
+                                                <Icono nombre="edit" size={13} />
+                                                Editar
+                                            </button>
+                                        )}
+                                        {puesto.estado !== "Abierto" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onCambiarEstado(puesto.id, "Abierto")}
+                                                style={{
+                                                    padding: "5px 12px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #c3e6cb",
+                                                    borderRadius: "5px",
+                                                    backgroundColor: "#d4edda",
+                                                    color: "#155724",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Abrir
+                                            </button>
+                                        )}
+                                        {puesto.estado !== "Pausado" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onCambiarEstado(puesto.id, "Pausado")}
+                                                style={{
+                                                    padding: "5px 12px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #ffeeba",
+                                                    borderRadius: "5px",
+                                                    backgroundColor: "#fff3cd",
+                                                    color: "#856404",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Pausar
+                                            </button>
+                                        )}
+                                        {puesto.estado !== "Cerrado" && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onCambiarEstado(puesto.id, "Cerrado")}
+                                                style={{
+                                                    padding: "5px 12px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #f5c6cb",
+                                                    borderRadius: "5px",
+                                                    backgroundColor: "#f8d7da",
+                                                    color: "#721c24",
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                Cerrar
+                                            </button>
+                                        )}
+                                        {onEliminarPuesto && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onEliminarPuesto(puesto.id)}
+                                                style={{
+                                                    padding: "5px 12px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    border: "1px solid #fca5a5",
+                                                    borderRadius: "5px",
+                                                    backgroundColor: "#fef2f2",
+                                                    color: "#b91c1c",
+                                                    cursor: "pointer",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: "4px",
+                                                }}
+                                                title="Eliminar oferta laboral"
+                                            >
+                                                <Icono nombre="trash" size={13} />
+                                                Eliminar
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    ))
+                            </article>
+                        );
+                    })
                 )}
             </div>
 
@@ -371,10 +517,11 @@ function GestionPuestosView({ puestos, onAbrirCrear, onCambiarEstado, etiquetas 
                             <button
                                 type="button"
                                 onClick={() => setModalBancoAbierto(false)}
-                                style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#888" }}
+                                style={{ background: "none", border: "none", cursor: "pointer", color: "#888" }}
                                 title="Cerrar"
+                                aria-label="Cerrar"
                             >
-                                ✕
+                                <Icono nombre="close" size={20} />
                             </button>
                         </div>
 

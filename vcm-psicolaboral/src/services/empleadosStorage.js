@@ -59,7 +59,16 @@ export const USUARIOS_EMPLEADOS_BASE = [
         nombre: "Carlos Mendoza",
         rol: "jefatura",
         candidatoId: null,
-        area_id: 1,
+        area_id: 1, // Sistemas y TI
+    },
+    {
+        id: 14,
+        email: "jefe.mantenimiento@aquachile.cl",
+        password: "password123",
+        nombre: "Hernán Soto",
+        rol: "jefatura",
+        candidatoId: null,
+        area_id: 3, // Mantenimiento Industrial
     },
 ];
 

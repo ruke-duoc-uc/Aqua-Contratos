@@ -295,13 +295,9 @@ export const db = {
             (datos.nombre ? datos.nombre.split(" ").slice(-2).join(" ") : "");
         const nombre = datos.nombre?.trim() || `${nombres} ${apellidos}`.trim() || "Postulante";
         const direccion = datos.direccion?.trim() || "";
-        const comuna = datos.comuna?.trim() || planta || "Puerto Montt";
+        const comuna = datos.comuna?.trim() || "";
         const fecha_nacimiento = datos.fecha_nacimiento || "";
-        const cv_pdf =
-            datos.cv_pdf?.trim() ||
-            (nombre
-                ? `cv_${nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`
-                : "cv_postulante.pdf");
+        const cv_pdf = datos.cv_pdf?.trim() || "";
         const cvDataUrl = datos.cvDataUrl || "";
 
         const nuevoId = await siguienteIdMongo(CandidatoModel, memoryStoreCandidatos);
@@ -508,6 +504,8 @@ export const db = {
             estado,
             creadoPor,
             fechaCreacion,
+            conteoModificaciones: 0,
+            historialModificaciones: [],
         };
 
         if (this.isUsingMongo()) {
@@ -523,6 +521,9 @@ export const db = {
 
     async actualizarPuesto(id, datos) {
         const numId = Number(id);
+        const previo = await this.obtenerPuestoPorId(numId);
+        if (!previo) return null;
+
         const camposPermitidos = [
             "area_id",
             "titulo",
@@ -555,6 +556,46 @@ export const db = {
                     payload[campo] = datos[campo];
                 }
             }
+        }
+
+        // Registrar conteo e historial de modificaciones si cambiaron condiciones del trabajo
+        const cambiosDetectados = [];
+        if (payload.titulo !== undefined && payload.titulo !== previo.titulo) {
+            cambiosDetectados.push(`Título: "${previo.titulo}" → "${payload.titulo}"`);
+        }
+        if (payload.planta !== undefined && payload.planta !== previo.planta) {
+            cambiosDetectados.push(`Planta: ${previo.planta} → ${payload.planta}`);
+        }
+        if (payload.vacantes !== undefined && Number(payload.vacantes) !== Number(previo.vacantes)) {
+            cambiosDetectados.push(`Vacantes: ${previo.vacantes} → ${payload.vacantes}`);
+        }
+        if (payload.descripcion !== undefined && payload.descripcion !== previo.descripcion) {
+            cambiosDetectados.push("Descripción actualizada");
+        }
+        if (payload.requisitos !== undefined && payload.requisitos !== previo.requisitos) {
+            cambiosDetectados.push("Requisitos actualizados");
+        }
+        if (payload.estado !== undefined && payload.estado !== previo.estado) {
+            cambiosDetectados.push(`Estado: ${previo.estado} → ${payload.estado}`);
+        }
+        if (
+            payload.etiquetas !== undefined &&
+            JSON.stringify(payload.etiquetas) !== JSON.stringify(previo.etiquetas || [])
+        ) {
+            cambiosDetectados.push("Cualidades/etiquetas actualizadas");
+        }
+
+        if (cambiosDetectados.length > 0 || datos.detalleModificacion) {
+            const historialActual = Array.isArray(previo.historialModificaciones)
+                ? previo.historialModificaciones
+                : [];
+            const nuevoRegistroHistorial = {
+                fecha: new Date().toISOString(),
+                autor: datos.modificadoPor || previo.creadoPor || "Jefe de Área",
+                detalle: datos.detalleModificacion || cambiosDetectados.join(" · "),
+            };
+            payload.historialModificaciones = [nuevoRegistroHistorial, ...historialActual];
+            payload.conteoModificaciones = (Number(previo.conteoModificaciones) || historialActual.length) + 1;
         }
 
         if (this.isUsingMongo()) {
@@ -731,7 +772,8 @@ export const db = {
     async actualizarPostulacion(id, datos) {
         const numId = Number(id);
         const camposPermitidos = [
-            "estado", "evaluadorAsignado", "fechaEntrevista", "respuestaCandidato",
+            "estado", "evaluadorAsignado", "fechaEntrevista", "tipoCitacion",
+            "enlaceGoogleMeet", "urlGoogleCalendar", "respuestaCandidato",
             "sugerenciaFecha", "dictamenPsicologico", "observaciones", "conclusiones",
             "decisionFinal",
         ];

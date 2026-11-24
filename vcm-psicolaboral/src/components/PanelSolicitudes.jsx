@@ -10,11 +10,13 @@ function PanelSolicitudes({ encabezado, anchoCompleto = false, filtros, solicitu
     return (
         <div
             style={{
-                border: "2px solid gray",
+                border: "1px solid #dbe3eb",
+                borderTop: "4px solid #223b4c",
                 borderRadius: "10px",
                 ...(anchoCompleto && { width: "100%" }),
                 backgroundColor: "white",
                 overflow: "hidden",
+                boxShadow: "0 3px 10px rgba(34, 59, 76, 0.05)",
             }}
         >
             {encabezado}
@@ -29,10 +31,11 @@ function PanelSolicitudes({ encabezado, anchoCompleto = false, filtros, solicitu
                             gridTemplateColumns: COLUMNAS,
                             alignItems: "center",
                             gap: "16px",
-                            padding: "10px 16px",
-                            backgroundColor: "#CDCDCD",
+                            padding: "11px 16px",
+                            backgroundColor: "#223b4c",
                             fontWeight: "bold",
-                            color: "gray",
+                            color: "white",
+                            fontSize: "13px",
                         }}
                     >
                         {TITULOS_COLUMNAS.map((titulo) => (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotonOrange from "./BotonOrange.jsx";
+import Icono from "./Icono.jsx";
 import { COMUNAS } from "../utils/constantes";
 
 function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
@@ -10,7 +11,7 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
         email: candidato?.email || "",
         telefono: candidato?.telefono || "",
         direccion: candidato?.direccion || "",
-        comuna: candidato?.comuna || "Puerto Montt",
+        comuna: candidato?.comuna || "",
         fecha_nacimiento: candidato?.fecha_nacimiento || "",
         cv_pdf: candidato?.cv_pdf || candidato?.cvArchivo || "",
         cvDataUrl: candidato?.cvDataUrl || "",
@@ -52,6 +53,14 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
         if (!form.apellidos.trim()) errs.apellidos = "Los apellidos son obligatorios.";
         if (!form.rut.trim()) errs.rut = "El RUT es obligatorio.";
         if (!form.email.trim()) errs.email = "El correo electrónico es obligatorio.";
+        if (!form.direccion.trim()) errs.direccion = "La dirección de residencia es obligatoria para poder postular.";
+        if (!form.comuna || !form.comuna.trim()) errs.comuna = "La comuna es obligatoria para poder postular.";
+        if (!form.fecha_nacimiento || !form.fecha_nacimiento.trim()) {
+            errs.fecha_nacimiento = "La fecha de nacimiento es obligatoria para poder postular.";
+        }
+        if (!form.cv_pdf || !form.cv_pdf.trim()) {
+            errs.cv_pdf = "Debes adjuntar tu Currículum Vitae (CV) para completar tu perfil y postular.";
+        }
         setErrores(errs);
         return Object.keys(errs).length === 0;
     };
@@ -143,7 +152,7 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                                 border: "1px solid #fed7aa",
                             }}
                         >
-                            👤
+                            <Icono nombre="user" size={22} />
                         </div>
                         <div>
                             <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#111827" }}>
@@ -174,7 +183,7 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                 </div>
 
                 {/* Formulario de Datos Personales */}
-                <form onSubmit={handleSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
+                <form onSubmit={handleSubmit} noValidate style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
                     {/* Nombres y Apellidos */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                         <div>
@@ -215,13 +224,14 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                             {errores.rut && <span style={estiloError}>{errores.rut}</span>}
                         </div>
                         <div>
-                            <label style={estiloLabel}>Fecha de Nacimiento</label>
+                            <label style={estiloLabel}>Fecha de Nacimiento *</label>
                             <input
                                 type="date"
                                 value={form.fecha_nacimiento}
                                 onChange={(e) => handleChange("fecha_nacimiento", e.target.value)}
-                                style={estiloInput}
+                                style={{ ...estiloInput, borderColor: errores.fecha_nacimiento ? "#dc3545" : "#ced4da" }}
                             />
+                            {errores.fecha_nacimiento && <span style={estiloError}>{errores.fecha_nacimiento}</span>}
                         </div>
                     </div>
 
@@ -253,32 +263,35 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                     {/* Dirección y Comuna */}
                     <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "16px" }}>
                         <div>
-                            <label style={estiloLabel}>Dirección de Residencia</label>
+                            <label style={estiloLabel}>Dirección de Residencia *</label>
                             <input
                                 type="text"
                                 value={form.direccion}
                                 onChange={(e) => handleChange("direccion", e.target.value)}
                                 placeholder="Ej: Av. Angelmó 1420"
-                                style={estiloInput}
+                                style={{ ...estiloInput, borderColor: errores.direccion ? "#dc3545" : "#ced4da" }}
                             />
+                            {errores.direccion && <span style={estiloError}>{errores.direccion}</span>}
                         </div>
                         <div>
-                            <label style={estiloLabel}>Comuna</label>
+                            <label style={estiloLabel}>Comuna *</label>
                             <select
                                 value={form.comuna}
                                 onChange={(e) => handleChange("comuna", e.target.value)}
-                                style={estiloInput}
+                                style={{ ...estiloInput, borderColor: errores.comuna ? "#dc3545" : "#ced4da" }}
                             >
+                                <option value="">Seleccionar Comuna</option>
                                 {COMUNAS.map((c) => (
                                     <option key={c} value={c}>{c}</option>
                                 ))}
                             </select>
+                            {errores.comuna && <span style={estiloError}>{errores.comuna}</span>}
                         </div>
                     </div>
 
                     {/* Currículum Vitae (PDF) */}
                     <div>
-                        <label style={estiloLabel}>Currículum Vitae (PDF o Word · máx. 10 MB)</label>
+                        <label style={estiloLabel}>Currículum Vitae * (PDF o Word · máx. 10 MB)</label>
                         <div
                             style={{
                                 display: "flex",
@@ -294,7 +307,9 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                             <label
                                 htmlFor="perfil-cv-input"
                                 style={{
-                                    display: "inline-block",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
                                     padding: "8px 14px",
                                     borderRadius: "6px",
                                     border: "1px solid #e8590c",
@@ -305,7 +320,8 @@ function EditarPerfilPostulanteView({ candidato, onGuardar, onVolver }) {
                                     cursor: "pointer",
                                 }}
                             >
-                                📄 {form.cv_pdf ? "Cambiar CV" : "Subir CV"}
+                                <Icono nombre="fileText" size={14} />
+                                {form.cv_pdf ? "Cambiar CV" : "Subir CV"}
                             </label>
                             <input
                                 id="perfil-cv-input"

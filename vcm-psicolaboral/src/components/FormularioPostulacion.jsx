@@ -194,7 +194,7 @@ function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar 
                 </div>
             </header>
 
-            <form onSubmit={manejarEnvio} style={{ padding: "20px" }}>
+            <form onSubmit={manejarEnvio} noValidate style={{ padding: "20px" }}>
                 <div
                     style={{
                         display: "grid",
@@ -277,7 +277,7 @@ function FormularioPostulacion({ puesto, perfilPostulante, onCancelar, onEnviar 
                         {...propsFoco("comuna")}
                         required
                     >
-                        <option value="">Selecciona tu comuna</option>
+                        <option value="">Seleccionar Comuna</option>
                         {COMUNAS.map((comuna) => (
                             <option key={comuna} value={comuna}>
                                 {comuna}

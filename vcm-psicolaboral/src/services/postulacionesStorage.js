@@ -253,6 +253,9 @@ export function normalizarPostulacion(item) {
             (item.fechaEntrevista
                 ? new Date(item.fechaEntrevista).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" })
                 : "Pendiente de agendar"),
+        tipoCitacion: item.tipoCitacion || "Entrevistas físicas",
+        enlaceGoogleMeet: item.enlaceGoogleMeet || "",
+        urlGoogleCalendar: item.urlGoogleCalendar || "",
         encargado: encargadoFinal,
         evaluadorAsignado: encargadoFinal,
         cv_pdf: cvFinal,

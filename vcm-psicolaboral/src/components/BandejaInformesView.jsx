@@ -5,6 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange";
+import Icono from "./Icono";
 
 export default function BandejaInformesView({
     informes = [],
@@ -62,7 +63,7 @@ export default function BandejaInformesView({
     };
 
     return (
-        <div style={{ backgroundColor: "white", borderRadius: "10px", border: "2px solid gray", overflow: "hidden" }}>
+        <div style={{ backgroundColor: "white", borderRadius: "10px", border: "1px solid #dbe3eb", borderTop: "4px solid #223b4c", overflow: "hidden", boxShadow: "0 3px 10px rgba(34, 59, 76, 0.05)" }}>
             {/* Cabecera */}
             <div
                 style={{
@@ -183,10 +184,10 @@ export default function BandejaInformesView({
                     gridTemplateColumns: "60px 1.8fr 100px 110px 140px 100px 140px",
                     alignItems: "center",
                     gap: "12px",
-                    padding: "10px 16px",
-                    backgroundColor: "#CDCDCD",
+                    padding: "11px 16px",
+                    backgroundColor: "#223b4c",
                     fontWeight: "bold",
-                    color: "#495057",
+                    color: "white",
                     fontSize: "13px",
                 }}
             >
@@ -345,7 +346,8 @@ export default function BandejaInformesView({
                                     }}
                                 >
                                     <div style={{ fontWeight: "bold", fontSize: "13px", color: "#004085", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <span>💬 Preguntas y Respuestas del Informe #{inf.id}:</span>
+                                        <Icono nombre="message" size={15} />
+                                        <span>Preguntas y Respuestas del Informe #{inf.id}:</span>
                                     </div>
 
                                     {listaPreguntas.length === 0 ? (

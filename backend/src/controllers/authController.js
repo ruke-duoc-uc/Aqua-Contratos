@@ -155,7 +155,7 @@ export const authController = {
                 email: emailNormalizado,
                 telefono: telefono?.trim() || "",
                 direccion: direccion?.trim() || "",
-                comuna: comuna?.trim() || "Puerto Montt",
+                comuna: comuna?.trim() || "",
                 fecha_nacimiento: fecha_nacimiento || "",
                 cv_pdf: cv_pdf?.trim() || "",
                 cvDataUrl: cvDataUrl || "",

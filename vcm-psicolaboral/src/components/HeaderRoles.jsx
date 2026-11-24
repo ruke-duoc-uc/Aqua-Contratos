@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { obtenerSesionEmpleado } from "../services/empleadosStorage";
 import { api } from "../services/api";
+import LogoAquaChile from "./LogoAquaChile";
 
 function HeaderRoles({
     rolActual,
@@ -56,9 +57,9 @@ function HeaderRoles({
 
     const tabsPorDefecto = [
         { id: "dashboard", label: "Dashboard Operativo" },
-        { id: "entrevistas", label: "Agenda de Entrevistas" },
-        
-        { id: "postulantesPorPuesto", label: "Postulantes por Puesto" },
+        { id: "postulantes", label: "Lista de Postulantes" },
+        { id: "postulantesPorPuesto", label: "Lista de Candidatos" },
+        { id: "entrevistas", label: "Calendario y Citaciones" },
         { id: "informes", label: "Informes de Candidatos" },
     ];
 
@@ -67,19 +68,20 @@ function HeaderRoles({
     return (
         <header className="header-roles" style={{ flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div>
-                        <h1 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "bold" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                    <LogoAquaChile height={44} />
+                    <div style={{ borderLeft: "2px solid #dbe3eb", paddingLeft: "14px" }}>
+                        <h1 style={{ margin: 0, fontSize: "1.08rem", fontWeight: "bold", color: "#223b4c" }}>
                             AquaChile · Aqua-Contratos
                         </h1>
-                        <span style={{ fontSize: "12px", color: "var(--color-texto-atenuado, #666)" }}>
+                        <span style={{ fontSize: "12px", color: "#5c7485" }}>
                             {nombreMostrado} · Sistema Integrado de Evaluaciones
                         </span>
                     </div>
                 </div>
 
                 <div className="selector-rol-container" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#555" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "600", color: "#5c7485" }}>
                         Cargo Activo:
                     </span>
 
@@ -87,9 +89,9 @@ function HeaderRoles({
                     <span
                         className="badge-rol"
                         style={{
-                            backgroundColor: "#e0f2fe",
-                            color: "#0369a1",
-                            border: "1px solid #7dd3fc",
+                            backgroundColor: "#e6eef4",
+                            color: "#223b4c",
+                            border: "1px solid #b6c8d6",
                             borderRadius: "6px",
                             padding: "6px 14px",
                             fontSize: "13px",
@@ -107,13 +109,13 @@ function HeaderRoles({
                             onClick={onVolver}
                             style={{
                                 background: "#ffffff",
-                                border: "1px solid #ced4da",
+                                border: "1px solid #223b4c",
                                 borderRadius: "6px",
                                 padding: "6px 14px",
                                 fontSize: "13px",
                                 fontWeight: "600",
                                 cursor: "pointer",
-                                color: "#0d47a1",
+                                color: "#223b4c",
                                 transition: "all 0.2s ease",
                             }}
                             title="Volver a la selección de portal"

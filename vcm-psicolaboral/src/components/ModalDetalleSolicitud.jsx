@@ -6,6 +6,7 @@
  **/
 import { useState } from "react";
 import BotonOrange from "./BotonOrange";
+import Icono from "./Icono";
 import { calcularEdad } from "../utils/calcularRut";
 import { abrirCvDocumento } from "../utils/visorCv";
 import SelectorTagsPsicolaborales from "./SelectorTagsPsicolaborales";
@@ -132,7 +133,12 @@ function ModalDetalleSolicitud({
             case "Recomendado":
                 return <span className="badge-dictamen badge-dictamen-recomendado">✓ Recomendado</span>;
             case "Recomendado con observaciones":
-                return <span className="badge-dictamen badge-dictamen-observaciones">⚠️ Con observaciones</span>;
+                return (
+                    <span className="badge-dictamen badge-dictamen-observaciones" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <Icono nombre="alert" size={12} />
+                        Con observaciones
+                    </span>
+                );
             case "No recomendado":
                 return <span className="badge-dictamen badge-dictamen-norecomendado">✕ No recomendado</span>;
             default:
@@ -235,7 +241,8 @@ function ModalDetalleSolicitud({
                                 {cvArchivo ? (
                                     <span className="d-inline-flex align-items-center gap-2 flex-wrap">
                                         <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", backgroundColor: "#e3f2fd", color: "#0d47a1", padding: "5px 12px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold" }}>
-                                            📄 {cvArchivo}
+                                            <Icono nombre="fileText" size={13} />
+                                            {cvArchivo}
                                         </span>
                                         <button
                                             type="button"
@@ -244,7 +251,8 @@ function ModalDetalleSolicitud({
                                             style={{ fontSize: "12px", padding: "4px 10px" }}
                                             title="Abrir currículum en nueva pestaña"
                                         >
-                                            ↗ Abrir CV en nueva pestaña
+                                            <Icono nombre="externalLink" size={12} />
+                                            Abrir CV en nueva pestaña
                                         </button>
                                     </span>
                                 ) : (
@@ -340,8 +348,9 @@ function ModalDetalleSolicitud({
 
                     {/* 3. Preguntas de Jefatura sobre el Candidato */}
                     <div style={{ margin: "16px 0", padding: "14px", backgroundColor: "#f8f9fa", borderRadius: "8px", border: "1px solid #ced4da" }}>
-                        <h4 style={{ margin: "0 0 10px 0", color: "#004085", fontSize: "15px" }}>
-                            💬 Preguntas de Jefatura ({todasLasPreguntas.length})
+                        <h4 style={{ margin: "0 0 10px 0", color: "#004085", fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Icono nombre="message" size={16} />
+                            Preguntas de Jefatura ({todasLasPreguntas.length})
                         </h4>
                         {todasLasPreguntas.length === 0 ? (
                             <p style={{ margin: 0, fontSize: "13px", color: "#6c757d", fontStyle: "italic" }}>
@@ -393,8 +402,9 @@ function ModalDetalleSolicitud({
                     {/* 4. Sección de Evaluación Psicolaboral Formal */}
                     <div className="caja-evaluacion-psicolaboral">
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                            <h4 style={{ margin: 0, color: "#0e97b3", fontSize: "15px" }}>
-                                🧠 Evaluación Psicolaboral
+                            <h4 style={{ margin: 0, color: "#0e97b3", fontSize: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Icono nombre="activity" size={16} />
+                                Evaluación Psicolaboral
                             </h4>
                             <span style={{ fontSize: "12px", color: "#666" }}>
                                 Evaluador responsable: {solicitud.evaluador || "Carolina Díaz"}
@@ -410,8 +420,9 @@ function ModalDetalleSolicitud({
                         {puedeEvaluar ? (
                             <form onSubmit={handleGuardarEvaluacion}>
                                 {errorEvaluacion && (
-                                    <div className="form-error-mensaje" role="alert" style={{ marginBottom: "12px" }}>
-                                        <strong>⚠️ Atención: </strong>{errorEvaluacion}
+                                    <div className="form-error-mensaje" role="alert" style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <Icono nombre="alert" size={15} />
+                                        <span><strong>Atención: </strong>{errorEvaluacion}</span>
                                     </div>
                                 )}
 
@@ -542,8 +553,9 @@ function ModalDetalleSolicitud({
 
                         {/* Historial de eventos del candidato */}
                         <div style={{ marginTop: "14px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "6px", border: "1px solid #dee2e6" }}>
-                            <strong style={{ fontSize: "12.5px", color: "#495057", display: "block", marginBottom: "6px" }}>
-                                📜 Historial ({historial.length})
+                            <strong style={{ fontSize: "12.5px", color: "#495057", display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                                <Icono nombre="history" size={14} />
+                                Historial ({historial.length})
                             </strong>
                             {historial.length === 0 ? (
                                 <span style={{ fontSize: "11.5px", color: "#888", fontStyle: "italic" }}>

@@ -13,8 +13,10 @@ import MisPostulacionesView from "../components/MisPostulacionesView";
 import EditarPerfilPostulanteView from "../components/EditarPerfilPostulanteView";
 import AlertaAviso from "../components/AlertaAviso";
 import PortalAuthPostulante from "../components/PortalAuthPostulante";
+import Icono from "../components/Icono";
+import LogoAquaChile from "../components/LogoAquaChile";
 import { api } from "../services/api";
-import { NARANJA } from "../components/Estilos";
+import { NARANJA, AZUL_MARINO_AQUA } from "../components/Estilos";
 import GrillaIndicadores from "../components/GrillaIndicadores";
 import EstadoVacio from "../components/EstadoVacio";
 import { useState, useEffect, useMemo } from "react";
@@ -23,6 +25,7 @@ import {
     actualizarDatosPersonalesCandidato,
     obtenerSesionPostulante,
     cerrarSesionPostulante,
+    obtenerCamposFaltantesPerfil,
 } from "../services/candidatosStorage";
 import {
     crearPostulacionGlobal,
@@ -143,6 +146,9 @@ function CandidatoPage({ onVolver }) {
                             fase: match.fase,
                             entrevista: match.entrevista,
                             fechaEntrevista: match.fechaEntrevista,
+                            tipoCitacion: match.tipoCitacion,
+                            enlaceGoogleMeet: match.enlaceGoogleMeet,
+                            urlGoogleCalendar: match.urlGoogleCalendar,
                             encargado: match.encargado,
                             evaluadorAsignado: match.evaluadorAsignado,
                             dictamenPsicologico: match.dictamenPsicologico,
@@ -176,6 +182,11 @@ function CandidatoPage({ onVolver }) {
     }, [alertaError]);
 
     const candidatoActivo = sesionPostulante?.candidato;
+    const camposFaltantesPerfil = useMemo(
+        () => obtenerCamposFaltantesPerfil(candidatoActivo),
+        [candidatoActivo]
+    );
+    const perfilIncompleto = camposFaltantesPerfil.length > 0;
 
     const misPostulaciones = useMemo(() => {
         if (!candidatoActivo) return [];
@@ -262,6 +273,15 @@ function CandidatoPage({ onVolver }) {
 
         if (!candidatoActivo) {
             setAlertaError("Debes iniciar sesión para postular a una vacante.");
+            return;
+        }
+
+        const faltantes = obtenerCamposFaltantesPerfil(candidatoActivo);
+        if (faltantes.length > 0) {
+            setAlertaError(
+                `Para postular debes completar primero tu perfil (${faltantes.join(", ")}). Completa los datos a continuación.`
+            );
+            setEditandoPerfil(true);
             return;
         }
 
@@ -406,8 +426,8 @@ function CandidatoPage({ onVolver }) {
     return (
         <main
             style={{
-                backgroundColor: "#F0F8FF",
-                fontFamily: "Arial, Helvetica, sans-serif",
+                backgroundColor: "#f3f6f9",
+                fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif",
                 padding: "20px",
                 minHeight: "100vh",
             }}
@@ -416,8 +436,10 @@ function CandidatoPage({ onVolver }) {
                 style={{
                     backgroundColor: "white",
                     borderRadius: "10px",
-                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)",
-                    padding: "16px 20px",
+                    borderTop: `4px solid ${AZUL_MARINO_AQUA}`,
+                    borderBottom: "1px solid #dbe3eb",
+                    boxShadow: "0 3px 10px rgba(34, 59, 76, 0.06)",
+                    padding: "14px 20px",
                     marginBottom: "20px",
                     display: "flex",
                     justifyContent: "space-between",
@@ -426,48 +448,62 @@ function CandidatoPage({ onVolver }) {
                     flexWrap: "wrap",
                 }}
             >
-                {/* Parte superior izquierda: Monigote de persona + Nombre + Botón Editar perfil */}
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                {/* Parte superior izquierda: Logo AquaChile + Perfil del Postulante + Botón Editar perfil */}
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                    <LogoAquaChile height={42} />
                     <div
                         style={{
-                            width: "50px",
-                            height: "50px",
-                            borderRadius: "50%",
-                            backgroundColor: "#fff4e6",
-                            color: "#e8590c",
-                            border: "2px solid #fdba74",
+                            borderLeft: "2px solid #dbe3eb",
+                            paddingLeft: "16px",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "1.7rem",
-                            flexShrink: 0,
+                            gap: "12px",
                         }}
-                        title="Foto de perfil"
                     >
-                        👤
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <span style={{ fontSize: "1.15rem", fontWeight: "bold", color: "#111827", lineHeight: "1.2" }}>
-                            {candidatoActivo?.nombre || sesionPostulante.usuario?.nombre}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setEditandoPerfil(true)}
+                        <div
                             style={{
-                                alignSelf: "flex-start",
-                                background: "#fff",
-                                border: "1px solid #ced4da",
-                                borderRadius: "5px",
-                                padding: "4px 12px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                color: "#e8590c",
-                                cursor: "pointer",
-                                transition: "all 0.15s ease",
+                                width: "46px",
+                                height: "46px",
+                                borderRadius: "50%",
+                                backgroundColor: "#e6eef4",
+                                color: AZUL_MARINO_AQUA,
+                                border: "2px solid #b6c8d6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
                             }}
+                            title="Foto de perfil"
                         >
-                            ✏️ Editar perfil
-                        </button>
+                            <Icono nombre="user" size={24} />
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#162936", lineHeight: "1.2" }}>
+                                {candidatoActivo?.nombre || sesionPostulante.usuario?.nombre}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setEditandoPerfil(true)}
+                                style={{
+                                    alignSelf: "flex-start",
+                                    background: "#fff",
+                                    border: "1px solid #223b4c",
+                                    borderRadius: "5px",
+                                    padding: "3px 12px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    color: "#223b4c",
+                                    cursor: "pointer",
+                                    transition: "all 0.15s ease",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                }}
+                            >
+                                <Icono nombre="edit" size={13} />
+                                Editar perfil
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -569,6 +605,53 @@ function CandidatoPage({ onVolver }) {
                     {/* Pestaña 2: Catálogo de Ofertas Laborales con Postulación en 1 Clic */}
                     {tabActiva === "ofertas_laborales" && (
                         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {/* Banner de aviso si el perfil está incompleto (B4 -> F3) */}
+                            {perfilIncompleto && (
+                                <div
+                                    role="alert"
+                                    style={{
+                                        backgroundColor: "#fff7ed",
+                                        border: "1px solid #fdba74",
+                                        borderLeft: "5px solid #e8590c",
+                                        borderRadius: "10px",
+                                        padding: "14px 20px",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                        gap: "12px",
+                                    }}
+                                >
+                                    <div style={{ fontSize: "13px", color: "#9a3412", display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <Icono nombre="alert" size={16} />
+                                        <span>
+                                            <strong>Necesitas terminar tu perfil para postular:</strong>{" "}
+                                            Te falta completar <strong>{camposFaltantesPerfil.join(", ")}</strong>.
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditandoPerfil(true)}
+                                        style={{
+                                            padding: "7px 14px",
+                                            fontSize: "12.5px",
+                                            fontWeight: "700",
+                                            borderRadius: "6px",
+                                            border: "none",
+                                            backgroundColor: "#e8590c",
+                                            color: "white",
+                                            cursor: "pointer",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                        }}
+                                    >
+                                        <Icono nombre="edit" size={13} />
+                                        Completar mi Perfil ahora
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Encabezado y resumen de postulación rápida */}
                             <div
                                 style={{
@@ -584,8 +667,9 @@ function CandidatoPage({ onVolver }) {
                                 }}
                             >
                                 <div>
-                                    <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1a1a1a" }}>
-                                        💼 Vacantes Disponibles en AquaChile
+                                    <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1a1a1a", display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <Icono nombre="briefcase" size={20} color="#e8590c" />
+                                        Vacantes Disponibles en AquaChile
                                     </h2>
                                     <span style={{ fontSize: "13px", color: "gray" }}>
                                         Postula en 1 clic directamente con los datos y el CV registrados en tu perfil ({candidatoActivo?.rut || "Sin RUT"})
@@ -602,9 +686,13 @@ function CandidatoPage({ onVolver }) {
                                             color: candidatoActivo?.cv_pdf ? "#166534" : "#9a3412",
                                             border: `1px solid ${candidatoActivo?.cv_pdf ? "#bbf7d0" : "#fed7aa"}`,
                                             fontWeight: "600",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
                                         }}
                                     >
-                                        📄 {candidatoActivo?.cv_pdf ? `CV en perfil: ${candidatoActivo.cv_pdf}` : "CV pendiente de subir en tu perfil"}
+                                        <Icono nombre="fileText" size={14} />
+                                        {candidatoActivo?.cv_pdf ? `CV en perfil: ${candidatoActivo.cv_pdf}` : "CV pendiente de subir en tu perfil"}
                                     </span>
                                     <button
                                         type="button"
@@ -618,9 +706,13 @@ function CandidatoPage({ onVolver }) {
                                             backgroundColor: "white",
                                             color: "#e8590c",
                                             cursor: "pointer",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
                                         }}
                                     >
-                                        ✏️ Actualizar Perfil / CV
+                                        <Icono nombre="edit" size={13} />
+                                        Actualizar Perfil / CV
                                     </button>
                                 </div>
                             </div>
@@ -694,7 +786,14 @@ function CandidatoPage({ onVolver }) {
                                                 puesto={puesto}
                                                 seleccionada={puestoPostulandoId === puesto.id}
                                                 yaPostulado={verificarYaPostulado(puesto)}
+                                                perfilIncompleto={perfilIncompleto}
                                                 onPostular={handlePostular}
+                                                onIrAPerfil={() => {
+                                                    setAlertaError(
+                                                        `Para postular debes terminar de completar tu perfil: ${camposFaltantesPerfil.join(", ")}.`
+                                                    );
+                                                    setEditandoPerfil(true);
+                                                }}
                                             />
                                         ))}
                                     </div>

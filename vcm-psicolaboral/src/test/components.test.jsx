@@ -4,6 +4,17 @@ import IndicadorCard from '../components/IndicadorCard';
 import AlertaExitoCerrable from '../components/AlertaExitoCerrable';
 import BarraFiltros from '../components/BarraFiltros';
 import PortalAuthPostulante from '../components/PortalAuthPostulante';
+import TarjetaOferta from '../components/tarjetaOferta';
+import { obtenerCamposFaltantesPerfil } from '../services/candidatosStorage';
+import {
+    registrarPuestoGlobal,
+    actualizarPuestoGlobal,
+    cargarPuestosGlobales,
+} from '../services/puestosStorage';
+import {
+    construirUrlGoogleCalendar,
+    registrarFechaEspecialCalendario,
+} from '../utils/googleCalendar';
 
 describe('Componente: IndicadorCard', () => {
     it('debe renderizar el título y el valor numérico correctamente', () => {
@@ -108,5 +119,104 @@ describe('Componente: PortalAuthPostulante (Registro e Inicio de Sesión B1 / B2
 
         expect(handleAutenticado).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(/módulo 11/i);
+    });
+});
+
+describe('Validación de Perfil Completo antes de Postular (B4 -> F3)', () => {
+    it('debe identificar los campos faltantes del perfil cuando recién se crea la cuenta', () => {
+        const faltantes = obtenerCamposFaltantesPerfil({
+            rut: '21.756.200-7',
+            nombres: 'Juan',
+            apellidos: 'Pérez',
+            email: 'juan@gmail.com',
+            direccion: '',
+            comuna: '',
+            fecha_nacimiento: '',
+            cv_pdf: '',
+        });
+
+        expect(faltantes).toContain('Dirección');
+        expect(faltantes).toContain('Comuna');
+        expect(faltantes).toContain('Fecha de nacimiento');
+        expect(faltantes).toContain('Currículum Vitae (CV)');
+    });
+
+    it('debe mostrar el botón de completar perfil en TarjetaOferta cuando perfilIncompleto es true', () => {
+        const handleIrAPerfil = vi.fn();
+        render(
+            <TarjetaOferta
+                puesto={{ id: 1, titulo: 'Buzo Básico', planta: 'Puerto Montt', familiaCargo: 'Operaciones', vacantes: 2 }}
+                perfilIncompleto={true}
+                onPostular={() => {}}
+                onIrAPerfil={handleIrAPerfil}
+            />
+        );
+
+        const btnCompletar = screen.getByRole('button', { name: /completa tu perfil para postular/i });
+        expect(btnCompletar).toBeInTheDocument();
+        fireEvent.click(btnCompletar);
+        expect(handleIrAPerfil).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('Edición de Ofertas e Historial de Modificaciones (F2)', () => {
+    it('debe incrementar conteoModificaciones y registrar historialModificaciones al editar un puesto', () => {
+        localStorage.clear();
+        const creados = registrarPuestoGlobal({
+            id: 99,
+            area_id: 1,
+            titulo: 'Analista QA',
+            planta: 'Puerto Montt',
+            familiaCargo: 'Sistemas y TI',
+            vacantes: 1,
+        });
+        const inicial = creados.find((p) => p.id === 99);
+        expect(inicial.conteoModificaciones).toBe(0);
+
+        const actualizados = actualizarPuestoGlobal(99, {
+            vacantes: 3,
+            planta: 'Osorno',
+            modificadoPor: 'Carlos Mendoza (Jefe Sistemas y TI)',
+            forzarCalculoLocal: true,
+        });
+        const editado = actualizados.find((p) => p.id === 99);
+
+        expect(editado.conteoModificaciones).toBe(1);
+        expect(editado.historialModificaciones).toHaveLength(1);
+        expect(editado.historialModificaciones[0].detalle).toMatch(/Vacantes: 1 → 3/);
+        expect(editado.historialModificaciones[0].detalle).toMatch(/Planta: Puerto Montt → Osorno/);
+    });
+});
+
+describe('Citaciones Google Calendar y Fechas Operativas (E1 -> E2 -> E3)', () => {
+    it('debe construir una URL válida de Google Calendar con tipo de citación e invitado', () => {
+        const url = construirUrlGoogleCalendar({
+            tipoCitacion: 'Inscripciones a la escuela de buceo',
+            fechaHora: '2026-10-25T10:00',
+            candidatoNombre: 'Rafael Muñoz',
+            candidatoEmail: 'rafael@gmail.com',
+            puestoTitulo: 'Buzo Básico',
+            planta: 'Puerto Montt',
+            evaluador: 'Carolina Díaz',
+        });
+
+        expect(url).toContain('https://calendar.google.com/calendar/render?');
+        expect(url).toContain('action=TEMPLATE');
+        expect(url).toContain('Inscripciones+a+la+escuela+de+buceo');
+        expect(url).toContain('add=rafael%40gmail.com');
+    });
+
+    it('debe registrar fechas operativas (cierres, vacaciones, mantenimientos, feriados) en el calendario', () => {
+        localStorage.clear();
+        const lista = registrarFechaEspecialCalendario({
+            titulo: 'Cierre de planta por mantención anual',
+            tipoEvento: 'Cierres de local',
+            fecha: '2026-11-02T08:00',
+            planta: 'Castro',
+        });
+
+        expect(lista[0].titulo).toBe('Cierre de planta por mantención anual');
+        expect(lista[0].tipoEvento).toBe('Cierres de local');
+        expect(lista[0].esEventoEspecial).toBe(true);
     });
 });

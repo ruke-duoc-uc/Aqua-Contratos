@@ -1,6 +1,8 @@
 import { useState } from "react";
 import BotonOrange from "./BotonOrange.jsx";
-import { EVALUADORES_DISPONIBLES } from "../utils/constantes";
+import Icono from "./Icono.jsx";
+import { EVALUADORES_DISPONIBLES, TIPOS_CITACION } from "../utils/constantes";
+import { construirUrlGoogleCalendar, generarEnlaceGoogleMeet } from "../utils/googleCalendar";
 
 function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
     // Obtener fecha por defecto (mañana a las 10:00) o existente
@@ -21,8 +23,16 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
     };
 
     const [fechaHora, setFechaHora] = useState(obtenerFechaDefecto);
+    const [tipoCitacion, setTipoCitacion] = useState(
+        postulante?.tipoCitacion || TIPOS_CITACION[0] || "Entrevistas físicas"
+    );
     const [evaluador, setEvaluador] = useState(
         postulante?.evaluadorAsignado || postulante?.encargado || EVALUADORES_DISPONIBLES[0] || "Amaro Villalobos Caseres"
+    );
+    const [enlaceGoogleMeet, setEnlaceGoogleMeet] = useState(
+        () =>
+            postulante?.enlaceGoogleMeet ||
+            generarEnlaceGoogleMeet(postulante?.candidatoNombre || postulante?.nombre || "aquachile")
     );
     const [observaciones, setObservaciones] = useState(postulante?.observaciones || "");
     const [enviando, setEnviando] = useState(false);
@@ -30,10 +40,27 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
 
     if (!isOpen || !postulante) return null;
 
+    const esOnline = tipoCitacion === "Entrevistas online";
+    const nombrePostulante = postulante.candidatoNombre || postulante.nombre || "Postulante";
+    const cargoPostulante = postulante.puestoTitulo || postulante.cargo || "Postulante General";
+    const plantaPostulante = postulante.puestoPlanta || postulante.planta || "Puerto Montt";
+
+    const urlGooglePreview = construirUrlGoogleCalendar({
+        tipoCitacion,
+        fechaHora,
+        candidatoNombre: nombrePostulante,
+        candidatoEmail: postulante.candidatoEmail || postulante.email || "",
+        puestoTitulo: cargoPostulante,
+        planta: plantaPostulante,
+        evaluador,
+        enlaceMeet: esOnline ? enlaceGoogleMeet : "",
+        observaciones,
+    });
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!fechaHora) {
-            setError("Debe seleccionar una fecha y hora para la entrevista.");
+            setError("Debe seleccionar una fecha y hora para la citación.");
             return;
         }
 
@@ -43,12 +70,15 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
             await onAgendar({
                 postulacionId: postulante.id,
                 fechaEntrevista: fechaHora,
+                tipoCitacion,
                 evaluadorAsignado: evaluador,
+                enlaceGoogleMeet: esOnline ? enlaceGoogleMeet.trim() : "",
+                urlGoogleCalendar: urlGooglePreview,
                 observaciones: observaciones.trim(),
             });
             onCerrar();
         } catch (err) {
-            setError(err.message || "Error al agendar la entrevista.");
+            setError(err.message || "Error al agendar la citación.");
         } finally {
             setEnviando(false);
         }
@@ -89,8 +119,8 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                     backgroundColor: "white",
                     borderRadius: "12px",
                     width: "95%",
-                    maxWidth: "500px",
-                    maxHeight: "90vh",
+                    maxWidth: "540px",
+                    maxHeight: "92vh",
                     overflowY: "auto",
                     boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
                 }}
@@ -107,9 +137,12 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                     }}
                 >
                     <div>
-                        <h2 style={{ margin: 0, fontSize: "1.15rem" }}>Citar a Entrevista Laboral</h2>
+                        <h2 style={{ margin: 0, fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Icono nombre="calendar" size={18} color="#e8590c" />
+                            Programar Citación con Postulante
+                        </h2>
                         <span style={{ fontSize: "12px", color: "#666" }}>
-                            Postulante: <strong>{postulante.candidatoNombre || postulante.nombre}</strong>
+                            Postulante: <strong>{nombrePostulante}</strong>
                         </span>
                     </div>
                     <button
@@ -118,39 +151,68 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                         style={{
                             background: "none",
                             border: "none",
-                            fontSize: "22px",
                             cursor: "pointer",
                             color: "#888",
                         }}
+                        aria-label="Cerrar modal"
                     >
-                        ✕
+                        <Icono nombre="close" size={20} />
                     </button>
                 </div>
 
                 {/* Formulario */}
-                <form onSubmit={handleSubmit} style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                <form onSubmit={handleSubmit} noValidate style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px" }}>
                     {/* Información resumida */}
                     <div style={{ backgroundColor: "#f8f9fa", padding: "10px 14px", borderRadius: "6px", fontSize: "13px", color: "#495057" }}>
-                        <div><strong>Puesto:</strong> {postulante.puestoTitulo || postulante.cargo || "Postulante General"}</div>
-                        <div><strong>Planta:</strong> {postulante.puestoPlanta || postulante.planta || "Sin asignar"}</div>
+                        <div><strong>Puesto:</strong> {cargoPostulante}</div>
+                        <div><strong>Planta:</strong> {plantaPostulante}</div>
                         <div><strong>RUT:</strong> {postulante.candidatoRut || postulante.rut || "Sin RUT"}</div>
+                    </div>
+
+                    {/* Tipo de Citación */}
+                    <div>
+                        <label style={estiloLabel}>Tipo de Citación *</label>
+                        <select
+                            value={tipoCitacion}
+                            onChange={(e) => setTipoCitacion(e.target.value)}
+                            style={estiloInput}
+                        >
+                            {TIPOS_CITACION.map((tipo) => (
+                                <option key={tipo} value={tipo}>
+                                    {tipo}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Fecha y Hora */}
                     <div>
-                        <label style={estiloLabel}>Fecha y Hora de la Entrevista *</label>
+                        <label style={estiloLabel}>Fecha y Hora de la Citación *</label>
                         <input
                             type="datetime-local"
                             value={fechaHora}
                             onChange={(e) => setFechaHora(e.target.value)}
-                            required
                             style={estiloInput}
                         />
                     </div>
 
-                    {/* Evaluador Asignado */}
+                    {/* Enlace Google Meet si es Entrevista Online */}
+                    {esOnline && (
+                        <div>
+                            <label style={estiloLabel}>Enlace Google Meet (Videollamada) *</label>
+                            <input
+                                type="url"
+                                value={enlaceGoogleMeet}
+                                onChange={(e) => setEnlaceGoogleMeet(e.target.value)}
+                                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                                style={estiloInput}
+                            />
+                        </div>
+                    )}
+
+                    {/* Evaluador / Encargado Asignado */}
                     <div>
-                        <label style={estiloLabel}>Profesional Evaluador Asignado *</label>
+                        <label style={estiloLabel}>Funcionario / Evaluador Responsable *</label>
                         <select
                             value={evaluador}
                             onChange={(e) => setEvaluador(e.target.value)}
@@ -164,14 +226,56 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
 
                     {/* Observaciones */}
                     <div>
-                        <label style={estiloLabel}>Instrucciones / Observaciones para la Entrevista</label>
+                        <label style={estiloLabel}>Instrucciones / Observaciones para la Citación</label>
                         <textarea
                             value={observaciones}
                             onChange={(e) => setObservaciones(e.target.value)}
-                            placeholder="Ej: Entrevista técnica presencial en faena. Presentarse con documento de identidad."
+                            placeholder="Ej: Presentarse con cédula de identidad vigente o conectarse 5 minutos antes a Google Meet."
                             rows={3}
                             style={{ ...estiloInput, resize: "vertical" }}
                         />
+                    </div>
+
+                    {/* Integración directa con Google Calendar (E2) */}
+                    <div
+                        style={{
+                            padding: "12px 14px",
+                            backgroundColor: "#eff6ff",
+                            border: "1px solid #bfdbfe",
+                            borderRadius: "8px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: "10px",
+                        }}
+                    >
+                        <div style={{ fontSize: "12px", color: "#1e3a8a" }}>
+                            <strong>Coordinación con Google Calendar</strong>
+                            <div style={{ color: "#3b82f6" }}>
+                                Sincroniza esta citación en Google Calendar e invita al postulante
+                            </div>
+                        </div>
+                        <a
+                            href={urlGooglePreview}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "7px 12px",
+                                backgroundColor: "#1d4ed8",
+                                color: "white",
+                                borderRadius: "6px",
+                                fontSize: "12px",
+                                fontWeight: "700",
+                                textDecoration: "none",
+                            }}
+                        >
+                            <Icono nombre="externalLink" size={13} />
+                            Abrir en Google Calendar
+                        </a>
                     </div>
 
                     {error && (
@@ -199,7 +303,7 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                             Cancelar
                         </button>
                         <BotonOrange
-                            texto={enviando ? "Guardando..." : "Confirmar Cita"}
+                            texto={enviando ? "Guardando..." : "Confirmar Citación"}
                             type="submit"
                             disabled={enviando}
                         />

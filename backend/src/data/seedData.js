@@ -504,6 +504,15 @@ export const USUARIOS_SEED = [
         area_id: 1, // Jefe del área Sistemas y TI
     },
     {
+        id: 14,
+        email: "jefe.mantenimiento@aquachile.cl",
+        password: "password123",
+        nombre: "Hernán Soto",
+        rol: "jefatura",
+        candidatoId: null,
+        area_id: 3, // Jefe del área Mantenimiento Industrial
+    },
+    {
         id: 4,
         email: "luis.mancilla@gmail.com",
         password: "password123",

@@ -6,10 +6,12 @@ import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import BotonOrange from "../components/BotonOrange";
 import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
+import GestionCandidatosView from "../components/GestionCandidatosView";
 import GestionPuestosView from "../components/GestionPuestosView";
 import ModalCrearPuesto from "../components/ModalCrearPuesto";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
+import { obtenerSesionEmpleado } from "../services/empleadosStorage";
 import {
     cargarCandidatosGlobales,
     guardarCandidatosGlobales,
@@ -23,7 +25,9 @@ import {
 import {
     cargarPuestosGlobales,
     registrarPuestoGlobal,
+    actualizarPuestoGlobal,
     actualizarEstadoPuestoGlobal,
+    eliminarPuestoGlobal,
     sincronizarPuestosConRemotos,
     cargarEtiquetasGlobales,
     guardarEtiquetasGlobales,
@@ -36,11 +40,18 @@ import EncabezadoDashboard from "../components/EncabezadoDashboard.jsx";
 import EncabezadoRegistro from "../components/EncabezadoRegistro";
 import PanelSolicitudes from "../components/PanelSolicitudes";
 
-import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES } from "../utils/constantes";
+import { PLANTAS_DISPONIBLES, EVALUADORES_DISPONIBLES, obtenerNombreAreaPorId } from "../utils/constantes";
 import { calcularIndicadores, aplicarFiltros } from "../utils/solicitudesUtils";
 
 function JefaturaPage({ onVolver }) {
     const rolActual = "jefatura";
+    const [usuarioJefe] = useState(() => obtenerSesionEmpleado()?.usuario || null);
+    const areaJefeId = usuarioJefe?.area_id ? Number(usuarioJefe.area_id) : null;
+    const nombreAreaJefe = obtenerNombreAreaPorId(areaJefeId);
+    const autorJefeTexto = usuarioJefe?.nombre
+        ? `${usuarioJefe.nombre}${nombreAreaJefe ? ` (Jefe ${nombreAreaJefe})` : " (Jefe de Área)"}`
+        : "Jefe de Área";
+
     const [tabActiva, setTabActiva] = useState("dashboard");
     const [candidatos, setCandidatos] = useState(cargarCandidatosGlobales);
     const [informes, setInformes] = useState(cargarInformesIniciales);
@@ -53,6 +64,7 @@ function JefaturaPage({ onVolver }) {
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [modalCrearInformeAbierto, setModalCrearInformeAbierto] = useState(false);
     const [modalCrearPuestoAbierto, setModalCrearPuestoAbierto] = useState(false);
+    const [puestoEnEdicion, setPuestoEnEdicion] = useState(null);
     const [informeSeleccionado, setInformeSeleccionado] = useState(null);
 
     // Sincronización en tiempo real con postulantes inscritos desde la pantalla pública o cambios de rol
@@ -150,9 +162,98 @@ function JefaturaPage({ onVolver }) {
         };
     }, []);
 
+    /* ==================== SEGREGACIÓN POR ÁREA DE JEFATURA ==================== */
+
+    // 1. Puestos que competen al área del Jefe logueado
+    const puestosDelArea = useMemo(() => {
+        if (!areaJefeId && !nombreAreaJefe) return puestos;
+        return puestos.filter((p) => {
+            const coincideAreaId = p.area_id && Number(p.area_id) === Number(areaJefeId);
+            const coincideFamilia =
+                nombreAreaJefe &&
+                (p.familiaCargo || "").toLowerCase().trim() === nombreAreaJefe.toLowerCase().trim();
+            return coincideAreaId || coincideFamilia;
+        });
+    }, [puestos, areaJefeId, nombreAreaJefe]);
+
+    // 2. Postulaciones inscritas en puestos del área del Jefe
+    const postulacionesDelArea = useMemo(() => {
+        if (!areaJefeId && !nombreAreaJefe) return postulaciones;
+        const idsPuestosArea = new Set(puestosDelArea.map((p) => Number(p.id)));
+        const titulosPuestosArea = new Set(
+            puestosDelArea.map((p) => (p.titulo || "").toLowerCase().trim()).filter(Boolean)
+        );
+        return postulaciones.filter((pos) => {
+            const pid = Number(pos.puestoTrabajoId || pos.puestoId);
+            if (pid && idsPuestosArea.has(pid)) return true;
+            const tituloPos = (pos.puestoTitulo || pos.cargo || "").toLowerCase().trim();
+            if (tituloPos && titulosPuestosArea.has(tituloPos)) return true;
+            const famPos = (pos.puestoFamilia || pos.familiaCargo || "").toLowerCase().trim();
+            if (nombreAreaJefe && famPos === nombreAreaJefe.toLowerCase().trim()) return true;
+            return false;
+        });
+    }, [postulaciones, puestosDelArea, areaJefeId, nombreAreaJefe]);
+
+    // 3. Candidatos que postulan en trabajos del área del Jefe
+    const candidatosDelArea = useMemo(() => {
+        if (!areaJefeId && !nombreAreaJefe) return candidatos;
+        const idsCandidatosEnPostulaciones = new Set(
+            postulacionesDelArea.map((pos) => Number(pos.candidatoId)).filter(Boolean)
+        );
+        const rutsEnPostulaciones = new Set(
+            postulacionesDelArea
+                .map((pos) => (pos.candidatoRut || pos.rut || "").replace(/[.-]/g, "").trim().toLowerCase())
+                .filter(Boolean)
+        );
+        const titulosPuestosArea = new Set(
+            puestosDelArea.map((p) => (p.titulo || "").toLowerCase().trim()).filter(Boolean)
+        );
+
+        return candidatos.filter((c) => {
+            if (idsCandidatosEnPostulaciones.has(Number(c.id))) return true;
+            const rutCand = (c.rut || "").replace(/[.-]/g, "").trim().toLowerCase();
+            if (rutCand && rutsEnPostulaciones.has(rutCand)) return true;
+            if (
+                nombreAreaJefe &&
+                (c.familiaCargo || "").toLowerCase().trim() === nombreAreaJefe.toLowerCase().trim()
+            ) {
+                return true;
+            }
+            const cargoCand = (c.cargo || c.especialidad || "").toLowerCase().trim();
+            if (cargoCand && titulosPuestosArea.has(cargoCand)) return true;
+            return false;
+        });
+    }, [candidatos, postulacionesDelArea, puestosDelArea, areaJefeId, nombreAreaJefe]);
+
+    // 4. Informes de candidatos pertenecientes al área del Jefe
+    const informesDelArea = useMemo(() => {
+        if (!areaJefeId && !nombreAreaJefe) return informes;
+        const idsCand = new Set(candidatosDelArea.map((c) => Number(c.id)));
+        const nombresCand = new Set(
+            candidatosDelArea.map((c) => (c.nombre || "").toLowerCase().trim()).filter(Boolean)
+        );
+        const idsPuestos = new Set(puestosDelArea.map((p) => Number(p.id)));
+
+        return informes.filter((inf) => {
+            if (inf.candidatoId && idsCand.has(Number(inf.candidatoId))) return true;
+            if (inf.puestoTrabajoId && idsPuestos.has(Number(inf.puestoTrabajoId))) return true;
+            if (
+                inf.candidatoNombre &&
+                nombresCand.has(inf.candidatoNombre.toLowerCase().trim())
+            ) {
+                return true;
+            }
+            return false;
+        });
+    }, [informes, candidatosDelArea, puestosDelArea, areaJefeId, nombreAreaJefe]);
+
     const handleCrearInforme = async (nuevoInformeDatos) => {
+        const datosConAutor = {
+            ...nuevoInformeDatos,
+            solicitante: autorJefeTexto,
+        };
         try {
-            const creado = await api.crearSolicitudInforme(nuevoInformeDatos);
+            const creado = await api.crearSolicitudInforme(datosConAutor);
             setInformes((prev) => {
                 const actualizados = [creado, ...prev];
                 guardarInformesLocal(actualizados);
@@ -163,14 +264,14 @@ function JefaturaPage({ onVolver }) {
                 const nuevoId = prev.length > 0 ? Math.max(...prev.map((i) => Number(i.id) || 0)) + 1 : 1;
                 const nuevoLocal = {
                     id: nuevoId,
-                    ...nuevoInformeDatos,
+                    ...datosConAutor,
                     estado: "Abierta",
                     fechaCreacion: new Date().toISOString(),
                     preguntas: nuevoInformeDatos.preguntas.map((p, idx) => ({
                         id: idx + 1,
                         texto: p,
                         fecha: new Date().toISOString(),
-                        creadaPor: "Jefe de Área",
+                        creadaPor: autorJefeTexto,
                         respuestas: [],
                     })),
                 };
@@ -183,7 +284,10 @@ function JefaturaPage({ onVolver }) {
 
     const handleAgregarPreguntaInforme = async (id, datosPregunta) => {
         try {
-            const actualizado = await api.agregarPreguntaInforme(id, datosPregunta);
+            const actualizado = await api.agregarPreguntaInforme(id, {
+                ...datosPregunta,
+                creadaPor: autorJefeTexto,
+            });
             setInformes((prev) => {
                 const actualizados = prev.map((inf) => (inf.id === id ? actualizado : inf));
                 guardarInformesLocal(actualizados);
@@ -201,7 +305,7 @@ function JefaturaPage({ onVolver }) {
                             id: nuevaPreguntaId,
                             texto: datosPregunta.texto,
                             fecha: new Date().toISOString(),
-                            creadaPor: "Jefe de Área",
+                            creadaPor: autorJefeTexto,
                             respuestas: [],
                         };
                         const upd = { ...inf, preguntas: [...(inf.preguntas || []), nuevaP] };
@@ -216,28 +320,40 @@ function JefaturaPage({ onVolver }) {
         }
     };
 
-    const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
+    const handleAgendarEntrevista = async ({
+        postulacionId,
+        fechaEntrevista,
+        tipoCitacion,
+        evaluadorAsignado,
+        enlaceGoogleMeet,
+        urlGoogleCalendar,
+        observaciones,
+    }) => {
         try {
             const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
                 fechaEntrevista,
+                tipoCitacion,
                 evaluadorAsignado,
+                enlaceGoogleMeet,
+                urlGoogleCalendar,
                 observaciones,
             });
-            setPuestos((prev) => prev); // mantener
             setPostulaciones((prev) => {
                 const list = prev.map((p) => (p.id === postulacionId ? { ...p, ...actualizado } : p));
                 guardarPostulacionesGlobales(list);
                 return list;
             });
         } catch {
-            // Fallback local
             setPostulaciones((prev) => {
                 const list = prev.map((p) => {
                     if (p.id === postulacionId) {
                         return {
                             ...p,
                             fechaEntrevista,
+                            tipoCitacion: tipoCitacion || "Entrevistas físicas",
                             evaluadorAsignado,
+                            enlaceGoogleMeet: enlaceGoogleMeet || "",
+                            urlGoogleCalendar: urlGoogleCalendar || "",
                             observaciones,
                             fase: "en entrevista",
                             estado: "Entrevista agendada",
@@ -266,19 +382,20 @@ function JefaturaPage({ onVolver }) {
     };
 
     const handleCrearPuesto = async (datosPuesto) => {
+        const payload = {
+            ...datosPuesto,
+            area_id: areaJefeId || datosPuesto.area_id || null,
+            familiaCargo: nombreAreaJefe || datosPuesto.familiaCargo,
+            creadoPor: autorJefeTexto,
+        };
         try {
-            const creado = await api.crearPuesto({
-                ...datosPuesto,
-                creadoPor: "Jefe de Área",
-            });
+            const creado = await api.crearPuesto(payload);
             const actualizados = registrarPuestoGlobal(creado);
             setPuestos(actualizados);
         } catch {
-            // Fallback local sin invocación dentro de updater de React
             const actualizados = registrarPuestoGlobal({
-                ...datosPuesto,
+                ...payload,
                 estado: "Abierto",
-                creadoPor: "Jefe de Área",
                 fechaCreacion: new Date().toISOString(),
             });
             setPuestos(actualizados);
@@ -291,15 +408,52 @@ function JefaturaPage({ onVolver }) {
         }
     };
 
+    const handleEditarPuesto = async (id, datosActualizados) => {
+        const payload = {
+            ...datosActualizados,
+            area_id: areaJefeId || datosActualizados.area_id || null,
+            familiaCargo: nombreAreaJefe || datosActualizados.familiaCargo,
+            modificadoPor: autorJefeTexto,
+        };
+        try {
+            const actualizadoRemoto = await api.actualizarPuesto(id, payload);
+            const actualizados = actualizarPuestoGlobal(id, actualizadoRemoto);
+            setPuestos(actualizados);
+        } catch {
+            const actualizados = actualizarPuestoGlobal(id, {
+                ...payload,
+                forzarCalculoLocal: true,
+            });
+            setPuestos(actualizados);
+        }
+        if (Array.isArray(datosActualizados.etiquetas) && datosActualizados.etiquetas.length > 0) {
+            const actuales = cargarEtiquetasGlobales();
+            const nuevas = Array.from(new Set([...actuales, ...datosActualizados.etiquetas]));
+            guardarEtiquetasGlobales(nuevas);
+            setEtiquetas(nuevas);
+        }
+        setPuestoEnEdicion(null);
+    };
+
     const handleCambiarEstadoPuesto = async (id, nuevoEstado) => {
         try {
             const actualizado = await api.cambiarEstadoPuesto(id, nuevoEstado);
-            const actualizados = actualizarEstadoPuestoGlobal(id, actualizado?.estado || nuevoEstado);
+            const actualizados = actualizarPuestoGlobal(id, actualizado || { estado: nuevoEstado, modificadoPor: autorJefeTexto, forzarCalculoLocal: true });
             setPuestos(actualizados);
         } catch {
-            const actualizados = actualizarEstadoPuestoGlobal(id, nuevoEstado);
+            const actualizados = actualizarEstadoPuestoGlobal(id, nuevoEstado, autorJefeTexto);
             setPuestos(actualizados);
         }
+    };
+
+    const handleEliminarPuesto = async (id) => {
+        try {
+            await api.eliminarPuesto(id);
+        } catch {
+            // Continuar con eliminación local
+        }
+        const actualizados = eliminarPuestoGlobal(id);
+        setPuestos(actualizados);
     };
 
     const handleCambiarEstadoInforme = async (id, nuevoEstado) => {
@@ -328,23 +482,23 @@ function JefaturaPage({ onVolver }) {
     };
 
     const indicadores = useMemo(() => {
-        const base = calcularIndicadores(candidatos);
-        const puestosAbiertos = puestos.filter((p) => p.estado === "Abierto").length;
+        const base = calcularIndicadores(candidatosDelArea);
+        const puestosAbiertos = puestosDelArea.filter((p) => p.estado === "Abierto").length;
         return [
             ...base,
-            { id: 5, titulo: "Puestos Abiertos", valor: puestosAbiertos },
-            { id: 6, titulo: "Informes Solicitados", valor: informes.length },
+            { id: 5, titulo: "Puestos Abiertos en Área", valor: puestosAbiertos },
+            { id: 6, titulo: "Informes Solicitados", valor: informesDelArea.length },
         ];
-    }, [candidatos, puestos, informes.length]);
+    }, [candidatosDelArea, puestosDelArea, informesDelArea.length]);
 
     const solicitudesFiltradas = useMemo(() => {
-        return aplicarFiltros(candidatos, {
+        return aplicarFiltros(candidatosDelArea, {
             busqueda,
             filtroEstado,
             filtroPlanta,
             filtroEvaluador,
         });
-    }, [candidatos, busqueda, filtroEstado, filtroPlanta, filtroEvaluador]);
+    }, [candidatosDelArea, busqueda, filtroEstado, filtroPlanta, filtroEvaluador]);
 
     const handleLimpiarFiltros = () => {
         setBusqueda("");
@@ -365,12 +519,12 @@ function JefaturaPage({ onVolver }) {
         plantasDisponibles: PLANTAS_DISPONIBLES,
         evaluadoresDisponibles: EVALUADORES_DISPONIBLES,
         totalResultados: solicitudesFiltradas.length,
-        totalOriginal: candidatos.length,
+        totalOriginal: candidatosDelArea.length,
         onLimpiarFiltros: handleLimpiarFiltros,
     };
 
     return (
-        <main style={{ backgroundColor: "#F0F8FF", fontFamily: "Arial, Helvetica, sans-serif", padding: "20px", minHeight: "100vh" }}>
+        <main style={{ backgroundColor: "#f3f6f9", fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif", padding: "20px", minHeight: "100vh" }}>
             <HeaderRoles
                 rolActual={rolActual}
                 tabActiva={tabActiva}
@@ -378,9 +532,10 @@ function JefaturaPage({ onVolver }) {
                 onVolver={onVolver}
                 tabs={[
                     { id: "dashboard", label: "Dashboard Operativo" },
-                    { id: "entrevistas", label: "Agenda de Entrevistas" },
-                    { id: "puestos", label: "Puestos de Trabajo" },
-                    { id: "postulantesPorPuesto", label: "Postulantes por Puesto" },
+                    { id: "puestos", label: "Ofertas de Trabajo" },
+                    { id: "postulantes", label: "Lista de Postulantes" },
+                    { id: "postulantesPorPuesto", label: "Lista de Candidatos" },
+                    { id: "entrevistas", label: "Calendario y Citaciones" },
                     { id: "informes", label: "Informes de Candidatos" },
                 ]}
             />
@@ -388,12 +543,14 @@ function JefaturaPage({ onVolver }) {
             <BannerEstadoBackend
                 backendConectado={backendConectado}
                 cargandoApi={cargandoApi}
-                etiquetaPantalla="Pantalla Dedicada · Jefe de Área (Solo Lectura)"
+                etiquetaPantalla={`Pantalla Dedicada · Jefe de Área${nombreAreaJefe ? ` (${nombreAreaJefe})` : ""}`}
             />
 
             {tabActiva === "dashboard" && (
                 <>
-                    <EncabezadoDashboard subtitulo="Jefe de Área · Supervisión y seguimiento consolidado">
+                    <EncabezadoDashboard
+                        subtitulo={`Jefe de Área${nombreAreaJefe ? ` · ${nombreAreaJefe}` : ""} · Supervisión de candidatos en ofertas de su área`}
+                    >
                         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                             <BotonOrange
                                 texto="+ Solicitar Informe de Candidato"
@@ -409,7 +566,7 @@ function JefaturaPage({ onVolver }) {
                                     fontWeight: "bold",
                                 }}
                             >
-                                Jefatura de Área
+                                {nombreAreaJefe ? `Área: ${nombreAreaJefe}` : "Jefatura de Área"}
                             </span>
                         </div>
                     </EncabezadoDashboard>
@@ -419,45 +576,65 @@ function JefaturaPage({ onVolver }) {
                     <PanelSolicitudes
                         anchoCompleto
                         encabezado={
-                            <EncabezadoRegistro subtitulo="Supervisión y trazabilidad de evaluaciones psicolaborales" />
+                            <EncabezadoRegistro
+                                subtitulo={`Supervisión y trazabilidad de postulantes en trabajos del área ${nombreAreaJefe || "asignada"}`}
+                            />
                         }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
-                        mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
+                        mensajeVacio="No se encontraron candidatos del área con los filtros aplicados."
                         onDetalle={setSolicitudSeleccionada}
                     />
                 </>
             )}
 
+            {tabActiva === "postulantes" && (
+                <GestionCandidatosView
+                    candidatos={candidatos}
+                    rolActual={rolActual}
+                    onVerDetalle={setSolicitudSeleccionada}
+                />
+            )}
+
             {tabActiva === "entrevistas" && (
                 <AgendaEntrevistasView
-                    postulaciones={postulaciones}
+                    postulaciones={postulacionesDelArea}
                     onAgendarEntrevista={handleAgendarEntrevista}
                 />
             )}
 
             {tabActiva === "puestos" && (
                 <GestionPuestosView
-                    puestos={puestos}
+                    puestos={puestosDelArea}
                     etiquetas={etiquetas}
+                    areaJefeId={areaJefeId}
+                    nombreAreaJefe={nombreAreaJefe}
                     onCrearEtiqueta={handleCrearEtiqueta}
-                    onAbrirCrear={() => setModalCrearPuestoAbierto(true)}
+                    onAbrirCrear={() => {
+                        setPuestoEnEdicion(null);
+                        setModalCrearPuestoAbierto(true);
+                    }}
+                    onAbrirEditar={(puesto) => {
+                        setPuestoEnEdicion(puesto);
+                        setModalCrearPuestoAbierto(true);
+                    }}
                     onCambiarEstado={handleCambiarEstadoPuesto}
+                    onEliminarPuesto={handleEliminarPuesto}
                 />
             )}
 
             {tabActiva === "postulantesPorPuesto" && (
                 <PostulantesPorPuestoView
-                    postulaciones={postulaciones}
-                    candidatos={candidatos}
-                    puestos={puestos}
+                    postulaciones={postulacionesDelArea}
+                    candidatos={candidatosDelArea}
+                    puestos={puestosDelArea}
                     onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}
 
             {tabActiva === "informes" && (
                 <BandejaInformesView
-                    informes={informes}
+                    informes={informesDelArea}
                     rolActual={rolActual}
                     onAbrirCrear={() => setModalCrearInformeAbierto(true)}
                     onVerDetalle={(inf) => setInformeSeleccionado(inf)}
@@ -468,14 +645,14 @@ function JefaturaPage({ onVolver }) {
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
-                informes={informes}
+                informes={informesDelArea}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 rolActual={rolActual}
             />
 
             <ModalSolicitarInforme
                 isOpen={modalCrearInformeAbierto}
-                candidatos={candidatos}
+                candidatos={candidatosDelArea}
                 onCerrar={() => setModalCrearInformeAbierto(false)}
                 onCrear={handleCrearInforme}
             />
@@ -484,7 +661,7 @@ function JefaturaPage({ onVolver }) {
                 key={informeSeleccionado?.id || "modal-detalle-informe"}
                 isOpen={Boolean(informeSeleccionado)}
                 informe={informeSeleccionado}
-                candidatos={candidatos}
+                candidatos={candidatosDelArea}
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
                 onAgregarPregunta={handleAgregarPreguntaInforme}
@@ -492,11 +669,19 @@ function JefaturaPage({ onVolver }) {
             />
 
             <ModalCrearPuesto
+                key={puestoEnEdicion?.id || "crear-puesto"}
                 isOpen={modalCrearPuestoAbierto}
+                puestoInicial={puestoEnEdicion}
+                areaJefeId={areaJefeId}
+                nombreAreaJefe={nombreAreaJefe}
                 etiquetasDisponibles={etiquetas}
                 onCrearEtiqueta={handleCrearEtiqueta}
-                onCerrar={() => setModalCrearPuestoAbierto(false)}
+                onCerrar={() => {
+                    setModalCrearPuestoAbierto(false);
+                    setPuestoEnEdicion(null);
+                }}
                 onCrear={handleCrearPuesto}
+                onEditar={handleEditarPuesto}
             />
         </main>
     );

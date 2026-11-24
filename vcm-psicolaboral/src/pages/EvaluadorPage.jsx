@@ -4,6 +4,7 @@ import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
+import GestionCandidatosView from "../components/GestionCandidatosView";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
@@ -153,11 +154,22 @@ function EvaluadorPage({ onVolver }) {
         }
     };
 
-    const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
+    const handleAgendarEntrevista = async ({
+        postulacionId,
+        fechaEntrevista,
+        tipoCitacion,
+        evaluadorAsignado,
+        enlaceGoogleMeet,
+        urlGoogleCalendar,
+        observaciones,
+    }) => {
         try {
             const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
                 fechaEntrevista,
+                tipoCitacion,
                 evaluadorAsignado,
+                enlaceGoogleMeet,
+                urlGoogleCalendar,
                 observaciones,
             });
             setPostulaciones((prev) => {
@@ -165,7 +177,7 @@ function EvaluadorPage({ onVolver }) {
                 guardarPostulacionesGlobales(list);
                 return list;
             });
-            setAlertaExito("Entrevista laboral agendada exitosamente.");
+            setAlertaExito("Citación laboral agendada exitosamente.");
         } catch {
             // Fallback local
             setPostulaciones((prev) => {
@@ -174,7 +186,10 @@ function EvaluadorPage({ onVolver }) {
                         return {
                             ...p,
                             fechaEntrevista,
+                            tipoCitacion: tipoCitacion || "Entrevistas físicas",
                             evaluadorAsignado,
+                            enlaceGoogleMeet: enlaceGoogleMeet || "",
+                            urlGoogleCalendar: urlGoogleCalendar || "",
                             observaciones,
                             fase: "en entrevista",
                             estado: "Entrevista agendada",
@@ -185,7 +200,7 @@ function EvaluadorPage({ onVolver }) {
                 guardarPostulacionesGlobales(list);
                 return list;
             });
-            setAlertaExito("Entrevista laboral agendada exitosamente.");
+            setAlertaExito("Citación laboral agendada exitosamente.");
         }
     };
 
@@ -330,7 +345,7 @@ function EvaluadorPage({ onVolver }) {
     };
 
     return (
-        <main style={{ backgroundColor: "#F0F8FF", fontFamily: "Arial, Helvetica, sans-serif", padding: "20px", minHeight: "100vh" }}>
+        <main style={{ backgroundColor: "#f3f6f9", fontFamily: "'Segoe UI', system-ui, -apple-system, Arial, sans-serif", padding: "20px", minHeight: "100vh" }}>
             <HeaderRoles
                 rolActual={rolActual}
                 tabActiva={tabActiva}
@@ -372,10 +387,18 @@ function EvaluadorPage({ onVolver }) {
                         }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
-                        mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
+                        mensajeVacio="No se encontraron solicitudes con los filtros aplicados."
                         onDetalle={setSolicitudSeleccionada}
                     />
                 </>
+            )}
+
+            {tabActiva === "postulantes" && (
+                <GestionCandidatosView
+                    candidatos={candidatos}
+                    rolActual={rolActual}
+                    onVerDetalle={setSolicitudSeleccionada}
+                />
             )}
 
             {tabActiva === "entrevistas" && (

@@ -5,6 +5,7 @@
  */
 import { useState, useMemo } from "react";
 import BotonOrange from "./BotonOrange";
+import Icono from "./Icono";
 
 export default function ModalSolicitarInforme({
     isOpen,
@@ -148,8 +149,9 @@ export default function ModalSolicitarInforme({
 
                                 {candidatoSeleccionado && (
                                     <div style={{ fontSize: "13px", lineHeight: "1.6" }}>
-                                        <h4 style={{ margin: "0 0 10px 0", color: "#004085", borderBottom: "1px solid #b8daff", paddingBottom: "4px" }}>
-                                            👤 Ficha del Candidato
+                                        <h4 style={{ margin: "0 0 10px 0", color: "#004085", borderBottom: "1px solid #b8daff", paddingBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <Icono nombre="user" size={16} />
+                                            Ficha del Candidato
                                         </h4>
                                         <div style={{ marginBottom: "6px" }}>
                                             <strong>RUT:</strong> {candidatoSeleccionado.rut}
@@ -205,10 +207,10 @@ export default function ModalSolicitarInforme({
                                             onChange={(e) => setUrgencia(e.target.value)}
                                             style={{ width: "100%", padding: "7px", borderRadius: "5px", border: "1px solid #ced4da" }}
                                         >
-                                            <option value="Baja">🟢 Baja</option>
-                                            <option value="Media">🟡 Media</option>
-                                            <option value="Alta">🟠 Alta</option>
-                                            <option value="Urgente">🔴 Urgente</option>
+                                            <option value="Baja">Baja</option>
+                                            <option value="Media">Media</option>
+                                            <option value="Alta">Alta</option>
+                                            <option value="Urgente">Urgente</option>
                                         </select>
                                     </div>
 

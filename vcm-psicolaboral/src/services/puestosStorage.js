@@ -195,6 +195,10 @@ export function registrarPuestoGlobal(puestoNuevo) {
         estado: puestoNuevo.estado || "Abierto",
         creadoPor: puestoNuevo.creadoPor || "Jefe de Área",
         fechaCreacion: puestoNuevo.fechaCreacion || new Date().toISOString(),
+        conteoModificaciones: Number(puestoNuevo.conteoModificaciones) || 0,
+        historialModificaciones: Array.isArray(puestoNuevo.historialModificaciones)
+            ? puestoNuevo.historialModificaciones
+            : [],
     };
 
     const actualizados = deduplicarPuestos([normalizado, ...actuales]);
@@ -202,13 +206,107 @@ export function registrarPuestoGlobal(puestoNuevo) {
     return actualizados;
 }
 
-export function actualizarEstadoPuestoGlobal(id, nuevoEstado) {
+/**
+ * Actualiza un puesto de trabajo existente y registra automáticamente
+ * el conteo y el historial de modificaciones para mantener transparencia con los postulantes.
+ */
+export function actualizarPuestoGlobal(id, datosActualizados = {}) {
     const actuales = cargarPuestosGlobales();
-    const actualizados = actuales.map((p) =>
-        Number(p.id) === Number(id) ? { ...p, estado: nuevoEstado } : p
-    );
+    const numId = Number(id);
+
+    const actualizados = actuales.map((previo) => {
+        if (Number(previo.id) !== numId) return previo;
+
+        // Si ya viene con historialModificaciones calculado desde el backend, respetarlo
+        if (
+            Array.isArray(datosActualizados.historialModificaciones) &&
+            datosActualizados.conteoModificaciones !== undefined &&
+            !datosActualizados.forzarCalculoLocal
+        ) {
+            return {
+                ...previo,
+                ...datosActualizados,
+                id: numId,
+            };
+        }
+
+        const cambiosDetectados = [];
+        if (datosActualizados.titulo !== undefined && datosActualizados.titulo !== previo.titulo) {
+            cambiosDetectados.push(`Título: "${previo.titulo}" → "${datosActualizados.titulo}"`);
+        }
+        if (datosActualizados.planta !== undefined && datosActualizados.planta !== previo.planta) {
+            cambiosDetectados.push(`Planta: ${previo.planta} → ${datosActualizados.planta}`);
+        }
+        if (
+            datosActualizados.vacantes !== undefined &&
+            Number(datosActualizados.vacantes) !== Number(previo.vacantes)
+        ) {
+            cambiosDetectados.push(`Vacantes: ${previo.vacantes} → ${datosActualizados.vacantes}`);
+        }
+        if (
+            datosActualizados.descripcion !== undefined &&
+            datosActualizados.descripcion !== previo.descripcion
+        ) {
+            cambiosDetectados.push("Descripción actualizada");
+        }
+        if (
+            datosActualizados.requisitos !== undefined &&
+            datosActualizados.requisitos !== previo.requisitos
+        ) {
+            cambiosDetectados.push("Requisitos actualizados");
+        }
+        if (datosActualizados.estado !== undefined && datosActualizados.estado !== previo.estado) {
+            cambiosDetectados.push(`Estado: ${previo.estado} → ${datosActualizados.estado}`);
+        }
+        if (
+            datosActualizados.etiquetas !== undefined &&
+            JSON.stringify(datosActualizados.etiquetas) !== JSON.stringify(previo.etiquetas || [])
+        ) {
+            cambiosDetectados.push("Cualidades/etiquetas actualizadas");
+        }
+
+        const historialPrevio = Array.isArray(previo.historialModificaciones)
+            ? previo.historialModificaciones
+            : [];
+        let historialModificaciones = historialPrevio;
+        let conteoModificaciones = Number(previo.conteoModificaciones) || historialPrevio.length;
+
+        if (cambiosDetectados.length > 0 || datosActualizados.detalleModificacion) {
+            const nuevoItem = {
+                fecha: new Date().toISOString(),
+                autor: datosActualizados.modificadoPor || previo.creadoPor || "Jefe de Área",
+                detalle: datosActualizados.detalleModificacion || cambiosDetectados.join(" · "),
+            };
+            historialModificaciones = [nuevoItem, ...historialPrevio];
+            conteoModificaciones += 1;
+        }
+
+        return {
+            ...previo,
+            ...datosActualizados,
+            id: numId,
+            conteoModificaciones,
+            historialModificaciones,
+        };
+    });
+
     guardarPuestosGlobales(actualizados);
     return actualizados;
+}
+
+export function actualizarEstadoPuestoGlobal(id, nuevoEstado, modificadoPor) {
+    return actualizarPuestoGlobal(id, {
+        estado: nuevoEstado,
+        modificadoPor,
+        forzarCalculoLocal: true,
+    });
+}
+
+export function eliminarPuestoGlobal(id) {
+    const actuales = cargarPuestosGlobales();
+    const filtrados = actuales.filter((p) => Number(p.id) !== Number(id));
+    guardarPuestosGlobales(filtrados);
+    return filtrados;
 }
 
 /**

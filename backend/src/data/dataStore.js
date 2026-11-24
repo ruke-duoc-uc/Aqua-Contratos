@@ -101,14 +101,20 @@ export const dataStore = {
         return db.actualizarPostulacion(id, { estado: nuevoEstado });
     },
 
-    async agendarEntrevistaPostulacion(id, { fechaEntrevista, evaluadorAsignado, observaciones }) {
+    async agendarEntrevistaPostulacion(
+        id,
+        { fechaEntrevista, evaluadorAsignado, tipoCitacion, enlaceGoogleMeet, urlGoogleCalendar, observaciones }
+    ) {
         const payload = {
             fechaEntrevista,
             estado: "Entrevista agendada",
             respuestaCandidato: "Pendiente",
         };
         if (evaluadorAsignado) payload.evaluadorAsignado = evaluadorAsignado;
-        if (observaciones) payload.observaciones = observaciones;
+        if (tipoCitacion) payload.tipoCitacion = tipoCitacion;
+        if (enlaceGoogleMeet !== undefined) payload.enlaceGoogleMeet = enlaceGoogleMeet;
+        if (urlGoogleCalendar !== undefined) payload.urlGoogleCalendar = urlGoogleCalendar;
+        if (observaciones !== undefined) payload.observaciones = observaciones;
         return db.actualizarPostulacion(id, payload);
     },
 

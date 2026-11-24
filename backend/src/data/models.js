@@ -68,6 +68,8 @@ const puestoTrabajoSchema = new mongoose.Schema(
         estado: { type: String, default: "Abierto" },
         creadoPor: { type: String, default: "Jefe de Área" },
         fechaCreacion: { type: String, required: true },
+        conteoModificaciones: { type: Number, default: 0 },
+        historialModificaciones: { type: Array, default: [] },
     },
     {
         collection: "puestos_trabajo",
@@ -86,6 +88,9 @@ const postulacionSchema = new mongoose.Schema(
         fechaPostulacion: { type: String, required: true },
         evaluadorAsignado: { type: String, default: "Sin Asignar" },
         fechaEntrevista: { type: String, default: null },
+        tipoCitacion: { type: String, default: "Entrevistas físicas" },
+        enlaceGoogleMeet: { type: String, default: "" },
+        urlGoogleCalendar: { type: String, default: "" },
         respuestaCandidato: { type: String, default: "Pendiente" },
         sugerenciaFecha: { type: String, default: null },
         dictamenPsicologico: { type: String, default: "Pendiente" },

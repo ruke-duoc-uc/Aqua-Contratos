@@ -274,12 +274,7 @@ export function normalizarCandidato(item) {
         (item.nombre ? item.nombre.split(" ").slice(-2).join(" ") : "");
     const nombreCompleto = item.nombre || `${nombres} ${apellidos}`.trim();
     const rutLimpio = item.rut || "";
-    const cvArchivo =
-        item.cv_pdf ||
-        item.cvArchivo ||
-        (nombreCompleto
-            ? `cv_${nombreCompleto.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`
-            : "cv_postulante.pdf");
+    const cvArchivo = item.cv_pdf || item.cvArchivo || "";
 
     return {
         ...item,
@@ -290,10 +285,10 @@ export function normalizarCandidato(item) {
         nombre: nombreCompleto,
         email: item.email || "",
         telefono: item.telefono || "",
-        direccion: item.direccion || "Dirección no informada",
-        comuna: item.comuna || item.planta || "Puerto Montt",
+        direccion: item.direccion && item.direccion !== "Dirección no informada" ? item.direccion : "",
+        comuna: item.comuna || "",
         planta: item.planta || item.comuna || "Puerto Montt",
-        fecha_nacimiento: item.fecha_nacimiento || "1998-01-01",
+        fecha_nacimiento: item.fecha_nacimiento || "",
         cv_pdf: cvArchivo,
         cvArchivo: cvArchivo,
         especialidad: item.especialidad || item.cargo || "Postulante General",
@@ -304,6 +299,50 @@ export function normalizarCandidato(item) {
         resultadoPsicologico: item.resultadoPsicologico || "Pendiente",
         fecha: item.fecha instanceof Date ? item.fecha : new Date(item.fecha || Date.now()),
     };
+}
+
+/**
+ * B4 -> F3: Verifica si el postulante tiene todos los datos obligatorios de su perfil
+ * completos antes de poder postular a una oferta laboral.
+ * Retorna la lista de campos faltantes (vacía si el perfil está completo).
+ */
+export function obtenerCamposFaltantesPerfil(candidato) {
+    if (!candidato) {
+        return ["Sesión de postulante"];
+    }
+    const faltantes = [];
+    const tieneNombre = Boolean(
+        (candidato.nombres && candidato.nombres.trim()) ||
+        (candidato.nombre && candidato.nombre.trim())
+    );
+    const tieneApellido = Boolean(
+        (candidato.apellidos && candidato.apellidos.trim()) ||
+        (candidato.nombre && candidato.nombre.trim().split(/\s+/).length >= 2)
+    );
+
+    if (!candidato.rut || !candidato.rut.trim()) faltantes.push("RUT");
+    if (!tieneNombre) faltantes.push("Nombres");
+    if (!tieneApellido) faltantes.push("Apellidos");
+    if (!candidato.email || !candidato.email.trim()) faltantes.push("Correo electrónico");
+    if (
+        !candidato.direccion ||
+        !candidato.direccion.trim() ||
+        candidato.direccion === "Dirección no informada" ||
+        candidato.direccion === "Dirección registrada en perfil"
+    ) {
+        faltantes.push("Dirección");
+    }
+    if (!candidato.comuna || !candidato.comuna.trim() || candidato.comuna === "No informada") {
+        faltantes.push("Comuna");
+    }
+    if (!candidato.fecha_nacimiento || !candidato.fecha_nacimiento.trim()) {
+        faltantes.push("Fecha de nacimiento");
+    }
+    if (!candidato.cv_pdf && !candidato.cvArchivo) {
+        faltantes.push("Currículum Vitae (CV)");
+    }
+
+    return faltantes;
 }
 
 export function cargarCandidatosGlobales() {
@@ -503,7 +542,7 @@ export async function registrarCuentaPostulante(datos) {
             password: datos.password,
             telefono: datos.telefono || "",
             direccion: datos.direccion || "",
-            comuna: datos.comuna || "Puerto Montt",
+            comuna: datos.comuna || "",
             fecha_nacimiento: datos.fecha_nacimiento || "",
             cv_pdf: datos.cv_pdf || "",
             cvDataUrl: datos.cvDataUrl || "",

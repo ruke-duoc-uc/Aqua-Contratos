@@ -29,6 +29,29 @@ export const FAMILIAS_CARGO = [
     "Sistemas y TI",
 ];
 
+// Catálogo de áreas de trabajo (sincronizado 1:1 con AREAS_SEED del backend)
+export const AREAS_TRABAJO = [
+    { id: 1, tipo_area: "Sistemas y TI" },
+    { id: 2, tipo_area: "Calidad y Prevención de Riesgos" },
+    { id: 3, tipo_area: "Mantenimiento Industrial" },
+    { id: 4, tipo_area: "Administración y Finanzas" },
+    { id: 5, tipo_area: "Logística y Abastecimiento" },
+    { id: 6, tipo_area: "Operaciones Productivas" },
+];
+
+export function obtenerNombreAreaPorId(areaId) {
+    if (!areaId) return "";
+    const encontrada = AREAS_TRABAJO.find((a) => Number(a.id) === Number(areaId));
+    return encontrada ? encontrada.tipo_area : "";
+}
+
+export function obtenerAreaIdPorFamilia(familiaCargo) {
+    if (!familiaCargo) return null;
+    const limpio = String(familiaCargo).trim().toLowerCase();
+    const encontrada = AREAS_TRABAJO.find((a) => a.tipo_area.toLowerCase() === limpio);
+    return encontrada ? encontrada.id : null;
+}
+
 export const COMUNAS = [
     "Ancud",
     "Calbuco",
@@ -100,4 +123,21 @@ export const TAGS_DEBILIDADES_SUGERIDAS = [
     "Dificultad para delegar",
     "Rigidez en procedimientos",
     "Inseguridad en decisiones clave",
+];
+
+// Tipos de citaciones para postulantes (E1 / E2)
+export const TIPOS_CITACION = [
+    "Entrevistas físicas",
+    "Entrevistas online",
+    "Inscripciones a la escuela de buceo",
+    "Firma de papeles",
+    "Entrega de papeles",
+];
+
+// Fechas especiales / operativas del calendario de AquaChile (E1 / E3)
+export const TIPOS_FECHA_ESPECIAL = [
+    "Cierres de local",
+    "Vacaciones y permisos",
+    "Mantenimientos y sanitizaciones",
+    "Feriados",
 ];

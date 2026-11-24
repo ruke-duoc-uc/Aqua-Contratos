@@ -1,16 +1,30 @@
 import { useState } from "react";
 import BotonOrange from "./BotonOrange.jsx";
-import { PLANTAS_DISPONIBLES, FAMILIAS_CARGO } from "../utils/constantes";
+import Icono from "./Icono.jsx";
+import { PLANTAS_DISPONIBLES, FAMILIAS_CARGO, obtenerNombreAreaPorId } from "../utils/constantes";
 
-function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = [], onCrearEtiqueta }) {
+function ModalCrearPuesto({
+    isOpen,
+    onCerrar,
+    onCrear,
+    onEditar,
+    puestoInicial = null,
+    areaJefeId = null,
+    nombreAreaJefe = "",
+    etiquetasDisponibles = [],
+    onCrearEtiqueta,
+}) {
+    const modoEdicion = Boolean(puestoInicial);
+    const areaFija = nombreAreaJefe || obtenerNombreAreaPorId(areaJefeId) || "";
+
     const [form, setForm] = useState({
-        titulo: "",
-        planta: "",
-        familiaCargo: "",
-        descripcion: "",
-        requisitos: "",
-        vacantes: 1,
-        etiquetas: [],
+        titulo: puestoInicial?.titulo || "",
+        planta: puestoInicial?.planta || "",
+        familiaCargo: puestoInicial?.familiaCargo || areaFija || "",
+        descripcion: puestoInicial?.descripcion || "",
+        requisitos: puestoInicial?.requisitos || "",
+        vacantes: puestoInicial?.vacantes || 1,
+        etiquetas: Array.isArray(puestoInicial?.etiquetas) ? [...puestoInicial.etiquetas] : [],
     });
     const [nuevaEtiqueta, setNuevaEtiqueta] = useState("");
     const [errores, setErrores] = useState({});
@@ -68,24 +82,23 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
 
         setEnviando(true);
         try {
-            await onCrear({
+            const payload = {
                 titulo: form.titulo.trim(),
                 planta: form.planta,
-                familiaCargo: form.familiaCargo,
+                familiaCargo: areaFija || form.familiaCargo,
+                area_id: areaJefeId || puestoInicial?.area_id || null,
                 descripcion: form.descripcion.trim(),
                 requisitos: form.requisitos.trim(),
                 etiquetas: form.etiquetas,
                 vacantes: Number(form.vacantes),
-            });
-            setForm({
-                titulo: "",
-                planta: "",
-                familiaCargo: "",
-                descripcion: "",
-                requisitos: "",
-                vacantes: 1,
-                etiquetas: [],
-            });
+            };
+
+            if (modoEdicion && onEditar) {
+                await onEditar(puestoInicial.id, payload);
+            } else if (onCrear) {
+                await onCrear(payload);
+            }
+
             setNuevaEtiqueta("");
             setErrores({});
             onCerrar();
@@ -116,6 +129,8 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
         color: "#dc3545",
         marginTop: "2px",
     };
+
+    const familiasPermitidas = areaFija ? [areaFija] : FAMILIAS_CARGO;
 
     return (
         <div
@@ -153,9 +168,14 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
                     }}
                 >
                     <div>
-                        <h2 style={{ margin: 0, fontSize: "1.15rem" }}>Crear Puesto de Trabajo</h2>
+                        <h2 style={{ margin: 0, fontSize: "1.15rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Icono nombre={modoEdicion ? "edit" : "briefcase"} size={18} color="#e8590c" />
+                            {modoEdicion ? `Editar Puesto de Trabajo #${puestoInicial.id}` : "Crear Puesto de Trabajo"}
+                        </h2>
                         <span style={{ fontSize: "12px", color: "#888" }}>
-                            Complete los datos de la nueva oferta laboral
+                            {modoEdicion
+                                ? "Las modificaciones quedarán registradas en el historial público de la oferta"
+                                : "Complete los datos de la nueva oferta laboral"}
                         </span>
                     </div>
                     <button
@@ -164,14 +184,14 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
                         style={{
                             background: "none",
                             border: "none",
-                            fontSize: "22px",
                             cursor: "pointer",
                             color: "#888",
                             padding: "4px 8px",
                         }}
                         title="Cerrar"
+                        aria-label="Cerrar modal"
                     >
-                        ✕
+                        <Icono nombre="close" size={20} />
                     </button>
                 </div>
 
@@ -207,14 +227,21 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
                             {errores.planta && <span style={estiloError}>{errores.planta}</span>}
                         </div>
                         <div>
-                            <label style={estiloLabel}>Familia de Cargo *</label>
+                            <label style={estiloLabel}>
+                                Área / Familia de Cargo * {areaFija ? "(Asignada a tu jefatura)" : ""}
+                            </label>
                             <select
-                                value={form.familiaCargo}
+                                value={areaFija || form.familiaCargo}
                                 onChange={(e) => handleChange("familiaCargo", e.target.value)}
-                                style={{ ...estiloInput, borderColor: errores.familiaCargo ? "#dc3545" : "#ced4da" }}
+                                disabled={Boolean(areaFija)}
+                                style={{
+                                    ...estiloInput,
+                                    borderColor: errores.familiaCargo ? "#dc3545" : "#ced4da",
+                                    backgroundColor: areaFija ? "#f1f5f9" : "white",
+                                }}
                             >
-                                <option value="">Seleccionar...</option>
-                                {FAMILIAS_CARGO.map((f) => (
+                                {!areaFija && <option value="">Seleccionar...</option>}
+                                {familiasPermitidas.map((f) => (
                                     <option key={f} value={f}>{f}</option>
                                 ))}
                             </select>
@@ -328,7 +355,7 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
                                     >
                                         {tag}
                                         {seleccionada ? (
-                                            <span style={{ fontWeight: "bold" }}>✓</span>
+                                            <Icono nombre="check" size={12} />
                                         ) : (
                                             <span style={{ color: "#94a3b8", fontSize: "11px" }}>+</span>
                                         )}
@@ -374,7 +401,11 @@ function ModalCrearPuesto({ isOpen, onCerrar, onCrear, etiquetasDisponibles = []
                         >
                             Cancelar
                         </button>
-                        <BotonOrange texto={enviando ? "Creando..." : "Crear Puesto"} type="submit" disabled={enviando} />
+                        <BotonOrange
+                            texto={enviando ? "Guardando..." : modoEdicion ? "Guardar Modificación" : "Crear Puesto"}
+                            type="submit"
+                            disabled={enviando}
+                        />
                     </div>
                 </form>
             </div>

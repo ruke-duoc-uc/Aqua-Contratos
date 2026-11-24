@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "../services/api";
 import { abrirCvDocumento } from "../utils/visorCv";
+import Icono from "./Icono";
 import {
     cargarPuestosGlobales,
     sincronizarPuestosConRemotos,
@@ -16,7 +17,8 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
     const [puestos, setPuestos] = useState(() =>
         Array.isArray(puestosProp) && puestosProp.length > 0 ? puestosProp : cargarPuestosGlobales()
     );
-    const [puestoSeleccionado, setPuestoSeleccionado] = useState("");
+    const [puestoSeleccionado, setPuestoSeleccionado] = useState("todos");
+    const [busqueda, setBusqueda] = useState("");
     const [cargando, setCargando] = useState(false);
 
     // Sincronizar si el padre pasa puestos actualizados
@@ -152,24 +154,43 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
         return false;
     };
 
-    // Filtrar postulaciones por puesto seleccionado
+    // Filtrar candidatos inscritos por puesto seleccionado y búsqueda (D3: Lista de Candidatos)
     const postulacionesFiltradas = useMemo(() => {
-        if (!puestoSeleccionado) return [];
-        if (puestoActual) {
-            return postulacionesEnriquecidas.filter((p) => coincideConPuesto(p, puestoActual));
-        }
-        return postulacionesEnriquecidas.filter(
-            (p) => String(p.puestoTrabajoId ?? p.puestoId) === String(puestoSeleccionado)
-        );
-    }, [postulacionesEnriquecidas, puestoSeleccionado, puestoActual]);
+        const base =
+            !puestoSeleccionado || puestoSeleccionado === "todos"
+                ? postulacionesEnriquecidas
+                : puestoActual
+                ? postulacionesEnriquecidas.filter((p) => coincideConPuesto(p, puestoActual))
+                : postulacionesEnriquecidas.filter(
+                      (p) => String(p.puestoTrabajoId ?? p.puestoId) === String(puestoSeleccionado)
+                  );
+
+        const termino = busqueda.toLowerCase().trim();
+        if (!termino) return base;
+
+        return base.filter((p) => {
+            const nombre = (p.candidatoNombre || p.nombre || "").toLowerCase();
+            const rut = (p.candidatoRut || p.rut || "").toLowerCase();
+            const cargo = (p.puestoTitulo || p.cargo || "").toLowerCase();
+            const comuna = (p.comuna || p.planta || "").toLowerCase();
+            return (
+                nombre.includes(termino) ||
+                rut.includes(termino) ||
+                cargo.includes(termino) ||
+                comuna.includes(termino)
+            );
+        });
+    }, [postulacionesEnriquecidas, puestoSeleccionado, puestoActual, busqueda]);
 
     return (
         <section
             style={{
                 backgroundColor: "white",
                 borderRadius: "10px",
-                border: "2px solid gray",
+                border: "1px solid #dbe3eb",
+                borderTop: "4px solid #223b4c",
                 overflow: "hidden",
+                boxShadow: "0 3px 10px rgba(34, 59, 76, 0.05)",
             }}
         >
             {/* Cabecera */}
@@ -179,18 +200,19 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
                     borderBottom: "1px solid #eee",
                 }}
             >
-                <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
-                    Postulantes por Puesto de Trabajo
+                <h2 style={{ margin: 0, fontSize: "1.25rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Icono nombre="briefcase" size={20} color="#0e97b3" />
+                    Lista de Candidatos (Inscritos en Ofertas de Trabajo)
                 </h2>
                 <span style={{ fontSize: "13px", color: "gray" }}>
-                    Seleccione un puesto para ver los postulantes inscritos
+                    Los candidatos son los postulantes que se han inscrito en una oferta laboral específica
                 </span>
             </div>
 
-            {/* Selector de puesto */}
-            <div style={{ padding: "12px 20px", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+            {/* Selector de puesto y buscador */}
+            <div style={{ padding: "12px 20px", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", backgroundColor: "#f8f9fa", borderBottom: "1px solid #eee" }}>
                 <label htmlFor="selector-puesto" style={{ fontWeight: "600", fontSize: "14px" }}>
-                    Puesto:
+                    Filtrar por Oferta:
                 </label>
                 <select
                     id="selector-puesto"
@@ -200,8 +222,10 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
                     style={{ minWidth: "300px" }}
                     disabled={cargando}
                 >
-                    <option value="">
-                        {cargando ? "Cargando puestos..." : "— Seleccione un puesto —"}
+                    <option value="todos">
+                        {cargando
+                            ? "Cargando ofertas..."
+                            : `Todas las ofertas con candidatos (${postulacionesEnriquecidas.length})`}
                     </option>
                     {puestos.map((p) => {
                         const cantidadInscritos = postulacionesEnriquecidas.filter((post) =>
@@ -212,47 +236,52 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
                                 {p.titulo || p.nombre || `Puesto #${p.id}`}
                                 {p.planta ? ` · ${p.planta}` : ""}
                                 {p.estado ? ` (${p.estado})` : ""}
-                                {` — [${cantidadInscritos} postulante${cantidadInscritos !== 1 ? "s" : ""}]`}
+                                {` — [${cantidadInscritos} candidato${cantidadInscritos !== 1 ? "s" : ""}]`}
                             </option>
                         );
                     })}
                 </select>
 
-                {puestoSeleccionado && (
-                    <span style={{ fontSize: "12px", color: "#6c757d", marginLeft: "auto" }}>
-                        <strong>{postulacionesFiltradas.length}</strong> postulante{postulacionesFiltradas.length !== 1 ? "s" : ""} inscrito{postulacionesFiltradas.length !== 1 ? "s" : ""}
-                    </span>
-                )}
+                <input
+                    type="text"
+                    className="buscador-input"
+                    placeholder="Buscar candidato por nombre, RUT o cargo..."
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    style={{ flex: 1, minWidth: "220px" }}
+                />
+
+                <span style={{ fontSize: "12px", color: "#6c757d", marginLeft: "auto" }}>
+                    <strong>{postulacionesFiltradas.length}</strong> candidato{postulacionesFiltradas.length !== 1 ? "s" : ""} inscrito{postulacionesFiltradas.length !== 1 ? "s" : ""}
+                </span>
             </div>
 
             {/* Info del puesto seleccionado */}
             {puestoActual && (
-                <div style={{ padding: "0 20px 12px", fontSize: "13px", color: "#555" }}>
-                    <strong>{puestoActual.titulo || puestoActual.nombre}</strong>
+                <div style={{ padding: "10px 20px", fontSize: "13px", color: "#555", backgroundColor: "#eff6ff", borderBottom: "1px solid #dbeafe" }}>
+                    <strong>Oferta seleccionada: {puestoActual.titulo || puestoActual.nombre}</strong>
                     {puestoActual.planta ? ` — Planta: ${puestoActual.planta}` : ""}
-                    {puestoActual.familiaCargo ? ` — Familia: ${puestoActual.familiaCargo}` : ""}
+                    {puestoActual.familiaCargo ? ` — Área: ${puestoActual.familiaCargo}` : ""}
                     {puestoActual.estado ? ` — Estado: ${puestoActual.estado}` : ""}
                 </div>
             )}
 
-            {/* Tabla de postulantes */}
-            {!puestoSeleccionado ? (
-                <div style={{ padding: "40px 20px", textAlign: "center", color: "#999" }}>
-                    📋 Seleccione un puesto de trabajo para visualizar sus postulantes.
-                </div>
-            ) : postulacionesFiltradas.length === 0 ? (
-                <div style={{ padding: "40px 20px", textAlign: "center", color: "#999" }}>
-                    📭 No hay postulantes inscritos en este puesto.
+            {/* Tabla de candidatos */}
+            {postulacionesFiltradas.length === 0 ? (
+                <div style={{ padding: "40px 20px", textAlign: "center", color: "#999", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    <Icono nombre="inbox" size={18} />
+                    <span>No hay candidatos inscritos en la oferta o filtro seleccionado.</span>
                 </div>
             ) : (
                 <div className="table-responsive shadow-sm" style={{ borderRadius: "8px" }}>
                     <table className="table table-hover align-middle mb-0" style={{ fontSize: "13.5px" }}>
                         <thead>
-                            <tr style={{ backgroundColor: "#CDCDCD", color: "#333", textAlign: "left" }}>
-                                <th style={{ padding: "12px 14px" }}>Nombre</th>
+                            <tr style={{ backgroundColor: "#223b4c", color: "white", textAlign: "left" }}>
+                                <th style={{ padding: "12px 14px" }}>Candidato</th>
                                 <th style={{ padding: "12px 14px" }}>RUT</th>
-                                <th style={{ padding: "12px 14px" }}>Comuna</th>
-                                <th style={{ padding: "12px 14px" }}>Fecha Inscripción</th>
+                                <th style={{ padding: "12px 14px" }}>Oferta Postulada</th>
+                                <th style={{ padding: "12px 14px" }}>Comuna / Planta</th>
+                                <th style={{ padding: "12px 14px" }}>Fecha Postulación</th>
                                 <th style={{ padding: "12px 14px" }}>Estado</th>
                                 <th style={{ padding: "12px 14px" }}>Evaluador</th>
                                 <th style={{ padding: "12px 14px" }}>CV</th>
@@ -302,6 +331,9 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
                                     >
                                         <td style={{ padding: "12px 14px" }}>{nombre}</td>
                                         <td style={{ padding: "12px 14px", fontWeight: "bold", whiteSpace: "nowrap" }}>{rut}</td>
+                                        <td style={{ padding: "12px 14px", fontWeight: "600", color: "#0d47a1" }}>
+                                            {puestoActual?.titulo || post.puestoTitulo || post.cargo || "—"}
+                                        </td>
                                         <td style={{ padding: "12px 14px" }}>{comuna}</td>
                                         <td style={{ padding: "12px 14px" }}>{fechaMostrar}</td>
                                         <td style={{ padding: "12px 14px" }}>
@@ -342,10 +374,14 @@ function PostulantesPorPuestoView({ postulaciones = [], candidatos = [], puestos
                                                         fontSize: "12px",
                                                         cursor: "pointer",
                                                         fontWeight: "600",
+                                                        display: "inline-flex",
+                                                        alignItems: "center",
+                                                        gap: "5px",
                                                     }}
                                                     title="Ver CV del postulante"
                                                 >
-                                                    📄 CV
+                                                    <Icono nombre="fileText" size={13} />
+                                                    CV
                                                 </button>
                                             ) : (
                                                 <span style={{ color: "#aaa", fontSize: "12px" }}>Sin CV</span>

@@ -166,10 +166,20 @@ export const api = {
         return res.datos;
     },
 
-    async agendarEntrevistaPostulacion(id, { fechaEntrevista, evaluadorAsignado, observaciones }) {
+    async agendarEntrevistaPostulacion(
+        id,
+        { fechaEntrevista, evaluadorAsignado, tipoCitacion, enlaceGoogleMeet, urlGoogleCalendar, observaciones }
+    ) {
         const res = await request(`/postulaciones/${id}/agendar`, {
             method: "PATCH",
-            body: JSON.stringify({ fechaEntrevista, evaluadorAsignado, observaciones }),
+            body: JSON.stringify({
+                fechaEntrevista,
+                evaluadorAsignado,
+                tipoCitacion,
+                enlaceGoogleMeet,
+                urlGoogleCalendar,
+                observaciones,
+            }),
         });
         return res.datos;
     },
