@@ -199,11 +199,14 @@ export const dataStore = {
         return db.actualizarCandidato(id, { estado: nuevoEstado });
     },
 
-    async actualizarEvaluacionSolicitud(id, { resultadoPsicologico, fechaEvaluacion, conclusiones, estado }) {
+    async actualizarEvaluacionSolicitud(id, { resultadoPsicologico, fechaEvaluacion, conclusiones, fortalezas, debilidades, historial, estado }) {
         const payload = {};
         if (resultadoPsicologico !== undefined) payload.resultadoPsicologico = resultadoPsicologico;
         if (fechaEvaluacion !== undefined) payload.fechaEvaluacion = fechaEvaluacion;
         if (conclusiones !== undefined) payload.conclusiones = conclusiones;
+        if (fortalezas !== undefined) payload.fortalezas = fortalezas;
+        if (debilidades !== undefined) payload.debilidades = debilidades;
+        if (historial !== undefined) payload.historial = historial;
         if (estado !== undefined) payload.estado = estado;
 
         return db.actualizarCandidato(id, payload);
@@ -243,17 +246,26 @@ export const dataStore = {
         return db.obtenerCatalogos();
     },
 
-    // ==================== SOLICITUDES DE INFORME ====================
-    async obtenerSolicitudesInforme(filtros) {
+    // ==================== INFORMES PSICOLABORALES ====================
+    async obtenerInformes(filtros) {
         return db.obtenerSolicitudesInforme(filtros);
     },
 
+    async obtenerInformePorId(id) {
+        return db.obtenerSolicitudInformePorId(id);
+    },
+
+    // Alias para compatibilidad interna (lo usa postulacionesController al crear)
     async obtenerSolicitudInformePorId(id) {
         return db.obtenerSolicitudInformePorId(id);
     },
 
-    async crearSolicitudInforme(datos) {
+    async crearInformePsicolaboral(datos) {
         return db.insertarSolicitudInforme(datos);
+    },
+
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }) {
+        return db.actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem });
     },
 
     async agregarPreguntaInforme(id, datosPregunta) {

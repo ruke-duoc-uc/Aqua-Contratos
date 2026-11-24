@@ -5,19 +5,22 @@
  * genera el expediente formal de postulación AquaChile con opción de impresión.
  */
 
-export function abrirCvDocumento(candidato) {
-    if (!candidato) return;
+export function abrirCvDocumento(input) {
+    if (!input) return;
+
+    const candidato = typeof input === "string" ? { cv_pdf: input } : input;
 
     // 1. Si el postulante subió un archivo real (guardado como Data URL base64)
     if (candidato.cvDataUrl) {
         const win = window.open("", "_blank");
         if (win) {
+            const tituloNombre = candidato.nombre || candidato.candidatoNombre || candidato.nombreCandidato || "Postulante";
             win.document.write(`
                 <!DOCTYPE html>
                 <html lang="es">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Currículum Vitae · ${candidato.nombre || "Postulante"}</title>
+                    <title>Currículum Vitae · ${tituloNombre}</title>
                     <style>
                         body { margin: 0; padding: 0; background-color: #525659; display: flex; justify-content: center; height: 100vh; }
                         iframe { width: 100%; height: 100%; border: none; }
@@ -40,15 +43,25 @@ export function abrirCvDocumento(candidato) {
         return;
     }
 
-    const nombre = candidato.nombre || `${candidato.nombres || ""} ${candidato.apellidos || ""}`.trim() || "Postulante AquaChile";
-    const rut = candidato.rut || "No informado";
-    const cargo = candidato.cargo || candidato.especialidad || "Operario de Producción";
-    const comuna = candidato.comuna || candidato.planta || "Puerto Montt";
-    const antecedentes = candidato.antecedentes || "Experiencia comprobada en procesos de producción, mantención y logística en plantas acuícolas.";
+    const nombre =
+        candidato.nombre ||
+        candidato.candidatoNombre ||
+        candidato.nombreCandidato ||
+        `${candidato.nombres || ""} ${candidato.apellidos || ""}`.trim() ||
+        "Postulante AquaChile";
+    const rut = candidato.rut || candidato.candidatoRut || candidato.rutCandidato || "No informado";
+    const cargo = candidato.puestoTitulo || candidato.cargo || candidato.especialidad || candidato.candidatoEspecialidad || "Operario de Producción";
+    const comuna = candidato.comuna || candidato.planta || candidato.puestoPlanta || "Puerto Montt";
+    const antecedentes =
+        candidato.antecedentes ||
+        candidato.experienciaLaboral ||
+        candidato.candidatoExperiencia ||
+        "Experiencia comprobada en procesos de producción, mantención y logística en plantas acuícolas.";
     const cvNombre = candidato.cv_pdf || candidato.cvArchivo || `cv_${nombre.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`;
-    const evaluador = candidato.evaluador || "Felipe Muñoz Parra";
-    const estado = candidato.estado || "En proceso";
-    const fecha = candidato.fecha ? new Date(candidato.fecha).toLocaleDateString("es-CL") : new Date().toLocaleDateString("es-CL");
+    const evaluador = candidato.evaluadorAsignado || candidato.encargado || candidato.evaluador || "Felipe Muñoz Parra";
+    const estado = candidato.estado || candidato.fase || "En proceso";
+    const fechaRaw = candidato.fechaPostulacion || candidato.fecha;
+    const fecha = fechaRaw ? new Date(fechaRaw).toLocaleDateString("es-CL") : new Date().toLocaleDateString("es-CL");
 
     win.document.write(`
         <!DOCTYPE html>

@@ -5,7 +5,7 @@ import ModalSolicitarInforme from "../components/ModalSolicitarInforme";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
 import BotonOrange from "../components/BotonOrange";
-import GestionCandidatosView from "../components/GestionCandidatosView";
+import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
 import GestionPuestosView from "../components/GestionPuestosView";
 import ModalCrearPuesto from "../components/ModalCrearPuesto";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
@@ -380,8 +380,7 @@ function JefaturaPage({ onVolver }) {
                     { id: "dashboard", label: "Dashboard Operativo" },
                     { id: "entrevistas", label: "Agenda de Entrevistas" },
                     { id: "puestos", label: "Puestos de Trabajo" },
-                    { id: "candidatos", label: "Gestión de Candidatos" },
-                    { id: "solicitudes", label: "Solicitudes de Evaluación" },
+                    { id: "postulantesPorPuesto", label: "Postulantes por Puesto" },
                     { id: "informes", label: "Informes de Candidatos" },
                 ]}
             />
@@ -419,6 +418,9 @@ function JefaturaPage({ onVolver }) {
 
                     <PanelSolicitudes
                         anchoCompleto
+                        encabezado={
+                            <EncabezadoRegistro subtitulo="Supervisión y trazabilidad de evaluaciones psicolaborales" />
+                        }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
                         mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
@@ -444,23 +446,12 @@ function JefaturaPage({ onVolver }) {
                 />
             )}
 
-            {tabActiva === "candidatos" && (
-                <GestionCandidatosView
+            {tabActiva === "postulantesPorPuesto" && (
+                <PostulantesPorPuestoView
+                    postulaciones={postulaciones}
                     candidatos={candidatos}
-                    rolActual={rolActual}
-                    onVerDetalle={(cand) => setSolicitudSeleccionada(cand)}
-                />
-            )}
-
-            {tabActiva === "solicitudes" && (
-                <PanelSolicitudes
-                    encabezado={
-                        <EncabezadoRegistro subtitulo="Supervisión y trazabilidad de evaluaciones psicolaborales" />
-                    }
-                    filtros={propsFiltros}
-                    solicitudes={solicitudesFiltradas}
-                    mensajeVacio="🔍 No se encontraron solicitudes que coincidan con la búsqueda."
-                    onDetalle={setSolicitudSeleccionada}
+                    puestos={puestos}
+                    onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}
 
@@ -477,6 +468,7 @@ function JefaturaPage({ onVolver }) {
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
+                informes={informes}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 rolActual={rolActual}
             />

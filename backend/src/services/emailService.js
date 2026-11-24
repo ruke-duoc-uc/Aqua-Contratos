@@ -8,15 +8,21 @@
  * el archivo .env. Un fallo de Resend nunca debe interrumpir el registro del
  * candidato: solo se deja una advertencia en consola.
  */
-import { Resend } from "resend";
-
 let clienteResend = null;
 
 /** Crea (una sola vez) el cliente de Resend usando la API key del entorno. */
-function obtenerCliente() {
+async function obtenerCliente() {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) return null;
-    if (!clienteResend) clienteResend = new Resend(apiKey);
+    if (!clienteResend) {
+        try {
+            const { Resend } = await import("resend");
+            clienteResend = new Resend(apiKey);
+        } catch {
+            console.warn("[correo] Paquete 'resend' no instalado: se omiten correos.");
+            return null;
+        }
+    }
     return clienteResend;
 }
 
@@ -54,7 +60,7 @@ Los antecedentes se encuentran disponibles para su revisión en la plataforma.`;
  * @returns {Promise<{ enviados: string[], errores: string[] }>}
  */
 export async function enviarCorreosPostulacion(datos) {
-    const resend = obtenerCliente();
+    const resend = await obtenerCliente();
     if (!resend) {
         console.warn("[correo] RESEND_API_KEY no configurada: no se enviaron notificaciones.");
         return { enviados: [], errores: ["RESEND_API_KEY no configurada"] };

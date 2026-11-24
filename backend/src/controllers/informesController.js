@@ -1,20 +1,26 @@
 /**
- * Controlador de Solicitudes de Informes (por Candidato o por Puesto de Trabajo)
+ * Controlador de Informes Psicolaborales
+ *
+ * El informe psicolaboral se genera automáticamente al crear una postulación.
+ * Contiene:
+ *   - La evaluación técnica del profesional evaluador (dictamen, conclusiones, fechaEvaluacion).
+ *   - Las preguntas/repreguntas de jefatura (preguntasJefatura), que solo existen dentro del informe.
  */
 import { dataStore } from "../data/dataStore.js";
 
 export const informesController = {
     /**
-     * GET /api/solicitudes-informe
+     * GET /api/informes-psicolaborales
      */
     async listar(req, res) {
         try {
-            const { busqueda, estado, candidatoId, puestoTrabajoId, urgencia, tipo } = req.query;
-            const informes = await dataStore.obtenerSolicitudesInforme({
+            const { busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo } = req.query;
+            const informes = await dataStore.obtenerInformes({
                 busqueda,
                 estado,
                 candidatoId,
                 puestoTrabajoId,
+                postulacionId,
                 urgencia,
                 tipo,
             });
@@ -27,60 +33,20 @@ export const informesController = {
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error interno al listar las solicitudes de informe.",
+                mensaje: "Error interno al listar los informes psicolaborales.",
                 error: error.message,
             });
         }
     },
 
     /**
-     * GET /api/solicitudes-informe/:id
-     */
-    async obtenerPorId(req, res) {
-        try {
-            const { id } = req.params;
-            const informe = await dataStore.obtenerSolicitudInformePorId(id);
-
-            if (!informe) {
-                return res.status(404).json({
-                    ok: false,
-                    mensaje: `No se encontró la solicitud de informe con ID ${id}.`,
-                });
-            }
-
-            let candidato = null;
-            if (informe.candidatoId) {
-                candidato = await dataStore.obtenerCandidatoPorId(informe.candidatoId);
-            }
-
-            let puesto = null;
-            if (informe.puestoTrabajoId) {
-                puesto = await dataStore.obtenerPuestoPorId(informe.puestoTrabajoId);
-            }
-
-            return res.status(200).json({
-                ok: true,
-                datos: {
-                    ...informe,
-                    candidatoPerfil: candidato || null,
-                    puestoPerfil: puesto || null,
-                },
-            });
-        } catch (error) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error al consultar la solicitud de informe.",
-                error: error.message,
-            });
-        }
-    },
-
-    /**
-     * POST /api/solicitudes-informe
+     * POST /api/informes-psicolaborales (y /api/solicitudes-informe)
+     * Permite registrar un nuevo informe psicolaboral o solicitud de preguntas de jefatura.
      */
     async crear(req, res) {
         try {
             const {
+                postulacionId,
                 candidatoId,
                 candidatoNombre,
                 puestoTrabajoId,
@@ -90,76 +56,138 @@ export const informesController = {
                 fechaLimite,
                 destinatarios,
                 preguntas,
+                preguntasJefatura,
+                estado,
             } = req.body;
 
-            if (!candidatoId && !puestoTrabajoId) {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: "Debe asociar la solicitud de informe a un candidato o a un puesto de trabajo.",
-                });
-            }
-
-            let nombreFinal = candidatoNombre;
-            if (candidatoId) {
-                const candidato = await dataStore.obtenerCandidatoPorId(candidatoId);
-                if (!candidato) {
-                    return res.status(404).json({
-                        ok: false,
-                        mensaje: `No se encontró el candidato con ID ${candidatoId}.`,
-                    });
-                }
-                nombreFinal = candidato.nombre;
-            }
-
-            if (puestoTrabajoId) {
-                const puesto = await dataStore.obtenerPuestoPorId(puestoTrabajoId);
-                if (!puesto) {
-                    return res.status(404).json({
-                        ok: false,
-                        mensaje: `No se encontró el puesto de trabajo con ID ${puestoTrabajoId}.`,
-                    });
-                }
-            }
-
-            const preguntasLimpias = (preguntas || [])
-                .map((p) => (typeof p === "string" ? p.trim() : p.texto?.trim()))
-                .filter(Boolean);
-
-            if (preguntasLimpias.length === 0) {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: "Debe ingresar al menos una pregunta para generar la solicitud de informe.",
-                });
-            }
-
-            const nuevaSolicitud = await dataStore.crearSolicitudInforme({
-                candidatoId: candidatoId ? Number(candidatoId) : null,
-                candidatoNombre: nombreFinal || "Solicitud por Puesto",
-                puestoTrabajoId: puestoTrabajoId ? Number(puestoTrabajoId) : null,
-                tipo: tipo || (puestoTrabajoId && !candidatoId ? "puesto" : "candidato"),
-                solicitante: solicitante || "Jefe de Área",
-                urgencia: urgencia || "Media",
-                fechaLimite: fechaLimite || null,
-                destinatarios: destinatarios || ["analista", "evaluador"],
-                preguntas: preguntasLimpias,
+            const creado = await dataStore.crearInformePsicolaboral({
+                postulacionId,
+                candidatoId,
+                candidatoNombre,
+                puestoTrabajoId,
+                tipo,
+                solicitante,
+                urgencia,
+                fechaLimite,
+                destinatarios,
+                preguntas,
+                preguntasJefatura,
+                estado: estado || "Abierta",
             });
 
             return res.status(201).json({
                 ok: true,
-                mensaje: "Solicitud de informe emitida exitosamente.",
-                datos: nuevaSolicitud,
+                mensaje: "Informe psicolaboral y consultas registrados exitosamente.",
+                datos: creado,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error interno al crear la solicitud de informe.",
+                mensaje: "Error interno al crear el informe psicolaboral.",
                 error: error.message,
             });
         }
     },
 
     /**
-     * POST /api/solicitudes-informe/:id/preguntas
+     * GET /api/informes-psicolaborales/:id
+     * Devuelve el informe completo: evaluación técnica + preguntas de jefatura.
+     */
+    async obtenerPorId(req, res) {
+        try {
+            const { id } = req.params;
+            const informe = await dataStore.obtenerInformePorId(id);
+
+            if (!informe) {
+                return res.status(404).json({
+                    ok: false,
+                    mensaje: `No se encontró el informe psicolaboral con ID ${id}.`,
+                });
+            }
+
+            const [candidato, puesto, postulacion] = await Promise.all([
+                informe.candidatoId ? dataStore.obtenerCandidatoPorId(informe.candidatoId) : null,
+                informe.puestoTrabajoId ? dataStore.obtenerPuestoPorId(informe.puestoTrabajoId) : null,
+                informe.postulacionId ? dataStore.obtenerPostulacionPorId(informe.postulacionId) : null,
+            ]);
+
+            return res.status(200).json({
+                ok: true,
+                datos: {
+                    ...informe,
+                    candidatoPerfil: candidato || null,
+                    puestoPerfil: puesto || null,
+                    postulacion: postulacion || null,
+                },
+            });
+        } catch (error) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al consultar el informe psicolaboral.",
+                error: error.message,
+            });
+        }
+    },
+
+    /**
+     * PATCH /api/informes-psicolaborales/:id/dictamen
+     * El evaluador actualiza la evaluación técnica del informe.
+     */
+    async actualizarDictamen(req, res) {
+        try {
+            const { id } = req.params;
+            const { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem } = req.body;
+
+            const dictamenesValidos = [
+                "Pendiente",
+                "Recomendable",
+                "Recomendado",
+                "Con reservas",
+                "Recomendado con observaciones",
+                "No recomendable",
+                "No recomendado",
+            ];
+            if (dictamen && !dictamenesValidos.includes(dictamen)) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: `Dictamen inválido. Valores permitidos: ${dictamenesValidos.join(", ")}.`,
+                });
+            }
+
+            const informe = await dataStore.actualizarDictamenInforme(id, {
+                evaluador,
+                fechaEvaluacion,
+                dictamen,
+                conclusiones,
+                fortalezas,
+                debilidades,
+                historialItem,
+            });
+
+            if (!informe) {
+                return res.status(404).json({
+                    ok: false,
+                    mensaje: `No se encontró el informe psicolaboral con ID ${id}.`,
+                });
+            }
+
+            return res.status(200).json({
+                ok: true,
+                mensaje: "Dictamen psicolaboral actualizado correctamente.",
+                datos: informe,
+            });
+        } catch (error) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error al actualizar el dictamen del informe.",
+                error: error.message,
+            });
+        }
+    },
+
+    /**
+     * POST /api/informes-psicolaborales/:id/preguntas
+     * Jefatura agrega una nueva pregunta al informe. La pregunta no existe fuera de él.
      */
     async agregarPregunta(req, res) {
         try {
@@ -181,26 +209,34 @@ export const informesController = {
             if (!informe) {
                 return res.status(404).json({
                     ok: false,
-                    mensaje: `No se encontró la solicitud de informe con ID ${id}.`,
+                    mensaje: `No se encontró el informe psicolaboral con ID ${id}.`,
+                });
+            }
+
+            if (informe.estado === "Cerrado" || informe.estado === "Cerrada") {
+                return res.status(409).json({
+                    ok: false,
+                    mensaje: "No se pueden agregar preguntas a un informe cerrado.",
                 });
             }
 
             return res.status(200).json({
                 ok: true,
-                mensaje: "Pregunta añadida exitosamente.",
+                mensaje: "Pregunta añadida al informe psicolaboral.",
                 datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al agregar pregunta a la solicitud de informe.",
+                mensaje: "Error al agregar pregunta al informe psicolaboral.",
                 error: error.message,
             });
         }
     },
 
     /**
-     * POST /api/solicitudes-informe/:id/preguntas/:preguntaId/respuestas
+     * POST /api/informes-psicolaborales/:id/preguntas/:preguntaId/respuestas
+     * Analistas o evaluadores responden una pregunta del informe.
      */
     async agregarRespuesta(req, res) {
         try {
@@ -229,30 +265,32 @@ export const informesController = {
 
             return res.status(200).json({
                 ok: true,
-                mensaje: "Respuesta registrada y vinculada a la trazabilidad del informe.",
+                mensaje: "Respuesta registrada en el informe psicolaboral.",
                 datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al registrar la respuesta a la pregunta.",
+                mensaje: "Error al registrar la respuesta.",
                 error: error.message,
             });
         }
     },
 
     /**
-     * PATCH /api/solicitudes-informe/:id/estado
+     * PATCH /api/informes-psicolaborales/:id/estado
+     * Cierra o reabre el informe. Al cerrarlo no se pueden agregar más preguntas.
      */
     async cambiarEstado(req, res) {
         try {
             const { id } = req.params;
             const { estado } = req.body;
 
-            if (!estado || !["Abierta", "Cerrada"].includes(estado)) {
+            const estadosValidos = ["Pendiente", "En evaluación", "Emitido", "Cerrado", "Abierta", "Cerrada"];
+            if (!estado || !estadosValidos.includes(estado)) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: "El estado debe ser 'Abierta' o 'Cerrada'.",
+                    mensaje: `Estado inválido. Valores permitidos: ${estadosValidos.join(", ")}.`,
                 });
             }
 
@@ -260,19 +298,19 @@ export const informesController = {
             if (!informe) {
                 return res.status(404).json({
                     ok: false,
-                    mensaje: `No se encontró la solicitud de informe con ID ${id}.`,
+                    mensaje: `No se encontró el informe psicolaboral con ID ${id}.`,
                 });
             }
 
             return res.status(200).json({
                 ok: true,
-                mensaje: `Solicitud de informe #${id} actualizada a estado '${estado}'.`,
+                mensaje: `Informe psicolaboral #${id} actualizado a estado '${estado}'.`,
                 datos: informe,
             });
         } catch (error) {
             return res.status(500).json({
                 ok: false,
-                mensaje: "Error al actualizar el estado de la solicitud de informe.",
+                mensaje: "Error al actualizar el estado del informe.",
                 error: error.message,
             });
         }

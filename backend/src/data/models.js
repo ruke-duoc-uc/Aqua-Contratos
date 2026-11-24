@@ -42,6 +42,9 @@ const candidatoSchema = new mongoose.Schema(
         resultadoPsicologico: { type: String, default: "Pendiente" },
         fechaEvaluacion: { type: String, default: null },
         conclusiones: { type: String, default: null },
+        fortalezas: { type: [String], default: [] },
+        debilidades: { type: [String], default: [] },
+        historial: { type: Array, default: [] },
     },
     {
         collection: "candidatos",
@@ -97,21 +100,36 @@ const postulacionSchema = new mongoose.Schema(
     }
 );
 
-// 4. Esquema de Solicitudes de Informe (Jefatura)
+// 4. Esquema de Informes Psicolaborales
+// El informe se crea automáticamente al registrar una postulación (estado "Pendiente").
+// Contiene la evaluación técnica del profesional evaluador y las preguntas/repreguntas de jefatura.
 const solicitudInformeSchema = new mongoose.Schema(
     {
         id: { type: Number, required: true, unique: true, index: true },
-        candidatoId: { type: Number, default: null },
+        postulacionId: { type: Number, default: null, index: true }, // FK → postulaciones.id
+        candidatoId: { type: Number, default: null, index: true },
         candidatoNombre: { type: String, default: null },
-        puestoTrabajoId: { type: Number, default: null },
+        puestoTrabajoId: { type: Number, default: null, index: true },
+        // Datos de solicitud/consulta de jefatura
         tipo: { type: String, default: "candidato" },
-        solicitante: { type: String, required: true },
-        urgencia: { type: String, required: true },
+        solicitante: { type: String, default: "Jefe de Área" },
+        urgencia: { type: String, default: "Media" },
         fechaLimite: { type: String, default: null },
-        estado: { type: String, required: true, default: "Abierta" },
+        // Evaluación técnica (la completa el evaluador)
+        evaluador: { type: String, default: null },
+        fechaEvaluacion: { type: String, default: null },
+        dictamen: { type: String, default: "Pendiente" }, // "Pendiente" | "Recomendable" | "Recomendado" | "Con reservas" | "Recomendado con observaciones" | "No recomendable" | "No recomendado"
+        conclusiones: { type: String, default: null },
+        fortalezas: { type: [String], default: [] },
+        debilidades: { type: [String], default: [] },
+        historial: { type: Array, default: [] },
+        // Metadatos del informe
+        estado: { type: String, required: true, default: "Abierta" }, // "Abierta" | "Cerrada" | "Pendiente" | "En evaluación" | "Emitido" | "Cerrado"
         fechaCreacion: { type: String, required: true },
         destinatarios: { type: [String], default: ["analista", "evaluador"] },
+        // Preguntas de jefatura (embebidas y sincronizadas en ambos campos por compatibilidad)
         preguntas: { type: Array, default: [] },
+        preguntasJefatura: { type: Array, default: [] },
     },
     {
         collection: "solicitudes_informe",

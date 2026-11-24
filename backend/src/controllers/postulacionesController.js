@@ -109,6 +109,16 @@ export const postulacionesController = {
                 evaluadorAsignado,
             });
 
+            // Generar el informe psicolaboral en borrador automáticamente al registrar la postulación
+            await dataStore.crearInformePsicolaboral({
+                postulacionId: nueva.id,
+                candidatoId: Number(candidatoId),
+                candidatoNombre: candidato.nombre,
+                puestoTrabajoId: Number(puestoTrabajoId),
+                estado: "Pendiente",
+                destinatarios: ["analista", "evaluador"],
+            });
+
             return res.status(201).json({
                 ok: true,
                 mensaje: `Postulación registrada exitosamente para el cargo '${puesto.titulo}' en planta '${puesto.planta}'.`,

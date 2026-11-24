@@ -4,7 +4,7 @@ import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalEditarCandidato from "../components/ModalEditarCandidato";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
-import GestionCandidatosView from "../components/GestionCandidatosView";
+import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
@@ -292,6 +292,9 @@ function AnalistaPage({ onVolver }) {
 
                     <PanelSolicitudes
                         anchoCompleto
+                        encabezado={
+                            <EncabezadoRegistro subtitulo="Seguimiento de postulaciones y emisión de solicitudes" />
+                        }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
                         mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
@@ -307,25 +310,11 @@ function AnalistaPage({ onVolver }) {
                 />
             )}
 
-            {tabActiva === "candidatos" && (
-                <GestionCandidatosView
+            {tabActiva === "postulantesPorPuesto" && (
+                <PostulantesPorPuestoView
+                    postulaciones={postulaciones}
                     candidatos={candidatos}
-                    rolActual={rolActual}
-                    onEditarCandidato={(cand) => setCandidatoAEditar(cand)}
-                    onVerDetalle={(cand) => setSolicitudSeleccionada(cand)}
-                />
-            )}
-
-            {tabActiva === "solicitudes" && (
-                <PanelSolicitudes
-                    encabezado={
-                        <EncabezadoRegistro subtitulo="Seguimiento de postulaciones y emisión de solicitudes">
-                        </EncabezadoRegistro>
-                    }
-                    filtros={propsFiltros}
-                    solicitudes={solicitudesFiltradas}
-                    mensajeVacio="🔍 No se encontraron solicitudes que coincidan con la búsqueda."
-                    onDetalle={setSolicitudSeleccionada}
+                    onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}
 
@@ -341,6 +330,7 @@ function AnalistaPage({ onVolver }) {
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
+                informes={informes}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 onCambiarEstado={handleCambiarEstado}
                 rolActual={rolActual}

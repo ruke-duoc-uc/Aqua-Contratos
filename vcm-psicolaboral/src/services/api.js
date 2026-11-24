@@ -348,6 +348,14 @@ export const api = {
         return res.datos;
     },
 
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }) {
+        const res = await request(`/informes-psicolaborales/${id}/dictamen`, {
+            method: "PATCH",
+            body: JSON.stringify({ evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }),
+        });
+        return res.datos;
+    },
+
     // ==================== ÁREAS DE TRABAJO ====================
     async getAreas({ busqueda } = {}) {
         const params = new URLSearchParams();

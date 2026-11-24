@@ -76,3 +76,28 @@ export const ETIQUETAS_SUGERIDAS = [
     "Logística",
     "Adaptabilidad",
 ];
+
+// Catálogo especializado de tags psicolaborales para el evaluador
+export const TAGS_FORTALEZAS_SUGERIDOS = [
+    "Liderazgo natural",
+    "Trabajo en equipo",
+    "Tolerancia a la frustración",
+    "Orientación al detalle",
+    "Adaptabilidad a turnos",
+    "Comunicación asertiva",
+    "Puntualidad y compromiso",
+    "Autonomía y proactividad",
+    "Resolución bajo presión",
+    "Disposición al aprendizaje",
+];
+
+export const TAGS_DEBILIDADES_SUGERIDAS = [
+    "Dificultad bajo presión",
+    "Baja asertividad",
+    "Requiere supervisión constante",
+    "Resistencia al cambio",
+    "Tendencia a la dispersión",
+    "Dificultad para delegar",
+    "Rigidez en procedimientos",
+    "Inseguridad en decisiones clave",
+];

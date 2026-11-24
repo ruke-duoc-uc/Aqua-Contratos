@@ -28,10 +28,10 @@ import {
     ETIQUETAS_SEED,
 } from "./seedData.js";
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/aqua_contratos";
 
@@ -89,6 +89,28 @@ function inicializarFallbackJson() {
             memoryStoreUsuarios.push({ ...uSeed });
         }
     }
+
+    // Asegurar que todas las postulaciones semilla existan en el fallback
+    for (const posSeed of POSTULACIONES_SEED) {
+        if (!memoryStorePostulaciones.some((p) => Number(p.id) === Number(posSeed.id))) {
+            memoryStorePostulaciones.push({ ...posSeed });
+        }
+    }
+
+    // Normalizar informes en el fallback (sincronizar preguntas y preguntasJefatura)
+    memoryStoreInformes = (memoryStoreInformes || []).map((inf) => {
+        const listaPreguntas =
+            Array.isArray(inf.preguntasJefatura) && inf.preguntasJefatura.length > 0
+                ? inf.preguntasJefatura
+                : Array.isArray(inf.preguntas)
+                ? inf.preguntas
+                : [];
+        return {
+            ...inf,
+            preguntas: listaPreguntas,
+            preguntasJefatura: listaPreguntas,
+        };
+    });
 }
 
 function persistJson(tipo) {
@@ -120,11 +142,41 @@ async function poblarSemillasMongo() {
     const countPostulaciones = await PostulacionModel.countDocuments();
     if (countPostulaciones === 0) {
         await PostulacionModel.insertMany(POSTULACIONES_SEED);
+    } else {
+        for (const posSeed of POSTULACIONES_SEED) {
+            const existe = await PostulacionModel.findOne({ id: posSeed.id });
+            if (!existe) {
+                await PostulacionModel.create(posSeed);
+            }
+        }
     }
 
     const countInformes = await SolicitudInformeModel.countDocuments();
     if (countInformes === 0) {
         await SolicitudInformeModel.insertMany(INFORMES_SEED);
+    } else {
+        // Sincronizar preguntas y preguntasJefatura en documentos existentes en MongoDB
+        const docsInformes = await SolicitudInformeModel.find();
+        for (const doc of docsInformes) {
+            const obj = doc.toJSON();
+            const listaPreguntas =
+                Array.isArray(obj.preguntasJefatura) && obj.preguntasJefatura.length > 0
+                    ? obj.preguntasJefatura
+                    : Array.isArray(obj.preguntas)
+                    ? obj.preguntas
+                    : [];
+            if (
+                !Array.isArray(obj.preguntas) ||
+                !Array.isArray(obj.preguntasJefatura) ||
+                obj.preguntas.length !== listaPreguntas.length ||
+                obj.preguntasJefatura.length !== listaPreguntas.length
+            ) {
+                await SolicitudInformeModel.updateOne(
+                    { id: obj.id },
+                    { $set: { preguntas: listaPreguntas, preguntasJefatura: listaPreguntas } }
+                );
+            }
+        }
     }
 
     const countEtiquetas = await EtiquetaModel.countDocuments();
@@ -280,6 +332,9 @@ export const db = {
             resultadoPsicologico,
             fechaEvaluacion: datos.fechaEvaluacion || null,
             conclusiones: datos.conclusiones || null,
+            fortalezas: Array.isArray(datos.fortalezas) ? datos.fortalezas : [],
+            debilidades: Array.isArray(datos.debilidades) ? datos.debilidades : [],
+            historial: Array.isArray(datos.historial) ? datos.historial : [],
         };
 
         if (this.isUsingMongo()) {
@@ -300,6 +355,7 @@ export const db = {
             "especialidad", "planta", "cargo", "familiaCargo", "evaluador",
             "estado", "antecedentes", "infoMedica", "experienciaLaboral",
             "resultadoPsicologico", "fechaEvaluacion", "conclusiones",
+            "fortalezas", "debilidades", "historial",
         ];
 
         const payload = {};
@@ -557,18 +613,55 @@ export const db = {
         const lista = postulacionesRaw.map((pos) => {
             const c = candidatosRaw.find((item) => Number(item.id) === Number(pos.candidatoId));
             const p = puestosRaw.find((item) => Number(item.id) === Number(pos.puestoTrabajoId));
+            const dictamenFinal =
+                pos.dictamenPsicologico && pos.dictamenPsicologico !== "Pendiente"
+                    ? pos.dictamenPsicologico
+                    : c?.resultadoPsicologico || "Pendiente";
             return {
                 ...pos,
+                puestoId: pos.puestoTrabajoId,
+                puestoTrabajoId: pos.puestoTrabajoId,
                 candidatoNombre: c?.nombre,
+                nombreCandidato: c?.nombre,
+                nombre: c?.nombre,
+                nombres: c?.nombres,
+                apellidos: c?.apellidos,
                 candidatoRut: c?.rut,
+                rutCandidato: c?.rut,
+                rut: c?.rut,
                 candidatoEmail: c?.email,
+                email: c?.email,
                 candidatoTelefono: c?.telefono,
+                telefono: c?.telefono,
+                direccion: c?.direccion,
+                comuna: c?.comuna || p?.planta || c?.planta,
+                fecha_nacimiento: c?.fecha_nacimiento,
+                cv_pdf: c?.cv_pdf,
+                cvArchivo: c?.cv_pdf,
+                cvDataUrl: c?.cvDataUrl,
                 candidatoEspecialidad: c?.especialidad,
+                especialidad: c?.especialidad,
                 candidatoInfoMedica: c?.infoMedica,
+                infoMedica: c?.infoMedica,
                 candidatoExperiencia: c?.experienciaLaboral,
+                experienciaLaboral: c?.experienciaLaboral,
+                antecedentes: c?.antecedentes,
+                resultadoPsicologico: dictamenFinal,
+                dictamenPsicologico: dictamenFinal,
+                fechaEvaluacion: c?.fechaEvaluacion,
+                conclusiones: pos.conclusiones || c?.conclusiones || null,
+                fortalezas: c?.fortalezas || [],
+                debilidades: c?.debilidades || [],
+                historial: c?.historial || [],
                 puestoTitulo: p?.titulo,
+                cargo: p?.titulo || c?.cargo,
                 puestoPlanta: p?.planta,
+                planta: p?.planta || c?.planta,
                 puestoFamilia: p?.familiaCargo,
+                familiaCargo: p?.familiaCargo || c?.familiaCargo,
+                evaluador: pos.evaluadorAsignado || c?.evaluador,
+                encargado: pos.evaluadorAsignado || c?.evaluador,
+                fecha: pos.fechaPostulacion || c?.fecha,
             };
         });
 
@@ -786,13 +879,37 @@ export const db = {
     },
 
     // ==================== SOLICITUDES DE INFORME ====================
-    async obtenerSolicitudesInforme({ busqueda, estado, candidatoId, puestoTrabajoId, urgencia, tipo } = {}) {
+    _normalizarInforme(inf) {
+        if (!inf) return null;
+        const listaPreguntas =
+            Array.isArray(inf.preguntasJefatura) && inf.preguntasJefatura.length > 0
+                ? inf.preguntasJefatura
+                : Array.isArray(inf.preguntas)
+                ? inf.preguntas
+                : [];
+        return {
+            ...inf,
+            tipo: inf.tipo || "candidato",
+            solicitante: inf.solicitante || "Jefe de Área",
+            urgencia: inf.urgencia || "Media",
+            fechaLimite: inf.fechaLimite || null,
+            dictamen: inf.dictamen || "Pendiente",
+            fortalezas: Array.isArray(inf.fortalezas) ? inf.fortalezas : [],
+            debilidades: Array.isArray(inf.debilidades) ? inf.debilidades : [],
+            historial: Array.isArray(inf.historial) ? inf.historial : [],
+            destinatarios: Array.isArray(inf.destinatarios) ? inf.destinatarios : ["analista", "evaluador"],
+            preguntas: listaPreguntas,
+            preguntasJefatura: listaPreguntas,
+        };
+    },
+
+    async obtenerSolicitudesInforme({ busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo } = {}) {
         let lista = [];
         if (this.isUsingMongo()) {
             const docs = await SolicitudInformeModel.find().sort({ id: -1 });
-            lista = docs.map((d) => d.toJSON());
+            lista = docs.map((d) => this._normalizarInforme(d.toJSON()));
         } else {
-            lista = [...(memoryStoreInformes || [])];
+            lista = [...(memoryStoreInformes || [])].map((inf) => this._normalizarInforme(inf));
         }
 
         return lista.filter((inf) => {
@@ -801,7 +918,8 @@ export const db = {
                 !termino ||
                 inf.candidatoNombre?.toLowerCase().includes(termino) ||
                 inf.solicitante?.toLowerCase().includes(termino) ||
-                inf.preguntas?.some((p) => p.texto?.toLowerCase().includes(termino));
+                inf.evaluador?.toLowerCase().includes(termino) ||
+                inf.preguntasJefatura?.some((p) => p.texto?.toLowerCase().includes(termino));
 
             const coincideEstado =
                 !estado ||
@@ -816,17 +934,29 @@ export const db = {
                 !puestoTrabajoId ||
                 Number(inf.puestoTrabajoId) === Number(puestoTrabajoId);
 
-            const coincideTipo =
-                !tipo ||
-                tipo === "todos" ||
-                (inf.tipo && inf.tipo.toLowerCase() === tipo.toLowerCase());
+            const coincidePostulacion =
+                !postulacionId ||
+                Number(inf.postulacionId) === Number(postulacionId);
 
             const coincideUrgencia =
                 !urgencia ||
                 urgencia === "todas" ||
                 inf.urgencia?.toLowerCase() === urgencia.toLowerCase();
 
-            return coincideTexto && coincideEstado && coincideCandidato && coincidePuesto && coincideTipo && coincideUrgencia;
+            const coincideTipo =
+                !tipo ||
+                tipo === "todos" ||
+                inf.tipo?.toLowerCase() === tipo.toLowerCase();
+
+            return (
+                coincideTexto &&
+                coincideEstado &&
+                coincideCandidato &&
+                coincidePuesto &&
+                coincidePostulacion &&
+                coincideUrgencia &&
+                coincideTipo
+            );
         });
     },
 
@@ -834,24 +964,30 @@ export const db = {
         const numId = Number(id);
         if (this.isUsingMongo()) {
             const doc = await SolicitudInformeModel.findOne({ id: numId });
-            return doc ? doc.toJSON() : null;
+            return doc ? this._normalizarInforme(doc.toJSON()) : null;
         }
-        return (memoryStoreInformes || []).find((i) => Number(i.id) === numId) || null;
+        const encontrado = (memoryStoreInformes || []).find((i) => Number(i.id) === numId);
+        return encontrado ? this._normalizarInforme(encontrado) : null;
     },
 
     async insertarSolicitudInforme(datos) {
         const candidato = datos.candidatoId ? await this.obtenerPorId(datos.candidatoId) : null;
         const candidatoNombre = datos.candidatoNombre || candidato?.nombre || null;
+        const fechaCreacion = datos.fechaCreacion || new Date().toISOString();
+        const puestoTrabajoId = datos.puestoTrabajoId ? Number(datos.puestoTrabajoId) : null;
         const solicitante = datos.solicitante?.trim() || "Jefe de Área";
         const urgencia = datos.urgencia || "Media";
         const fechaLimite = datos.fechaLimite || null;
-        const estado = datos.estado || "Abierta";
-        const fechaCreacion = datos.fechaCreacion || new Date().toISOString();
-        const puestoTrabajoId = datos.puestoTrabajoId ? Number(datos.puestoTrabajoId) : null;
         const tipo = datos.tipo || (puestoTrabajoId && !datos.candidatoId ? "puesto" : "candidato");
         const destinatarios = Array.isArray(datos.destinatarios) ? datos.destinatarios : ["analista", "evaluador"];
 
-        const preguntas = (datos.preguntas || []).map((p, index) => {
+        const rawPreguntas = Array.isArray(datos.preguntasJefatura) && datos.preguntasJefatura.length > 0
+            ? datos.preguntasJefatura
+            : Array.isArray(datos.preguntas)
+            ? datos.preguntas
+            : [];
+
+        const preguntasNormalizadas = rawPreguntas.map((p, index) => {
             if (typeof p === "string") {
                 return {
                     id: index + 1,
@@ -874,6 +1010,7 @@ export const db = {
 
         const nuevoInforme = {
             id: nuevoId,
+            postulacionId: datos.postulacionId ? Number(datos.postulacionId) : null,
             candidatoId: datos.candidatoId ? Number(datos.candidatoId) : null,
             candidatoNombre,
             puestoTrabajoId,
@@ -881,21 +1018,40 @@ export const db = {
             solicitante,
             urgencia,
             fechaLimite,
-            estado,
+            // Evaluación técnica (vacía al inicio, la llena el evaluador)
+            evaluador: datos.evaluador || candidato?.evaluador || null,
+            fechaEvaluacion: datos.fechaEvaluacion || null,
+            dictamen: datos.dictamen || "Pendiente",
+            conclusiones: datos.conclusiones || null,
+            fortalezas: Array.isArray(datos.fortalezas) ? datos.fortalezas : [],
+            debilidades: Array.isArray(datos.debilidades) ? datos.debilidades : [],
+            historial: Array.isArray(datos.historial) ? datos.historial : [
+                {
+                    fecha: fechaCreacion,
+                    accion: "Informe creado",
+                    autor: solicitante || "Sistema",
+                    rol: datos.solicitante ? "jefatura" : "sistema",
+                    detalle: "Generación del informe psicolaboral.",
+                },
+            ],
+            // Metadatos
+            estado: datos.estado || "Abierta",
             fechaCreacion,
             destinatarios,
-            preguntas,
+            // Preguntas de jefatura (embebidas y sincronizadas)
+            preguntas: preguntasNormalizadas,
+            preguntasJefatura: preguntasNormalizadas,
         };
 
         if (this.isUsingMongo()) {
             const creado = await SolicitudInformeModel.create(nuevoInforme);
-            return creado.toJSON();
+            return this._normalizarInforme(creado.toJSON());
         }
 
         if (!memoryStoreInformes) memoryStoreInformes = [];
         memoryStoreInformes.unshift(nuevoInforme);
         persistJson("informes");
-        return nuevoInforme;
+        return this._normalizarInforme(nuevoInforme);
     },
 
     async agregarPreguntaInforme(id, { texto, creadaPor }) {
@@ -903,30 +1059,78 @@ export const db = {
         const informe = await this.obtenerSolicitudInformePorId(numId);
         if (!informe) return null;
 
+        // Informe cerrado: rechazar (la validación también está en el controlador)
+        if (informe.estado === "Cerrado" || informe.estado === "Cerrada") return informe;
+
         const nuevaPregunta = {
             id: Date.now(),
             texto: texto.trim(),
             fecha: new Date().toISOString(),
-            creadaPor: creadaPor || informe.solicitante || "Jefe de Área",
+            creadaPor: creadaPor || "Jefe de Área",
             respuestas: [],
         };
 
-        const preguntasActualizadas = [...(informe.preguntas || []), nuevaPregunta];
+        const preguntasBase =
+            Array.isArray(informe.preguntasJefatura) && informe.preguntasJefatura.length > 0
+                ? informe.preguntasJefatura
+                : Array.isArray(informe.preguntas)
+                ? informe.preguntas
+                : [];
+        const preguntasActualizadas = [...preguntasBase, nuevaPregunta];
 
         if (this.isUsingMongo()) {
             const doc = await SolicitudInformeModel.findOneAndUpdate(
                 { id: numId },
-                { $set: { preguntas: preguntasActualizadas } },
+                { $set: { preguntas: preguntasActualizadas, preguntasJefatura: preguntasActualizadas } },
                 { new: true }
             );
-            return doc ? doc.toJSON() : null;
+            return doc ? this._normalizarInforme(doc.toJSON()) : null;
         }
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
             memoryStoreInformes[idx].preguntas = preguntasActualizadas;
+            memoryStoreInformes[idx].preguntasJefatura = preguntasActualizadas;
             persistJson("informes");
-            return memoryStoreInformes[idx];
+            return this._normalizarInforme(memoryStoreInformes[idx]);
+        }
+        return null;
+    },
+
+    async actualizarDictamenInforme(id, { evaluador, fechaEvaluacion, dictamen, conclusiones, fortalezas, debilidades, historialItem }) {
+        const numId = Number(id);
+        const informePrevio = await this.obtenerSolicitudInformePorId(numId);
+        const payload = {};
+        if (evaluador !== undefined) payload.evaluador = evaluador;
+        if (fechaEvaluacion !== undefined) payload.fechaEvaluacion = fechaEvaluacion;
+        if (dictamen !== undefined) payload.dictamen = dictamen;
+        if (conclusiones !== undefined) payload.conclusiones = conclusiones;
+        if (fortalezas !== undefined) payload.fortalezas = fortalezas;
+        if (debilidades !== undefined) payload.debilidades = debilidades;
+
+        // Historial acumulativo
+        const historialPrevio = Array.isArray(informePrevio?.historial) ? informePrevio.historial : [];
+        if (historialItem) {
+            payload.historial = [...historialPrevio, {
+                fecha: new Date().toISOString(),
+                ...historialItem,
+            }];
+        }
+
+        if (this.isUsingMongo()) {
+            const doc = await SolicitudInformeModel.findOneAndUpdate(
+                { id: numId },
+                { $set: payload },
+                { new: true }
+            );
+            return doc ? this._normalizarInforme(doc.toJSON()) : null;
+        }
+
+        const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
+        if (idx !== -1) {
+            Object.assign(memoryStoreInformes[idx], payload);
+            persistJson("informes");
+            return this._normalizarInforme(memoryStoreInformes[idx]);
         }
         return null;
     },
@@ -945,7 +1149,14 @@ export const db = {
             fecha: new Date().toISOString(),
         };
 
-        const preguntasActualizadas = (informe.preguntas || []).map((p) => {
+        const preguntasBase =
+            Array.isArray(informe.preguntasJefatura) && informe.preguntasJefatura.length > 0
+                ? informe.preguntasJefatura
+                : Array.isArray(informe.preguntas)
+                ? informe.preguntas
+                : [];
+
+        const preguntasActualizadas = preguntasBase.map((p) => {
             if (Number(p.id) === numPreguntaId) {
                 return {
                     ...p,
@@ -958,17 +1169,18 @@ export const db = {
         if (this.isUsingMongo()) {
             const doc = await SolicitudInformeModel.findOneAndUpdate(
                 { id: numId },
-                { $set: { preguntas: preguntasActualizadas } },
+                { $set: { preguntas: preguntasActualizadas, preguntasJefatura: preguntasActualizadas } },
                 { new: true }
             );
-            return doc ? doc.toJSON() : null;
+            return doc ? this._normalizarInforme(doc.toJSON()) : null;
         }
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
             memoryStoreInformes[idx].preguntas = preguntasActualizadas;
+            memoryStoreInformes[idx].preguntasJefatura = preguntasActualizadas;
             persistJson("informes");
-            return memoryStoreInformes[idx];
+            return this._normalizarInforme(memoryStoreInformes[idx]);
         }
         return null;
     },
@@ -981,14 +1193,14 @@ export const db = {
                 { $set: { estado } },
                 { new: true }
             );
-            return doc ? doc.toJSON() : null;
+            return doc ? this._normalizarInforme(doc.toJSON()) : null;
         }
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
             memoryStoreInformes[idx].estado = estado;
             persistJson("informes");
-            return memoryStoreInformes[idx];
+            return this._normalizarInforme(memoryStoreInformes[idx]);
         }
         return null;
     },

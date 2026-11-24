@@ -3,7 +3,7 @@ import HeaderRoles from "../components/HeaderRoles";
 import ModalDetalleSolicitud from "../components/ModalDetalleSolicitud";
 import ModalDetalleInforme from "../components/ModalDetalleInforme";
 import BandejaInformesView from "../components/BandejaInformesView";
-import GestionCandidatosView from "../components/GestionCandidatosView";
+import PostulantesPorPuestoView from "../components/PostulantesPorPuestoView";
 import AgendaEntrevistasView from "../components/AgendaEntrevistasView";
 import { api } from "../services/api";
 import {
@@ -108,6 +108,50 @@ function EvaluadorPage({ onVolver }) {
             isMounted = false;
         };
     }, []);
+
+    const handleActualizarInformeEvaluador = async (id, datosActualizados) => {
+        try {
+            const actualizado = await api.actualizarDictamenInforme(id, datosActualizados);
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => (inf.id === id ? { ...inf, ...actualizado } : inf));
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+            setInformeSeleccionado((prev) => (prev?.id === id ? { ...prev, ...actualizado } : prev));
+        } catch {
+            setInformes((prev) => {
+                const actualizados = prev.map((inf) => {
+                    if (inf.id === id) {
+                        const nuevoHistorial = [
+                            ...(inf.historial || []),
+                            ...(datosActualizados.historialItem ? [{ fecha: new Date().toISOString(), ...datosActualizados.historialItem }] : []),
+                        ];
+                        return {
+                            ...inf,
+                            ...datosActualizados,
+                            historial: nuevoHistorial,
+                        };
+                    }
+                    return inf;
+                });
+                guardarInformesLocal(actualizados);
+                return actualizados;
+            });
+            setInformeSeleccionado((prev) => {
+                if (prev?.id === id) {
+                    return {
+                        ...prev,
+                        ...datosActualizados,
+                        historial: [
+                            ...(prev.historial || []),
+                            ...(datosActualizados.historialItem ? [{ fecha: new Date().toISOString(), ...datosActualizados.historialItem }] : []),
+                        ],
+                    };
+                }
+                return prev;
+            });
+        }
+    };
 
     const handleAgendarEntrevista = async ({ postulacionId, fechaEntrevista, evaluadorAsignado, observaciones }) => {
         try {
@@ -223,6 +267,32 @@ function EvaluadorPage({ onVolver }) {
     };
 
     const handleGuardarEvaluacion = async (id, evaluacionData) => {
+        // 1. Sincronizar en el informe psicolaboral (Fuente única de verdad)
+        const informeRelacionado = informes.find((inf) => {
+            const mismoCandidatoId = inf.candidatoId && (String(inf.candidatoId) === String(solicitudSeleccionada?.candidatoId || id));
+            const mismoNombre = inf.candidatoNombre && solicitudSeleccionada?.nombre && inf.candidatoNombre.toLowerCase() === solicitudSeleccionada.nombre.toLowerCase();
+            const mismaPostulacion = inf.postulacionId && (String(inf.postulacionId) === String(id));
+            return mismoCandidatoId || mismoNombre || mismaPostulacion;
+        });
+
+        if (informeRelacionado) {
+            handleActualizarInformeEvaluador(informeRelacionado.id, {
+                evaluador: "Carolina Díaz (Evaluador)",
+                fechaEvaluacion: evaluacionData.fechaEvaluacion,
+                dictamen: evaluacionData.resultadoPsicologico,
+                conclusiones: evaluacionData.conclusiones,
+                fortalezas: evaluacionData.fortalezas || [],
+                debilidades: evaluacionData.debilidades || [],
+                historialItem: {
+                    accion: "Evaluación formal registrada desde ficha de candidato",
+                    autor: "Carolina Díaz",
+                    rol: "evaluador",
+                    detalle: `Dictamen: ${evaluacionData.resultadoPsicologico}.`,
+                },
+            });
+        }
+
+        // 2. Mantener consistencia en el estado de candidatos
         setCandidatos((prev) => {
             const actualizados = prev.map((c) => (c.id === id ? { ...c, ...evaluacionData } : c));
             guardarCandidatosGlobales(actualizados);
@@ -235,7 +305,7 @@ function EvaluadorPage({ onVolver }) {
         try {
             await api.guardarEvaluacionSolicitud(id, evaluacionData);
             setBackendConectado(true);
-            setAlertaExito(`✓ Dictamen guardado en base de datos para ${solicitudSeleccionada?.nombre || "el postulante"}`);
+            setAlertaExito(`✓ Dictamen e informe sincronizados exitosamente para ${solicitudSeleccionada?.nombre || "el postulante"}`);
         } catch (err) {
             console.warn("Evaluación local:", err.message);
             setAlertaExito(`✓ Evaluación psicológica registrada con éxito para ${solicitudSeleccionada?.nombre || "el postulante"}`);
@@ -297,6 +367,9 @@ function EvaluadorPage({ onVolver }) {
 
                     <PanelSolicitudes
                         anchoCompleto
+                        encabezado={
+                            <EncabezadoRegistro subtitulo="Dictámenes psicolaborales y actualización de estado" />
+                        }
                         filtros={propsFiltros}
                         solicitudes={solicitudesFiltradas}
                         mensajeVacio="🔍 No se encontraron solicitudes con los filtros aplicados."
@@ -312,23 +385,11 @@ function EvaluadorPage({ onVolver }) {
                 />
             )}
 
-            {tabActiva === "candidatos" && (
-                <GestionCandidatosView
+            {tabActiva === "postulantesPorPuesto" && (
+                <PostulantesPorPuestoView
+                    postulaciones={postulaciones}
                     candidatos={candidatos}
-                    rolActual={rolActual}
-                    onVerDetalle={(cand) => setSolicitudSeleccionada(cand)}
-                />
-            )}
-
-            {tabActiva === "solicitudes" && (
-                <PanelSolicitudes
-                    encabezado={
-                        <EncabezadoRegistro subtitulo="Dictámenes psicolaborales y actualización de estado" />
-                    }
-                    filtros={propsFiltros}
-                    solicitudes={solicitudesFiltradas}
-                    mensajeVacio="🔍 No se encontraron solicitudes que coincidan con la búsqueda."
-                    onDetalle={setSolicitudSeleccionada}
+                    onVerDetalle={(post) => setSolicitudSeleccionada(post)}
                 />
             )}
 
@@ -344,6 +405,7 @@ function EvaluadorPage({ onVolver }) {
                 key={solicitudSeleccionada?.id || "modal-detalle"}
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
+                informes={informes}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 onCambiarEstado={handleCambiarEstado}
                 onGuardarEvaluacion={handleGuardarEvaluacion}
@@ -358,6 +420,7 @@ function EvaluadorPage({ onVolver }) {
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
                 onAgregarRespuesta={handleAgregarRespuestaInforme}
+                onActualizarInforme={handleActualizarInformeEvaluador}
             />
         </main>
     );
