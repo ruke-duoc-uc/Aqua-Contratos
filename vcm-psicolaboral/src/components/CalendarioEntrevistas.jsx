@@ -53,7 +53,7 @@ function CalendarioEntrevistas({ entrevistas = [], diaSeleccionado, onSelecciona
                 const clave = extraerClaveFecha(f);
                 if (clave) {
                     const [y, m, d] = clave.split("-").map(Number);
-                    return new Date(y, m - 1, d);
+                    return new Date(y, m , d);
                 }
             }
         }
