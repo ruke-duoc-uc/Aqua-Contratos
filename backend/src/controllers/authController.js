@@ -4,6 +4,25 @@
  * y auto-registro de postulantes con su ficha completa de Datos Postulantes.
  */
 import { dataStore } from "../data/dataStore.js";
+import { cvStorageService } from "../services/cvStorageService.js";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "aqua_contratos_secret_key_jwt_2026_super_seguro";
+
+function generarToken(usuario) {
+    return jwt.sign(
+        {
+            id: usuario.id,
+            email: usuario.email,
+            nombre: usuario.nombre,
+            rol: usuario.rol,
+            candidatoId: usuario.candidatoId || null,
+            area_id: usuario.area_id !== undefined ? usuario.area_id : null,
+        },
+        JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRATION || "24h" }
+    );
+}
 
 export const authController = {
     /**
@@ -66,10 +85,13 @@ export const authController = {
                 perfilCandidato = candidatos[0] || null;
             }
 
+            const token = generarToken(usuario);
+
             return res.status(200).json({
                 ok: true,
                 mensaje: `Bienvenido(a) a Aqua-Contratos, ${usuario.nombre}.`,
                 datos: {
+                    token,
                     usuario,
                     perfilCandidato,
                 },
@@ -105,6 +127,7 @@ export const authController = {
                 especialidad,
                 infoMedica,
                 experienciaLaboral,
+                consentimientoPrivacidad,
             } = req.body;
 
             const nombresLimpio = (nombres || "").trim();
@@ -163,8 +186,23 @@ export const authController = {
                 cargo: especialidad?.trim() || "Postulante Registrado",
                 infoMedica: infoMedica?.trim() || "",
                 experienciaLaboral: experienciaLaboral?.trim() || "",
+                consentimientoPrivacidad: Boolean(consentimientoPrivacidad),
                 estado: "Pendiente",
             });
+
+            // Guardar CV en carpeta privada del postulante (Requisito clave de TI)
+            try {
+                cvStorageService.guardarCvEnCarpetaPrivada({
+                    candidatoId: nuevoCandidato.id,
+                    nombre: nombreCompleto,
+                    rut: rut.trim(),
+                    cargo: especialidad?.trim() || "Postulante Registrado",
+                    cvDataUrl: cvDataUrl || "",
+                    nombreArchivo: cv_pdf || `CV_${nuevoCandidato.id}.pdf`,
+                });
+            } catch (errCv) {
+                console.warn("[authController] Error al almacenar CV en carpeta privada:", errCv.message);
+            }
 
             // 2. Crear la cuenta de usuario vinculada (B1: Crear Usuario Postulantes)
             const nuevoUsuario = await dataStore.registrarUsuario({
@@ -175,10 +213,13 @@ export const authController = {
                 candidatoId: nuevoCandidato.id,
             });
 
+            const token = generarToken(nuevoUsuario);
+
             return res.status(201).json({
                 ok: true,
                 mensaje: "Cuenta de postulante creada exitosamente.",
                 datos: {
+                    token,
                     usuario: nuevoUsuario,
                     candidato: nuevoCandidato,
                 },
@@ -195,6 +236,32 @@ export const authController = {
                 mensaje: "Error interno al registrar postulante.",
                 error: error.message,
             });
+        }
+    },
+
+    /**
+     * GET /api/auth/me
+     * Retorna los datos del usuario autenticado vía JWT.
+     */
+    async obtenerPerfilActual(req, res) {
+        try {
+            if (!req.usuario) {
+                return res.status(401).json({ ok: false, mensaje: "No autenticado." });
+            }
+            const usuario = await dataStore.obtenerUsuarioPorId(req.usuario.id);
+            if (!usuario) {
+                return res.status(404).json({ ok: false, mensaje: "Usuario no encontrado." });
+            }
+            let perfilCandidato = null;
+            if (usuario.candidatoId) {
+                perfilCandidato = await dataStore.obtenerCandidatoPorId(usuario.candidatoId);
+            }
+            return res.status(200).json({
+                ok: true,
+                datos: { usuario, perfilCandidato },
+            });
+        } catch (error) {
+            return res.status(500).json({ ok: false, mensaje: "Error al obtener perfil.", error: error.message });
         }
     },
 };

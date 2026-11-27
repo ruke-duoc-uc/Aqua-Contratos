@@ -6,6 +6,23 @@
  * @autor Luxorar 
  */
 
+export function obtenerDvEsperado(rut) {
+    if (!rut) return "";
+    const cuerpoLimpio = rut.toString().replace(/[^0-9]/g, "");
+    if (cuerpoLimpio.length < 7 || cuerpoLimpio.length > 9) return "";
+
+    let suma = 0;
+    let multiplicador = 2;
+    for (let i = cuerpoLimpio.length - 1; i >= 0; i--) {
+        suma += parseInt(cuerpoLimpio[i], 10) * multiplicador;
+        multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+    }
+
+    const resto = suma % 11;
+    const dvEsperadoNum = 11 - resto;
+    return dvEsperadoNum === 11 ? "0" : dvEsperadoNum === 10 ? "K" : dvEsperadoNum.toString();
+}
+
 export function calcularRut(rut, verificador) {
     if (!rut || !verificador) return false;
     const cuerpoLimpio = rut.toString().replace(/[^0-9]/g, "");

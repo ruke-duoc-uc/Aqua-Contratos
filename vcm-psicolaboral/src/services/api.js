@@ -3,12 +3,34 @@
  * Conecta con el backend Express y la base de datos persistente MongoDB.
  */
 
-const API_BASE_URL = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "http://localhost:4000/api";
+const API_BASE_URL =
+    (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) || "/api";
+
+function obtenerTokenSesion() {
+    try {
+        if (typeof localStorage === "undefined") return null;
+        const sesionEmpleado = localStorage.getItem("aqua_sesion_empleado");
+        if (sesionEmpleado) {
+            const parsed = JSON.parse(sesionEmpleado);
+            if (parsed.token) return parsed.token;
+        }
+        const sesionPostulante = localStorage.getItem("aqua_contratos_sesion_postulante_v1");
+        if (sesionPostulante) {
+            const parsed = JSON.parse(sesionPostulante);
+            if (parsed.token) return parsed.token;
+        }
+    } catch {
+        // Ignorar en entornos sin localStorage
+    }
+    return null;
+}
 
 async function request(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
+    const token = obtenerTokenSesion();
     const defaultHeaders = {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
     const config = {
@@ -168,7 +190,7 @@ export const api = {
 
     async agendarEntrevistaPostulacion(
         id,
-        { fechaEntrevista, evaluadorAsignado, tipoCitacion, enlaceGoogleMeet, urlGoogleCalendar, observaciones }
+        { fechaEntrevista, evaluadorAsignado, tipoCitacion, enlaceGoogleMeet, urlGoogleCalendar, observaciones, candidatoEmail }
     ) {
         const res = await request(`/postulaciones/${id}/agendar`, {
             method: "PATCH",
@@ -179,6 +201,7 @@ export const api = {
                 enlaceGoogleMeet,
                 urlGoogleCalendar,
                 observaciones,
+                candidatoEmail,
             }),
         });
         return res.datos;
@@ -379,5 +402,34 @@ export const api = {
     async getAreaPorId(id) {
         const res = await request(`/areas/${id}`);
         return res.datos;
+    },
+
+    // ==================== GOOGLE CALENDAR Y MEET (Nivel 4) ====================
+    async getEstadoCalendar() {
+        return request("/calendar/estado");
+    },
+
+    async getUrlAuthCalendar() {
+        return request("/calendar/auth-url");
+    },
+
+    async crearCitacionCalendar(datosCitacion) {
+        return request("/calendar/citacion", {
+            method: "POST",
+            body: JSON.stringify(datosCitacion),
+        });
+    },
+
+    // ==================== ASISTENTE DE INTELIGENCIA ARTIFICIAL ====================
+    async analizarCandidatoConIa(datos) {
+        return request("/ia/analizar-candidato", {
+            method: "POST",
+            body: JSON.stringify(datos),
+        });
+    },
+
+    // ==================== CARPETAS PRIVADAS Y DESCARGA DE CV ====================
+    obtenerUrlDescargaCv(candidatoId) {
+        return `${API_BASE_URL}/candidatos/${candidatoId}/cv`;
     },
 };

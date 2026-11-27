@@ -4,6 +4,7 @@
  */
 import { dataStore } from "../data/dataStore.js";
 import { enviarCorreosPostulacion } from "../services/emailService.js";
+import { cvStorageService } from "../services/cvStorageService.js";
 
 /**
  * Dispara las notificaciones por correo sin bloquear la respuesta HTTP.
@@ -21,8 +22,12 @@ export const candidatosController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, planta } = req.query;
-            const candidatos = await dataStore.obtenerCandidatos({ busqueda, planta });
+            const { busqueda, planta, areaId, area_id } = req.query;
+            const areaFiltro = req.usuario?.rol === "jefatura" && req.usuario?.area_id
+                ? req.usuario.area_id
+                : areaId || area_id;
+
+            const candidatos = await dataStore.obtenerCandidatos({ busqueda, planta, areaId: areaFiltro });
             return res.status(200).json({
                 ok: true,
                 total: candidatos.length,
@@ -192,7 +197,15 @@ export const candidatosController = {
     async actualizar(req, res) {
         try {
             const { id } = req.params;
-            const candidatoExistente = await dataStore.obtenerCandidatoPorId(id);
+            let candidatoExistente = await dataStore.obtenerCandidatoPorId(id);
+
+            const rutBuscado = req.body?.rut || req.usuario?.rut;
+            if (!candidatoExistente && rutBuscado) {
+                candidatoExistente = await dataStore.buscarCandidatoPorRut(rutBuscado);
+            }
+            if (!candidatoExistente && req.usuario?.candidatoId) {
+                candidatoExistente = await dataStore.obtenerCandidatoPorId(req.usuario.candidatoId);
+            }
 
             if (!candidatoExistente) {
                 return res.status(404).json({
@@ -201,9 +214,11 @@ export const candidatosController = {
                 });
             }
 
+            const idReal = candidatoExistente.id;
+
             if (req.body.rut && req.body.rut !== candidatoExistente.rut) {
                 const rutColision = await dataStore.buscarCandidatoPorRut(req.body.rut);
-                if (rutColision && Number(rutColision.id) !== Number(id)) {
+                if (rutColision && Number(rutColision.id) !== Number(idReal)) {
                     return res.status(409).json({
                         ok: false,
                         mensaje: `El RUT ${req.body.rut} ya se encuentra asignado a otro candidato.`,
@@ -211,7 +226,7 @@ export const candidatosController = {
                 }
             }
 
-            const candidatoActualizado = await dataStore.actualizarCandidato(id, req.body);
+            const candidatoActualizado = await dataStore.actualizarCandidato(idReal, req.body);
 
             return res.status(200).json({
                 ok: true,
@@ -250,6 +265,39 @@ export const candidatosController = {
             return res.status(500).json({
                 ok: false,
                 mensaje: "Error interno al eliminar el candidato.",
+                error: error.message,
+            });
+        }
+    },
+
+    /**
+     * GET /api/candidatos/:id/cv
+     * Descarga el CV almacenado en la carpeta privada del postulante
+     */
+    async descargarCv(req, res) {
+        try {
+            const { id } = req.params;
+            const candidato = await dataStore.obtenerCandidatoPorId(id);
+            if (!candidato) {
+                return res.status(404).json({
+                    ok: false,
+                    mensaje: `No se encontró el candidato con ID ${id}.`,
+                });
+            }
+
+            const infoCv = cvStorageService.obtenerRutaCv(id, candidato);
+            if (!infoCv.existe || !infoCv.rutaArchivo) {
+                return res.status(404).json({
+                    ok: false,
+                    mensaje: "El candidato no cuenta con un archivo de CV registrado.",
+                });
+            }
+
+            return res.download(infoCv.rutaArchivo, infoCv.nombreArchivo);
+        } catch (error) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: "Error interno al descargar el archivo de CV.",
                 error: error.message,
             });
         }

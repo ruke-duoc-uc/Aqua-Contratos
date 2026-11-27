@@ -141,3 +141,36 @@ export const TIPOS_FECHA_ESPECIAL = [
     "Mantenimientos y sanitizaciones",
     "Feriados",
 ];
+
+// Dictámenes psicolaborales oficiales homologados (Fusión Informes + Evaluación Psicolaboral)
+export const DICTAMENES_PSICOLABORALES = [
+    { valor: "Recomendable", label: "Recomendable", color: "#0f5132", bg: "#d1e7dd", borde: "#badbcc" },
+    { valor: "Con reservas", label: "Con reservas", color: "#856404", bg: "#fff3cd", borde: "#ffeeba" },
+    { valor: "No recomendable", label: "No recomendable", color: "#842029", bg: "#f8d7da", borde: "#f5c2c7" },
+];
+
+/**
+ * Homologa la nomenclatura histórica ("Recomendado", "Recomendado con observaciones", "No recomendado")
+ * al vocabulario psicolaboral formal ("Recomendable", "Con reservas", "No recomendable").
+ */
+export function normalizarDictamen(dictamen) {
+    if (!dictamen || dictamen === "Pendiente") return "Pendiente";
+    const d = String(dictamen).trim().toLowerCase();
+    if (d === "recomendable" || d === "recomendado") return "Recomendable";
+    if (d === "con reservas" || d === "recomendado con observaciones" || d === "con observaciones") return "Con reservas";
+    if (d === "no recomendable" || d === "no recomendado") return "No recomendable";
+    return dictamen;
+}
+
+export function obtenerConfigDictamen(dictamen) {
+    const norm = normalizarDictamen(dictamen);
+    const encontrado = DICTAMENES_PSICOLABORALES.find((dp) => dp.valor === norm);
+    if (encontrado) return encontrado;
+    return {
+        valor: "Pendiente",
+        label: "Sin dictamen aún",
+        color: "#495057",
+        bg: "#e2e3e5",
+        borde: "#ced4da",
+    };
+}

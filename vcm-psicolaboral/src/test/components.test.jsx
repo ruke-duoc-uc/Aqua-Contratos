@@ -15,6 +15,8 @@ import {
     construirUrlGoogleCalendar,
     registrarFechaEspecialCalendario,
 } from '../utils/googleCalendar';
+import ModalDetallePsicolaboral from '../components/ModalDetallePsicolaboral';
+import { normalizarDictamen, DICTAMENES_PSICOLABORALES } from '../utils/constantes';
 
 describe('Componente: IndicadorCard', () => {
     it('debe renderizar el título y el valor numérico correctamente', () => {
@@ -120,6 +122,29 @@ describe('Componente: PortalAuthPostulante (Registro e Inicio de Sesión B1 / B2
         expect(handleAutenticado).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(/módulo 11/i);
     });
+
+    it('debe bloquear el registro si no se aceptan las políticas de privacidad y tratamiento de datos', () => {
+        const handleAutenticado = vi.fn();
+        render(<PortalAuthPostulante onAutenticado={handleAutenticado} onVolver={() => {}} />);
+
+        const tabRegistro = screen.getByRole('button', { name: /crear usuario postulante/i });
+        fireEvent.click(tabRegistro);
+
+        // RUT válido (21756200-7)
+        fireEvent.change(screen.getByLabelText(/RUT \*/i), { target: { value: '21756200' } });
+        fireEvent.change(screen.getByLabelText(/dígito verificador/i), { target: { value: '7' } });
+        fireEvent.change(screen.getByLabelText(/Nombres \*/i), { target: { value: 'Juan' } });
+        fireEvent.change(screen.getByLabelText(/Apellidos \*/i), { target: { value: 'Pérez' } });
+        fireEvent.change(screen.getByLabelText(/Correo Electrónico/i), { target: { value: 'juan.perez@gmail.com' } });
+        fireEvent.change(screen.getByLabelText(/Contraseña \* \(mín\. 6 caracteres\)/i), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByLabelText(/Confirmar Contraseña \*/i), { target: { value: 'password123' } });
+
+        const btnSubmit = screen.getByRole('button', { name: /registrar cuenta de postulante/i });
+        fireEvent.click(btnSubmit);
+
+        expect(handleAutenticado).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent(/privacidad/i);
+    });
 });
 
 describe('Validación de Perfil Completo antes de Postular (B4 -> F3)', () => {
@@ -218,5 +243,67 @@ describe('Citaciones Google Calendar y Fechas Operativas (E1 -> E2 -> E3)', () =
         expect(lista[0].titulo).toBe('Cierre de planta por mantención anual');
         expect(lista[0].tipoEvento).toBe('Cierres de local');
         expect(lista[0].esEventoEspecial).toBe(true);
+    });
+});
+
+describe('Fusión de Informes y Evaluación Psicolaboral (ModalDetallePsicolaboral)', () => {
+    it('debe homologar el vocabulario histórico al estándar psicolaboral formal', () => {
+        expect(normalizarDictamen('Recomendado')).toBe('Recomendable');
+        expect(normalizarDictamen('Recomendable')).toBe('Recomendable');
+        expect(normalizarDictamen('Recomendado con observaciones')).toBe('Con reservas');
+        expect(normalizarDictamen('Con reservas')).toBe('Con reservas');
+        expect(normalizarDictamen('No recomendado')).toBe('No recomendable');
+        expect(normalizarDictamen('No recomendable')).toBe('No recomendable');
+        expect(normalizarDictamen('Pendiente')).toBe('Pendiente');
+    });
+
+    it('debe renderizar la ficha del postulante y permitir alternar entre evaluación y consultas de jefatura', () => {
+        const solicitudMock = {
+            id: 1,
+            rut: '21.756.200-7',
+            nombre: 'Luis Mancilla Peralta',
+            nombres: 'Luis Andrés',
+            apellidos: 'Mancilla Peralta',
+            cargo: 'Desarrollador Full Stack',
+            planta: 'Puerto Montt',
+            estado: 'En proceso',
+            resultadoPsicologico: 'Recomendable',
+            conclusiones: 'Excelente perfil técnico y proactividad.',
+            fortalezas: ['Trabajo en equipo', 'React'],
+            debilidades: ['Poca experiencia presencial'],
+        };
+
+        const informeMock = {
+            id: 50,
+            candidatoId: 1,
+            estado: 'Abierta',
+            urgencia: 'Alta',
+            preguntas: [
+                { id: 1, texto: '¿Tiene disponibilidad para turnos de emergencia?', respuestas: [] },
+            ],
+        };
+
+        render(
+            <ModalDetallePsicolaboral
+                isOpen={true}
+                solicitud={solicitudMock}
+                informe={informeMock}
+                rolActual="evaluador"
+                onCerrar={() => {}}
+            />
+        );
+
+        // Ficha del postulante en panel izquierdo
+        expect(screen.getByText('Luis Mancilla Peralta')).toBeInTheDocument();
+        expect(screen.getByText('21.756.200-7')).toBeInTheDocument();
+
+        // Pestañas unificadas presentes
+        expect(screen.getByRole('button', { name: /evaluación psicolaboral/i })).toBeInTheDocument();
+        const tabConsultas = screen.getByRole('button', { name: /consultas e informe de jefatura/i });
+        expect(tabConsultas).toBeInTheDocument();
+
+        // Alternar a la pestaña de consultas de jefatura
+        fireEvent.click(tabConsultas);
+        expect(screen.getByText(/¿Tiene disponibilidad para turnos de emergencia\?/i)).toBeInTheDocument();
     });
 });

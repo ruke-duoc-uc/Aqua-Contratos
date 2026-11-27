@@ -162,6 +162,7 @@ function EvaluadorPage({ onVolver }) {
         enlaceGoogleMeet,
         urlGoogleCalendar,
         observaciones,
+        candidatoEmail,
     }) => {
         try {
             const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
@@ -171,6 +172,7 @@ function EvaluadorPage({ onVolver }) {
                 enlaceGoogleMeet,
                 urlGoogleCalendar,
                 observaciones,
+                candidatoEmail,
             });
             setPostulaciones((prev) => {
                 const list = prev.map((p) => (p.id === postulacionId ? { ...p, ...actualizado } : p));
@@ -429,9 +431,12 @@ function EvaluadorPage({ onVolver }) {
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
                 informes={informes}
+                candidatos={candidatos}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 onCambiarEstado={handleCambiarEstado}
                 onGuardarEvaluacion={handleGuardarEvaluacion}
+                onActualizarInforme={handleActualizarInformeEvaluador}
+                onAgregarRespuesta={handleAgregarRespuestaInforme}
                 rolActual={rolActual}
             />
 
@@ -439,11 +444,14 @@ function EvaluadorPage({ onVolver }) {
                 key={informeSeleccionado?.id || "modal-detalle-informe"}
                 isOpen={Boolean(informeSeleccionado)}
                 informe={informeSeleccionado}
+                informes={informes}
                 candidatos={candidatos}
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
-                onAgregarRespuesta={handleAgregarRespuestaInforme}
+                onCambiarEstado={handleCambiarEstado}
+                onGuardarEvaluacion={handleGuardarEvaluacion}
                 onActualizarInforme={handleActualizarInformeEvaluador}
+                onAgregarRespuesta={handleAgregarRespuestaInforme}
             />
         </main>
     );

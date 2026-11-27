@@ -14,7 +14,11 @@ export const informesController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo } = req.query;
+            const { busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo, areaId, area_id } = req.query;
+            const areaFiltro = req.usuario?.rol === "jefatura" && req.usuario?.area_id
+                ? req.usuario.area_id
+                : areaId || area_id;
+
             const informes = await dataStore.obtenerInformes({
                 busqueda,
                 estado,
@@ -23,6 +27,7 @@ export const informesController = {
                 postulacionId,
                 urgencia,
                 tipo,
+                areaId: areaFiltro,
             });
 
             return res.status(200).json({

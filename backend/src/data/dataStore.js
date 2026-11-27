@@ -6,9 +6,36 @@ import { db } from "./db.js";
 
 export const dataStore = {
     // ==================== CANDIDATOS ====================
-    async obtenerCandidatos({ busqueda, planta } = {}) {
+    async obtenerCandidatos({ busqueda, planta, areaId } = {}) {
         const todos = await db.obtenerTodos();
-        return todos.filter((c) => {
+        let lista = todos;
+
+        if (areaId) {
+            const [puestos, postulaciones] = await Promise.all([
+                db.obtenerPuestos({ areaId }),
+                db.obtenerPostulaciones({ areaId }),
+            ]);
+            const idsCandidatosEnPostulaciones = new Set(
+                postulaciones.map((p) => Number(p.candidatoId)).filter(Boolean)
+            );
+            const titulosPuestosArea = new Set(
+                puestos.map((p) => (p.titulo || "").toLowerCase().trim()).filter(Boolean)
+            );
+            const familiasPuestosArea = new Set(
+                puestos.map((p) => (p.familiaCargo || "").toLowerCase().trim()).filter(Boolean)
+            );
+
+            lista = lista.filter((c) => {
+                if (idsCandidatosEnPostulaciones.has(Number(c.id))) return true;
+                const cargoCand = (c.cargo || c.especialidad || "").toLowerCase().trim();
+                if (cargoCand && titulosPuestosArea.has(cargoCand)) return true;
+                const famCand = (c.familiaCargo || "").toLowerCase().trim();
+                if (famCand && familiasPuestosArea.has(famCand)) return true;
+                return false;
+            });
+        }
+
+        return lista.filter((c) => {
             const termino = busqueda ? busqueda.toLowerCase().trim() : "";
             const coincideTexto =
                 !termino ||
@@ -215,7 +242,28 @@ export const dataStore = {
         if (historial !== undefined) payload.historial = historial;
         if (estado !== undefined) payload.estado = estado;
 
-        return db.actualizarCandidato(id, payload);
+        let cand = await db.actualizarCandidato(id, payload);
+        let candidatoIdReal = cand ? cand.id : Number(id);
+
+        if (!cand) {
+            const inf = await db.obtenerSolicitudInformePorId(id);
+            if (inf?.candidatoId) {
+                candidatoIdReal = inf.candidatoId;
+                cand = await db.actualizarCandidato(candidatoIdReal, payload);
+            }
+        }
+
+        const informePayload = {};
+        if (resultadoPsicologico !== undefined) informePayload.dictamen = resultadoPsicologico;
+        if (fechaEvaluacion !== undefined) informePayload.fechaEvaluacion = fechaEvaluacion;
+        if (conclusiones !== undefined) informePayload.conclusiones = conclusiones;
+        if (fortalezas !== undefined) informePayload.fortalezas = fortalezas;
+        if (debilidades !== undefined) informePayload.debilidades = debilidades;
+        if (estado !== undefined) informePayload.estado = estado;
+
+        await db.sincronizarInformePorCandidato(candidatoIdReal, informePayload);
+
+        return cand;
     },
 
     // ==================== DASHBOARD / KPIS ====================

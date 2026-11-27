@@ -158,6 +158,7 @@ export async function iniciarSesionEmpleado({ email, password }) {
 
         const sesion = {
             usuario,
+            token: respuesta?.token || null,
             desdeBackend: true,
         };
 

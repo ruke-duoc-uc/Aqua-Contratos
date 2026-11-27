@@ -74,7 +74,7 @@ function CandidatoPage({ onVolver }) {
     const [puestoPostulandoId, setPuestoPostulandoId] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [filtroPlanta, setFiltroPlanta] = useState("todas");
-    const [backendConectado, setBackendConectado] = useState(false);
+    const [backendConectado, setBackendConectado] = useState(true);
     const [alertaExito, setAlertaExito] = useState("");
     const [alertaError, setAlertaError] = useState("");
 
@@ -85,27 +85,39 @@ function CandidatoPage({ onVolver }) {
         setAlertaError("");
     };
 
-    /* Carga las ofertas desde la API y las fusiona con las creadas localmente por Jefatura */
+    /* Carga las ofertas y postulaciones desde la API REST (MongoDB) */
     useEffect(() => {
         let isMounted = true;
 
-        async function cargarOfertas() {
+        async function cargarDatosRemotos() {
             try {
-                const remotos = await api.getPuestos();
+                const [remotos, postulacionesRemotas] = await Promise.all([
+                    api.getPuestos().catch(() => null),
+                    api.getPostulaciones().catch(() => null),
+                ]);
+
                 if (isMounted && Array.isArray(remotos) && remotos.length > 0) {
                     const fusionados = sincronizarPuestosConRemotos(remotos);
                     setPuestos(fusionados);
-                    setBackendConectado(true);
                 }
+
+                if (isMounted && Array.isArray(postulacionesRemotas) && postulacionesRemotas.length > 0) {
+                    guardarPostulacionesGlobales(postulacionesRemotas);
+                    setPostulaciones((prev) => {
+                        const idsRemotos = new Set(postulacionesRemotas.map((p) => p.id));
+                        const soloLocales = prev.filter((p) => !idsRemotos.has(p.id));
+                        return [...postulacionesRemotas, ...soloLocales];
+                    });
+                }
+                if (isMounted) setBackendConectado(true);
             } catch {
                 if (isMounted) {
                     setPuestos(cargarPuestosGlobales());
-                    setBackendConectado(false);
                 }
             }
         }
 
-        cargarOfertas();
+        cargarDatosRemotos();
         return () => {
             isMounted = false;
         };
@@ -338,20 +350,37 @@ function CandidatoPage({ onVolver }) {
                 resultadoPsicologico: "Pendiente",
             });
 
-            // 2. Intentar registrar el vínculo en la API REST si el backend está conectado
+            // 2. Registrar el vínculo en la API REST (MongoDB)
+            let idPostulacionCreada = nuevaPostulacionId;
             try {
-                await api.crearPostulacion({
+                const resPostulacion = await api.crearPostulacion({
                     candidatoId: candidatoIdFinal,
                     puestoTrabajoId: puesto.id,
                     evaluadorAsignado: "Amaro Villalobos Caseres",
+                    rut,
+                    nombre: nombreCompleto,
+                    nombres,
+                    apellidos,
+                    email,
+                    telefono: candidatoActivo.telefono || "",
+                    direccion,
+                    comuna,
+                    cv_pdf: cvNombre,
                 });
-            } catch {
-                // Si el backend no está activo o el candidato aún es solo local, continúa con el registro global local
+                if (resPostulacion?.id) {
+                    idPostulacionCreada = resPostulacion.id;
+                }
+            } catch (err) {
+                console.warn("Aviso al guardar postulación en API:", err);
+                if (err.status === 409 || err.message?.includes("activa")) {
+                    setAlertaError("Ya tienes una postulación activa para este cargo.");
+                    return;
+                }
             }
 
             // 3. Registrar en la lista GLOBAL de postulaciones (sincronizada con Analista, Evaluador y Jefatura)
             crearPostulacionGlobal({
-                id: nuevaPostulacionId,
+                id: idPostulacionCreada,
                 puestoId: puesto.id,
                 puestoTitulo: puesto.titulo,
                 planta: puesto.planta,
@@ -366,7 +395,7 @@ function CandidatoPage({ onVolver }) {
 
             // 4. Registrar en el estado local del candidato
             const nuevaLocal = {
-                id: nuevaPostulacionId,
+                id: idPostulacionCreada,
                 candidatoId: candidatoIdFinal,
                 rut,
                 nombres,
@@ -559,43 +588,6 @@ function CandidatoPage({ onVolver }) {
                             Ofertas Laborales ({puestosAbiertos.length})
                         </button>
                     </nav>
-
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "8px 14px",
-                            backgroundColor: backendConectado ? "#e8f5e9" : "#fff8e1",
-                            borderRadius: "6px",
-                            border: `1px solid ${backendConectado ? "#c8e6c9" : "#ffe082"}`,
-                            marginBottom: "20px",
-                            fontSize: "12px",
-                            color: backendConectado ? "#1b5e20" : "#795548",
-                            gap: "10px",
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span
-                                style={{
-                                    display: "inline-block",
-                                    width: "8px",
-                                    height: "8px",
-                                    borderRadius: "50%",
-                                    backgroundColor: backendConectado ? "#2e7d32" : NARANJA,
-                                }}
-                            />
-                            <strong>
-                                {backendConectado
-                                    ? "Conexión en línea con la API REST (Backend Express + MongoDB)"
-                                    : "Modo Local Sincronizado (demostración)"}
-                            </strong>
-                        </div>
-                        <span style={{ fontSize: "11px", color: "#666" }}>
-                            Portal del Postulante · AquaChile
-                        </span>
-                    </div>
 
                     {/* Pestaña 1: Postulaciones activas */}
                     {tabActiva === "postulaciones_activas" && (

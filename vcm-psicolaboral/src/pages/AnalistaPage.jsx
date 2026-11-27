@@ -120,6 +120,7 @@ function AnalistaPage({ onVolver }) {
         enlaceGoogleMeet,
         urlGoogleCalendar,
         observaciones,
+        candidatoEmail,
     }) => {
         try {
             const actualizado = await api.agendarEntrevistaPostulacion(postulacionId, {
@@ -129,6 +130,7 @@ function AnalistaPage({ onVolver }) {
                 enlaceGoogleMeet,
                 urlGoogleCalendar,
                 observaciones,
+                candidatoEmail,
             });
             setPostulaciones((prev) => {
                 const list = prev.map((p) => (p.id === postulacionId ? { ...p, ...actualizado } : p));
@@ -355,8 +357,10 @@ function AnalistaPage({ onVolver }) {
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
                 informes={informes}
+                candidatos={candidatos}
                 onCerrar={() => setSolicitudSeleccionada(null)}
                 onCambiarEstado={handleCambiarEstado}
+                onAgregarRespuesta={handleAgregarRespuestaInforme}
                 rolActual={rolActual}
             />
 
@@ -372,9 +376,11 @@ function AnalistaPage({ onVolver }) {
                 key={informeSeleccionado?.id || "modal-detalle-informe"}
                 isOpen={Boolean(informeSeleccionado)}
                 informe={informeSeleccionado}
+                informes={informes}
                 candidatos={candidatos}
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
+                onCambiarEstado={handleCambiarEstado}
                 onAgregarRespuesta={handleAgregarRespuestaInforme}
             />
         </main>

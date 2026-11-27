@@ -9,8 +9,12 @@ export const puestosController = {
      */
     async listar(req, res) {
         try {
-            const { busqueda, planta, familiaCargo, estado, areaId } = req.query;
-            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId });
+            const { busqueda, planta, familiaCargo, estado, areaId, area_id } = req.query;
+            const areaFiltro = req.usuario?.rol === "jefatura" && req.usuario?.area_id
+                ? req.usuario.area_id
+                : areaId || area_id;
+
+            const puestos = await dataStore.obtenerPuestos({ busqueda, planta, familiaCargo, estado, areaId: areaFiltro });
 
             return res.status(200).json({
                 ok: true,

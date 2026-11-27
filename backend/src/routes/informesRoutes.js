@@ -6,28 +6,29 @@
  */
 import { Router } from "express";
 import { informesController } from "../controllers/informesController.js";
+import { verificarToken, verificarRol } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
-// GET /api/informes-psicolaborales (soporta ?busqueda= &estado= &candidatoId= &puestoTrabajoId= &postulacionId=)
-router.get("/", informesController.listar);
+// GET /api/informes-psicolaborales (Empleados: analista, evaluador, jefatura)
+router.get("/", verificarToken, verificarRol(["jefatura", "analista", "evaluador"]), informesController.listar);
 
-// POST /api/informes-psicolaborales (y /api/solicitudes-informe)
-router.post("/", informesController.crear);
+// POST /api/informes-psicolaborales (Jefatura o analista crea solicitud de informe)
+router.post("/", verificarToken, verificarRol(["jefatura", "analista"]), informesController.crear);
 
-// GET /api/informes-psicolaborales/:id (devuelve informe completo: evaluación + preguntasJefatura)
-router.get("/:id", informesController.obtenerPorId);
+// GET /api/informes-psicolaborales/:id
+router.get("/:id", verificarToken, verificarRol(["jefatura", "analista", "evaluador"]), informesController.obtenerPorId);
 
-// PATCH /api/informes-psicolaborales/:id/dictamen (Evaluador actualiza la evaluación técnica)
-router.patch("/:id/dictamen", informesController.actualizarDictamen);
+// PATCH /api/informes-psicolaborales/:id/dictamen (Exclusivo: evaluador actualiza dictamen técnico)
+router.patch("/:id/dictamen", verificarToken, verificarRol(["evaluador"]), informesController.actualizarDictamen);
 
-// POST /api/informes-psicolaborales/:id/preguntas (Jefatura agrega pregunta subordinada al informe)
-router.post("/:id/preguntas", informesController.agregarPregunta);
+// POST /api/informes-psicolaborales/:id/preguntas (Exclusivo: jefatura agrega pregunta subordinada)
+router.post("/:id/preguntas", verificarToken, verificarRol(["jefatura"]), informesController.agregarPregunta);
 
-// POST /api/informes-psicolaborales/:id/preguntas/:preguntaId/respuestas (Analista/Evaluador responde)
-router.post("/:id/preguntas/:preguntaId/respuestas", informesController.agregarRespuesta);
+// POST /api/informes-psicolaborales/:id/preguntas/:preguntaId/respuestas (Analista o evaluador responde)
+router.post("/:id/preguntas/:preguntaId/respuestas", verificarToken, verificarRol(["analista", "evaluador"]), informesController.agregarRespuesta);
 
-// PATCH /api/informes-psicolaborales/:id/estado (Cambiar estado: Pendiente / En evaluación / Emitido / Cerrado)
-router.patch("/:id/estado", informesController.cambiarEstado);
+// PATCH /api/informes-psicolaborales/:id/estado (Exclusivo: jefatura cierra o reabre informe)
+router.patch("/:id/estado", verificarToken, verificarRol(["jefatura"]), informesController.cambiarEstado);
 
 export default router;

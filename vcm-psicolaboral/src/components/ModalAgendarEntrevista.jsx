@@ -34,6 +34,9 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
             postulante?.enlaceGoogleMeet ||
             generarEnlaceGoogleMeet(postulante?.candidatoNombre || postulante?.nombre || "aquachile")
     );
+    const [correoGmail, setCorreoGmail] = useState(
+        () => postulante?.candidatoEmail || postulante?.email || ""
+    );
     const [observaciones, setObservaciones] = useState(postulante?.observaciones || "");
     const [enviando, setEnviando] = useState(false);
     const [error, setError] = useState("");
@@ -75,6 +78,7 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                 enlaceGoogleMeet: esOnline ? enlaceGoogleMeet.trim() : "",
                 urlGoogleCalendar: urlGooglePreview,
                 observaciones: observaciones.trim(),
+                candidatoEmail: correoGmail.trim(),
             });
             onCerrar();
         } catch (err) {
@@ -185,6 +189,22 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                         </select>
                     </div>
 
+                    {/* Correo Electrónico del Postulante para Notificación Gmail */}
+                    <div>
+                        <label style={estiloLabel}>Correo Electrónico para Notificación (Gmail) *</label>
+                        <input
+                            type="email"
+                            value={correoGmail}
+                            onChange={(e) => setCorreoGmail(e.target.value)}
+                            placeholder="ejemplo@gmail.com"
+                            style={estiloInput}
+                            required
+                        />
+                        <span style={{ fontSize: "11px", color: "#666" }}>
+                            A esta dirección llegará la notificación oficial con la sala Google Meet y sincronización en Google Calendar.
+                        </span>
+                    </div>
+
                     {/* Fecha y Hora */}
                     <div>
                         <label style={estiloLabel}>Fecha y Hora de la Citación *</label>
@@ -253,7 +273,9 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                         <div style={{ fontSize: "12px", color: "#1e3a8a" }}>
                             <strong>Coordinación con Google Calendar</strong>
                             <div style={{ color: "#3b82f6" }}>
-                                Sincroniza esta citación en Google Calendar e invita al postulante
+                                {esOnline
+                                    ? "Incluye sala de Google Meet y sincronización en Google Calendar"
+                                    : "Sincroniza esta citación en Google Calendar e invita al postulante"}
                             </div>
                         </div>
                         <a
@@ -276,6 +298,30 @@ function ModalAgendarEntrevista({ isOpen, postulante, onCerrar, onAgendar }) {
                             <Icono nombre="externalLink" size={13} />
                             Abrir en Google Calendar
                         </a>
+                    </div>
+
+                    {/* Notificación de Correo Automática (Nivel 4) */}
+                    <div
+                        style={{
+                            padding: "10px 14px",
+                            backgroundColor: "#f0fdf4",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            color: "#166534",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                        }}
+                    >
+                        <span>✉️</span>
+                        <div>
+                            <strong>Notificación por correo:</strong> Se enviará un correo oficial de confirmación
+                            {postulante?.candidatoEmail || postulante?.email
+                                ? ` a ${postulante.candidatoEmail || postulante.email}`
+                                : " al postulante"}{" "}
+                            con la fecha, modalidad y enlace de acceso.
+                        </div>
                     </div>
 
                     {error && (

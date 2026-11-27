@@ -590,7 +590,7 @@ function JefaturaPage({ onVolver }) {
 
             {tabActiva === "postulantes" && (
                 <GestionCandidatosView
-                    candidatos={candidatos}
+                    candidatos={candidatosDelArea}
                     rolActual={rolActual}
                     onVerDetalle={setSolicitudSeleccionada}
                 />
@@ -646,7 +646,10 @@ function JefaturaPage({ onVolver }) {
                 isOpen={Boolean(solicitudSeleccionada)}
                 solicitud={solicitudSeleccionada}
                 informes={informesDelArea}
+                candidatos={candidatosDelArea}
                 onCerrar={() => setSolicitudSeleccionada(null)}
+                onAgregarPregunta={handleAgregarPreguntaInforme}
+                onCambiarEstadoInforme={handleCambiarEstadoInforme}
                 rolActual={rolActual}
             />
 
@@ -661,10 +664,12 @@ function JefaturaPage({ onVolver }) {
                 key={informeSeleccionado?.id || "modal-detalle-informe"}
                 isOpen={Boolean(informeSeleccionado)}
                 informe={informeSeleccionado}
+                informes={informesDelArea}
                 candidatos={candidatosDelArea}
                 rolActual={rolActual}
                 onCerrar={() => setInformeSeleccionado(null)}
                 onAgregarPregunta={handleAgregarPreguntaInforme}
+                onCambiarEstadoInforme={handleCambiarEstadoInforme}
                 onCambiarEstado={handleCambiarEstadoInforme}
             />
 

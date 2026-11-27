@@ -8,7 +8,7 @@ import BotonOrange from "./BotonOrange";
 import Icono from "./Icono";
 import LogoAquaChile from "./LogoAquaChile";
 import { NARANJA, NARANJA_OSCURO, NARANJA_CLARO, AZUL_MARINO_AQUA } from "./Estilos";
-import { calcularRut } from "../utils/calcularRut";
+import { calcularRut, obtenerDvEsperado } from "../utils/calcularRut";
 import {
     iniciarSesionPostulante,
     registrarCuentaPostulante,
@@ -34,6 +34,7 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
         email: "",
         password: "",
         confirmarPassword: "",
+        aceptaPrivacidad: false,
     });
     const [intentoRegistro, setIntentoRegistro] = useState(false);
 
@@ -48,6 +49,18 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
         setIdentificador(candidatoDemo.email);
         setPasswordLogin("password123");
         setError("");
+    };
+
+    const handleGenerarRutPrueba = () => {
+        const cuerpoAleatorio = Math.floor(14000000 + Math.random() * 12000000).toString();
+        const dvAleatorio = obtenerDvEsperado(cuerpoAleatorio);
+        setRegistro((prev) => ({
+            ...prev,
+            rutCuerpo: cuerpoAleatorio,
+            rutDv: dvAleatorio,
+        }));
+        setError("");
+        setIntentoRegistro(false);
     };
 
     const handleLoginSubmit = async (e) => {
@@ -78,7 +91,16 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
         setError("");
         setIntentoRegistro(true);
 
-        if (!calcularRut(registro.rutCuerpo, registro.rutDv)) {
+        let cuerpo = (registro.rutCuerpo || "").replace(/\D/g, "").slice(0, 8);
+        let dv = (registro.rutDv || "").trim().toUpperCase().slice(0, 1);
+
+        // Si el DV está vacío y el cuerpo tiene longitud válida, autocompletarlo con el DV esperado
+        if (cuerpo.length >= 7 && !dv) {
+            dv = obtenerDvEsperado(cuerpo);
+            setRegistro((prev) => ({ ...prev, rutDv: dv }));
+        }
+
+        if (!calcularRut(cuerpo, dv)) {
             setError("El RUT ingresado no es válido según el algoritmo Módulo 11. Revisa el cuerpo y el dígito verificador.");
             return;
         }
@@ -98,8 +120,12 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
             setError("Las contraseñas ingresadas no coinciden.");
             return;
         }
+        if (!registro.aceptaPrivacidad) {
+            setError("Debes autorizar el Tratamiento de Datos Personales y Privacidad para crear tu cuenta de postulante.");
+            return;
+        }
 
-        const rutFormateado = `${registro.rutCuerpo}-${registro.rutDv}`;
+        const rutFormateado = `${cuerpo}-${dv}`;
 
         setCargando(true);
         try {
@@ -109,6 +135,7 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                 apellidos: registro.apellidos.trim(),
                 email: registro.email.trim().toLowerCase(),
                 password: registro.password,
+                consentimientoPrivacidad: true,
             });
             onAutenticado(sesion);
         } catch (err) {
@@ -387,24 +414,59 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                         gap: "16px",
                                     }}
                                 >
-                                    {/* RUT dividido en cuerpo y verificador */}
+                                    {/* RUT dividido en cuerpo y verificador con autocompletado y soporte para pegar */}
                                     <div className="form-grupo">
-                                        <label htmlFor="registro-rut-cuerpo">RUT *</label>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                            <label htmlFor="registro-rut-cuerpo" style={{ margin: 0 }}>RUT *</label>
+                                            <button
+                                                type="button"
+                                                onClick={handleGenerarRutPrueba}
+                                                style={{
+                                                    background: "none",
+                                                    border: "none",
+                                                    color: "#f37021",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    cursor: "pointer",
+                                                    padding: 0,
+                                                    textDecoration: "underline",
+                                                }}
+                                                title="Generar un RUT válido matemáticamente para pruebas"
+                                            >
+                                                🎲 Generar RUT de prueba
+                                            </button>
+                                        </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                             <input
                                                 id="registro-rut-cuerpo"
                                                 type="text"
-                                                inputMode="numeric"
                                                 placeholder="12345678"
-                                                maxLength={8}
                                                 className="form-input"
                                                 style={{ flex: 1, minWidth: 0 }}
                                                 value={registro.rutCuerpo}
                                                 onChange={(e) => {
-                                                    setRegistro((prev) => ({
-                                                        ...prev,
-                                                        rutCuerpo: e.target.value.replace(/\D/g, "").slice(0, 8),
-                                                    }));
+                                                    const raw = e.target.value;
+                                                    if (raw.includes("-")) {
+                                                        const [cuerpoPart, dvPart] = raw.split("-");
+                                                        const cuerpo = cuerpoPart.replace(/\D/g, "").slice(0, 8);
+                                                        const dv = dvPart ? dvPart.replace(/[^0-9kK]/g, "").toUpperCase().slice(0, 1) : obtenerDvEsperado(cuerpo);
+                                                        setRegistro((prev) => ({ ...prev, rutCuerpo: cuerpo, rutDv: dv }));
+                                                    } else {
+                                                        const soloNum = raw.replace(/\D/g, "");
+                                                        if (soloNum.length === 9) {
+                                                            const cuerpo = soloNum.slice(0, 8);
+                                                            const dv = soloNum.slice(8, 9).toUpperCase();
+                                                            setRegistro((prev) => ({ ...prev, rutCuerpo: cuerpo, rutDv: dv }));
+                                                        } else {
+                                                            const cuerpo = soloNum.slice(0, 8);
+                                                            const dvSugerido = cuerpo.length >= 7 ? obtenerDvEsperado(cuerpo) : "";
+                                                            setRegistro((prev) => ({
+                                                                ...prev,
+                                                                rutCuerpo: cuerpo,
+                                                                rutDv: prev.rutDv || dvSugerido,
+                                                            }));
+                                                        }
+                                                    }
                                                     setError("");
                                                     setIntentoRegistro(false);
                                                 }}
@@ -523,6 +585,52 @@ function PortalAuthPostulante({ onAutenticado, onVolver }) {
                                             }}
                                         />
                                     </div>
+                                </div>
+
+                                {/* Consentimiento y Términos de Privacidad */}
+                                <div
+                                    style={{
+                                        marginTop: "16px",
+                                        padding: "12px 14px",
+                                        backgroundColor: "#f8f9fa",
+                                        border: "1px solid #e9ecef",
+                                        borderRadius: "6px",
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: "10px",
+                                    }}
+                                >
+                                    <input
+                                        id="registro-consentimiento-privacidad"
+                                        type="checkbox"
+                                        checked={registro.aceptaPrivacidad}
+                                        onChange={(e) => {
+                                            setRegistro((prev) => ({
+                                                ...prev,
+                                                aceptaPrivacidad: e.target.checked,
+                                            }));
+                                            setError("");
+                                        }}
+                                        style={{
+                                            marginTop: "3px",
+                                            width: "16px",
+                                            height: "16px",
+                                            accentColor: "#f37021",
+                                            cursor: "pointer",
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="registro-consentimiento-privacidad"
+                                        style={{
+                                            fontSize: "13px",
+                                            color: "#495057",
+                                            lineHeight: "1.4",
+                                            cursor: "pointer",
+                                            userSelect: "none",
+                                        }}
+                                    >
+                                        He leído y autorizo el <strong>Tratamiento de mis Datos Personales y Curriculum Vitae</strong> conforme a las políticas de privacidad y selección de AquaChile, con la finalidad exclusiva de participar en procesos de evaluación y contratación laboral.
+                                    </label>
                                 </div>
 
                                 <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "22px", flexWrap: "wrap" }}>

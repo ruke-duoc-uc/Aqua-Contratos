@@ -45,6 +45,7 @@ const candidatoSchema = new mongoose.Schema(
         fortalezas: { type: [String], default: [] },
         debilidades: { type: [String], default: [] },
         historial: { type: Array, default: [] },
+        consentimientoPrivacidad: { type: Boolean, default: false },
     },
     {
         collection: "candidatos",

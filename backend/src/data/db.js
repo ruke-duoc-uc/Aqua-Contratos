@@ -8,6 +8,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import {
     AreaTrabajoModel,
     CandidatoModel,
@@ -631,7 +632,7 @@ export const db = {
     },
 
     // ==================== POSTULACIONES ====================
-    async obtenerPostulaciones({ candidatoId, puestoTrabajoId, estado, evaluador } = {}) {
+    async obtenerPostulaciones({ candidatoId, puestoTrabajoId, estado, evaluador, areaId } = {}) {
         let postulacionesRaw = [];
         let candidatosRaw = [];
         let puestosRaw = [];
@@ -700,6 +701,7 @@ export const db = {
                 planta: p?.planta || c?.planta,
                 puestoFamilia: p?.familiaCargo,
                 familiaCargo: p?.familiaCargo || c?.familiaCargo,
+                area_id: p?.area_id || null,
                 evaluador: pos.evaluadorAsignado || c?.evaluador,
                 encargado: pos.evaluadorAsignado || c?.evaluador,
                 fecha: pos.fechaPostulacion || c?.fecha,
@@ -714,8 +716,9 @@ export const db = {
                 !evaluador ||
                 evaluador === "todos" ||
                 (pos.evaluadorAsignado && pos.evaluadorAsignado.toLowerCase() === evaluador.toLowerCase());
+            const coincideArea = !areaId || Number(pos.area_id) === Number(areaId);
 
-            return coincideCandidato && coincidePuesto && coincideEstado && coincideEvaluador;
+            return coincideCandidato && coincidePuesto && coincideEstado && coincideEvaluador && coincideArea;
         });
     },
 
@@ -859,7 +862,13 @@ export const db = {
             throw error;
         }
 
-        const password = datos.password || "password123";
+        const rawPass = datos.password || "password123";
+        let passwordHash = rawPass;
+        if (!rawPass.startsWith("$2a$") && !rawPass.startsWith("$2b$")) {
+            const salt = await bcrypt.genSalt(10);
+            passwordHash = await bcrypt.hash(rawPass, salt);
+        }
+
         const nombre = datos.nombre.trim();
         const rol = datos.rol || "candidato";
         const candidatoId = datos.candidatoId ? Number(datos.candidatoId) : null;
@@ -873,7 +882,7 @@ export const db = {
         const nuevoUsuario = {
             id: nuevoId,
             email,
-            password,
+            password: passwordHash,
             nombre,
             rol,
             candidatoId,
@@ -914,10 +923,43 @@ export const db = {
         }
 
         if (!user) return null;
-        if (user.password !== password) return null;
+
+        let passwordValida = false;
+        if (user.password && (user.password.startsWith("$2a$") || user.password.startsWith("$2b$"))) {
+            passwordValida = await bcrypt.compare(password, user.password);
+        } else {
+            // Compatibilidad con usuarios de demostración históricos y auto-migración a bcrypt
+            passwordValida = user.password === password;
+            if (passwordValida && user.id) {
+                try {
+                    const salt = await bcrypt.genSalt(10);
+                    const nuevoHash = await bcrypt.hash(password, salt);
+                    await this.actualizarPasswordUsuario(user.id, nuevoHash);
+                } catch (e) {
+                    console.warn("No se pudo auto-migrar contraseña a bcrypt:", e.message);
+                }
+            }
+        }
+
+        if (!passwordValida) return null;
 
         const { password: _, ...usuarioAutenticado } = user;
         return usuarioAutenticado;
+    },
+
+    async actualizarPasswordUsuario(id, nuevoHash) {
+        const numId = Number(id);
+        if (this.isUsingMongo()) {
+            await UsuarioModel.updateOne({ id: numId }, { $set: { password: nuevoHash } });
+            return true;
+        }
+        const idx = (memoryStoreUsuarios || []).findIndex((u) => Number(u.id) === numId);
+        if (idx !== -1) {
+            memoryStoreUsuarios[idx].password = nuevoHash;
+            persistJson("usuarios");
+            return true;
+        }
+        return false;
     },
 
     // ==================== SOLICITUDES DE INFORME ====================
@@ -945,13 +987,19 @@ export const db = {
         };
     },
 
-    async obtenerSolicitudesInforme({ busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo } = {}) {
+    async obtenerSolicitudesInforme({ busqueda, estado, candidatoId, puestoTrabajoId, postulacionId, urgencia, tipo, areaId } = {}) {
         let lista = [];
+        let puestosRaw = [];
         if (this.isUsingMongo()) {
-            const docs = await SolicitudInformeModel.find().sort({ id: -1 });
+            const [docs, pDocs] = await Promise.all([
+                SolicitudInformeModel.find().sort({ id: -1 }),
+                areaId ? PuestoTrabajoModel.find() : Promise.resolve([]),
+            ]);
             lista = docs.map((d) => this._normalizarInforme(d.toJSON()));
+            puestosRaw = pDocs.map((d) => d.toJSON());
         } else {
             lista = [...(memoryStoreInformes || [])].map((inf) => this._normalizarInforme(inf));
+            puestosRaw = [...(memoryStorePuestos || [])];
         }
 
         return lista.filter((inf) => {
@@ -990,6 +1038,9 @@ export const db = {
                 tipo === "todos" ||
                 inf.tipo?.toLowerCase() === tipo.toLowerCase();
 
+            const puestoAsociado = areaId ? puestosRaw.find((p) => Number(p.id) === Number(inf.puestoTrabajoId)) : null;
+            const coincideArea = !areaId || Number(puestoAsociado?.area_id) === Number(areaId);
+
             return (
                 coincideTexto &&
                 coincideEstado &&
@@ -997,7 +1048,8 @@ export const db = {
                 coincidePuesto &&
                 coincidePostulacion &&
                 coincideUrgencia &&
-                coincideTipo
+                coincideTipo &&
+                coincideArea
             );
         });
     },
@@ -1165,16 +1217,79 @@ export const db = {
                 { $set: payload },
                 { new: true }
             );
+            if (doc) {
+                if (doc.candidatoId) {
+                    const cUpd = {};
+                    if (payload.dictamen) cUpd.resultadoPsicologico = payload.dictamen;
+                    if (payload.fechaEvaluacion) cUpd.fechaEvaluacion = payload.fechaEvaluacion;
+                    if (payload.conclusiones !== undefined) cUpd.conclusiones = payload.conclusiones;
+                    if (payload.fortalezas !== undefined) cUpd.fortalezas = payload.fortalezas;
+                    if (payload.debilidades !== undefined) cUpd.debilidades = payload.debilidades;
+                    if (Object.keys(cUpd).length > 0) {
+                        await CandidatoModel.findOneAndUpdate({ id: doc.candidatoId }, { $set: cUpd });
+                    }
+                }
+                if (doc.postulacionId) {
+                    const pUpd = {};
+                    if (payload.dictamen) pUpd.dictamenPsicologico = payload.dictamen;
+                    if (payload.conclusiones !== undefined) pUpd.conclusiones = payload.conclusiones;
+                    if (Object.keys(pUpd).length > 0) {
+                        await PostulacionModel.findOneAndUpdate({ id: doc.postulacionId }, { $set: pUpd });
+                    }
+                }
+            }
             return doc ? this._normalizarInforme(doc.toJSON()) : null;
         }
 
         const idx = (memoryStoreInformes || []).findIndex((i) => Number(i.id) === numId);
         if (idx !== -1) {
             Object.assign(memoryStoreInformes[idx], payload);
+            const inf = memoryStoreInformes[idx];
+            if (inf.candidatoId) {
+                const cIdx = memoryStoreCandidatos.findIndex((c) => Number(c.id) === Number(inf.candidatoId));
+                if (cIdx !== -1) {
+                    if (payload.dictamen) memoryStoreCandidatos[cIdx].resultadoPsicologico = payload.dictamen;
+                    if (payload.fechaEvaluacion) memoryStoreCandidatos[cIdx].fechaEvaluacion = payload.fechaEvaluacion;
+                    if (payload.conclusiones !== undefined) memoryStoreCandidatos[cIdx].conclusiones = payload.conclusiones;
+                    if (payload.fortalezas !== undefined) memoryStoreCandidatos[cIdx].fortalezas = payload.fortalezas;
+                    if (payload.debilidades !== undefined) memoryStoreCandidatos[cIdx].debilidades = payload.debilidades;
+                    persistJson("candidatos");
+                }
+            }
+            if (inf.postulacionId) {
+                const pIdx = memoryStorePostulaciones.findIndex((p) => Number(p.id) === Number(inf.postulacionId));
+                if (pIdx !== -1) {
+                    if (payload.dictamen) memoryStorePostulaciones[pIdx].dictamenPsicologico = payload.dictamen;
+                    if (payload.conclusiones !== undefined) memoryStorePostulaciones[pIdx].conclusiones = payload.conclusiones;
+                    persistJson("postulaciones");
+                }
+            }
             persistJson("informes");
             return this._normalizarInforme(memoryStoreInformes[idx]);
         }
         return null;
+    },
+
+    async sincronizarInformePorCandidato(candidatoId, payload) {
+        const numCandId = Number(candidatoId);
+        if (!numCandId) return;
+
+        if (this.isUsingMongo()) {
+            await SolicitudInformeModel.updateMany(
+                { candidatoId: numCandId },
+                { $set: payload }
+            );
+            return;
+        }
+
+        if (Array.isArray(memoryStoreInformes)) {
+            for (const inf of memoryStoreInformes) {
+                if (Number(inf.candidatoId) === numCandId) {
+                    Object.assign(inf, payload);
+                }
+            }
+            persistJson("informes");
+        }
     },
 
     async agregarRespuestaInforme(id, preguntaId, { autor, rol, texto }) {

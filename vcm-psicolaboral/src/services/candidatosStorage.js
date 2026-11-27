@@ -3,6 +3,7 @@
  * @Autor Amaro Villalobos
  * Conecta con el Backend Node.js + MongoDB y mantiene respaldo en localStorage.
  */
+import { api } from "./api";
 
 export const STORAGE_KEY_CANDIDATOS = "aqua_contratos_datos_mvp_v1";
 export const STORAGE_KEY_USUARIOS_POSTULANTES = "aqua_contratos_usuarios_postulantes_v1";
@@ -394,12 +395,6 @@ export async function registrarPostulanteGlobal(nuevoPostulante) {
         console.error("Error guardando postulante en almacenamiento global:", e);
     }
 
-    try {
-        await api.crearSolicitud(normalizado);
-    } catch (err) {
-        console.warn("Backend no disponible al registrar postulante (permanece en modo local global):", err.message);
-    }
-
     return normalizado;
 }
 
@@ -530,6 +525,7 @@ export async function registrarCuentaPostulante(datos) {
 
     let usuarioCreado = null;
     let candidatoCreado = null;
+    let tokenCreado = null;
     let desdeBackend = false;
 
     try {
@@ -547,10 +543,12 @@ export async function registrarCuentaPostulante(datos) {
             cv_pdf: datos.cv_pdf || "",
             cvDataUrl: datos.cvDataUrl || "",
             especialidad: "Postulante Registrado",
+            consentimientoPrivacidad: datos.consentimientoPrivacidad !== false,
         });
 
         usuarioCreado = respuestaApi.usuario;
         candidatoCreado = normalizarCandidato(respuestaApi.candidato);
+        tokenCreado = respuestaApi.token || null;
         if (!datos.cv_pdf) {
             candidatoCreado.cv_pdf = "";
             candidatoCreado.cvArchivo = "";
@@ -563,61 +561,12 @@ export async function registrarCuentaPostulante(datos) {
         }
         desdeBackend = true;
     } catch (error) {
-        // Si el backend respondió 400 o 409 (RUT o Email duplicado), propagar el error
-        if (error.status === 400 || error.status === 409) {
-            throw error;
-        }
-
-        // Fallback local si el backend está apagado
-        const actuales = cargarCandidatosGlobales();
-        const usuariosLocales = cargarUsuariosPostulantesLocales();
-
-        if (usuariosLocales.some((u) => (u.email || "").toLowerCase() === emailLimpio)) {
-            throw new Error(`El correo electrónico ${emailLimpio} ya se encuentra registrado.`);
-        }
-        if (actuales.some((c) => limpiarRut(c.rut) === limpiarRut(rutLimpio))) {
-            throw new Error(`Ya existe un postulante registrado con el RUT ${rutLimpio}.`);
-        }
-
-        const nuevoId = actuales.length > 0 ? Math.max(...actuales.map((c) => Number(c.id) || 0)) + 1 : 1;
-        candidatoCreado = normalizarCandidato({
-            id: nuevoId,
-            rut: rutLimpio,
-            nombres: nombresLimpio,
-            apellidos: apellidosLimpio,
-            nombre: nombreCompleto,
-            email: emailLimpio,
-            telefono: datos.telefono || "",
-            direccion: datos.direccion || "",
-            comuna: datos.comuna || "",
-            fecha_nacimiento: datos.fecha_nacimiento || "",
-            cv_pdf: datos.cv_pdf || "",
-            cvArchivo: datos.cv_pdf || "",
-            cvDataUrl: datos.cvDataUrl || "",
-            especialidad: "Postulante Registrado",
-            cargo: "Postulante Registrado",
-            estado: "Pendiente",
-            fecha: new Date(),
-        });
-        if (!datos.cv_pdf) {
-            candidatoCreado.cv_pdf = "";
-            candidatoCreado.cvArchivo = "";
-        }
-        if (!datos.fecha_nacimiento) {
-            candidatoCreado.fecha_nacimiento = "";
-        }
-        if (!datos.comuna) {
-            candidatoCreado.comuna = "";
-        }
-
-        usuarioCreado = {
-            id: Date.now(),
-            email: emailLimpio,
-            rut: rutLimpio,
-            nombre: nombreCompleto,
-            rol: "candidato",
-            candidatoId: candidatoCreado.id,
-        };
+        console.error("Error al registrar cuenta de postulante en backend:", error);
+        throw new Error(
+            error.mensaje ||
+            error.message ||
+            "No fue posible guardar el usuario en la base de datos central de AquaChile. Por favor verifica los datos ingresados o intenta nuevamente."
+        );
     }
 
     // Sincronizar con el catálogo local y lista de usuarios locales
@@ -642,6 +591,7 @@ export async function registrarCuentaPostulante(datos) {
     const sesion = {
         usuario: usuarioCreado,
         candidato: candidatoCreado,
+        token: tokenCreado,
         desdeBackend,
     };
     guardarSesionPostulante(sesion);
@@ -680,6 +630,7 @@ export async function iniciarSesionPostulante({ identificador, password }) {
         const sesion = {
             usuario: respuestaApi.usuario,
             candidato: candidatoNormalizado,
+            token: respuestaApi.token || null,
             desdeBackend: true,
         };
         guardarSesionPostulante(sesion);
